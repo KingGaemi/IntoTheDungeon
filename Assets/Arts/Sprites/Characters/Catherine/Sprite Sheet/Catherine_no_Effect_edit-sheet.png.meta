@@ -1,0 +1,2668 @@
+fileFormatVersion: 2
+guid: b75341cb8d13a8249953924d134b5582
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -3351695576979300831
+    second: Catherine_no_Effect_edit-sheet_0
+  - first:
+      213: 112482031100428842
+    second: Catherine_no_Effect_edit-sheet_1
+  - first:
+      213: 4269196166569434335
+    second: Catherine_no_Effect_edit-sheet_2
+  - first:
+      213: 726552058342632760
+    second: Catherine_no_Effect_edit-sheet_3
+  - first:
+      213: 7270533539492120700
+    second: Catherine_no_Effect_edit-sheet_4
+  - first:
+      213: -5887169476646637829
+    second: Catherine_no_Effect_edit-sheet_5
+  - first:
+      213: -1205934293306037692
+    second: Catherine_no_Effect_edit-sheet_6
+  - first:
+      213: 6348396237867292879
+    second: Catherine_no_Effect_edit-sheet_7
+  - first:
+      213: -7224567124220853188
+    second: Catherine_no_Effect_edit-sheet_8
+  - first:
+      213: -8079434359813587492
+    second: Catherine_no_Effect_edit-sheet_9
+  - first:
+      213: -1436399394268290855
+    second: Catherine_no_Effect_edit-sheet_10
+  - first:
+      213: 5348513263714416054
+    second: Catherine_no_Effect_edit-sheet_11
+  - first:
+      213: -2650066026575255829
+    second: Catherine_no_Effect_edit-sheet_12
+  - first:
+      213: 5584256935647344574
+    second: Catherine_no_Effect_edit-sheet_13
+  - first:
+      213: 5386102224343912880
+    second: Catherine_no_Effect_edit-sheet_14
+  - first:
+      213: -589342835279699039
+    second: Catherine_no_Effect_edit-sheet_15
+  - first:
+      213: -4024718039778135177
+    second: Catherine_no_Effect_edit-sheet_16
+  - first:
+      213: -8536046602467227178
+    second: Catherine_no_Effect_edit-sheet_17
+  - first:
+      213: 2281817525035341707
+    second: Catherine_no_Effect_edit-sheet_18
+  - first:
+      213: 2022856760124508034
+    second: Catherine_no_Effect_edit-sheet_19
+  - first:
+      213: 343871459058452538
+    second: Catherine_no_Effect_edit-sheet_20
+  - first:
+      213: -3064044035518884719
+    second: Catherine_no_Effect_edit-sheet_21
+  - first:
+      213: 524356655586168849
+    second: Catherine_no_Effect_edit-sheet_22
+  - first:
+      213: 8412155754458342619
+    second: Catherine_no_Effect_edit-sheet_23
+  - first:
+      213: -6257012701108531824
+    second: Catherine_no_Effect_edit-sheet_24
+  - first:
+      213: 9097085679899565506
+    second: Catherine_no_Effect_edit-sheet_25
+  - first:
+      213: -8349067737473833042
+    second: Catherine_no_Effect_edit-sheet_26
+  - first:
+      213: -4995604798534932275
+    second: Catherine_no_Effect_edit-sheet_27
+  - first:
+      213: 8932115697570148823
+    second: Catherine_no_Effect_edit-sheet_28
+  - first:
+      213: -2736231898906095273
+    second: Catherine_no_Effect_edit-sheet_29
+  - first:
+      213: 2366666124256893846
+    second: Catherine_no_Effect_edit-sheet_30
+  - first:
+      213: -5399367379885545288
+    second: Catherine_no_Effect_edit-sheet_31
+  - first:
+      213: 7762300846009936198
+    second: Catherine_no_Effect_edit-sheet_32
+  - first:
+      213: -8095715945072443317
+    second: Catherine_no_Effect_edit-sheet_33
+  - first:
+      213: 5782935585859420460
+    second: Catherine_no_Effect_edit-sheet_34
+  - first:
+      213: 8043505988176627477
+    second: Catherine_no_Effect_edit-sheet_35
+  - first:
+      213: -8725109012455089986
+    second: Catherine_no_Effect_edit-sheet_36
+  - first:
+      213: -6884085146346159964
+    second: Catherine_no_Effect_edit-sheet_37
+  - first:
+      213: 1854248220244499307
+    second: Catherine_no_Effect_edit-sheet_38
+  - first:
+      213: 2391499195746031927
+    second: Catherine_no_Effect_edit-sheet_39
+  - first:
+      213: -431854078512276460
+    second: Catherine_no_Effect_edit-sheet_40
+  - first:
+      213: 1324668469001370364
+    second: Catherine_no_Effect_edit-sheet_41
+  - first:
+      213: 4450097211807754816
+    second: Catherine_no_Effect_edit-sheet_42
+  - first:
+      213: -7229029174202935569
+    second: Catherine_no_Effect_edit-sheet_43
+  - first:
+      213: 6210126201932275074
+    second: Catherine_no_Effect_edit-sheet_44
+  - first:
+      213: -2740956303721370763
+    second: Catherine_no_Effect_edit-sheet_45
+  - first:
+      213: 5174686750571672533
+    second: Catherine_no_Effect_edit-sheet_46
+  - first:
+      213: -53670108948755423
+    second: Catherine_no_Effect_edit-sheet_47
+  - first:
+      213: 9197518464272247889
+    second: Catherine_no_Effect_edit-sheet_48
+  - first:
+      213: 1626696571325613066
+    second: Catherine_no_Effect_edit-sheet_49
+  - first:
+      213: 1408191510948301852
+    second: Catherine_no_Effect_edit-sheet_50
+  - first:
+      213: 7275882387023455177
+    second: Catherine_no_Effect_edit-sheet_51
+  - first:
+      213: 2093638983500749142
+    second: Catherine_no_Effect_edit-sheet_52
+  - first:
+      213: 5846581929061691236
+    second: Catherine_no_Effect_edit-sheet_53
+  - first:
+      213: 8352025620316804778
+    second: Catherine_no_Effect_edit-sheet_54
+  - first:
+      213: -7279779843787876533
+    second: Catherine_no_Effect_edit-sheet_55
+  - first:
+      213: 5749051240646409980
+    second: Catherine_no_Effect_edit-sheet_56
+  - first:
+      213: -7255505813467986842
+    second: Catherine_no_Effect_edit-sheet_57
+  - first:
+      213: 318156121383239065
+    second: Catherine_no_Effect_edit-sheet_58
+  - first:
+      213: -9038241708525100417
+    second: Catherine_no_Effect_edit-sheet_59
+  - first:
+      213: 265607314875290715
+    second: Catherine_no_Effect_edit-sheet_60
+  - first:
+      213: 8665627424980704879
+    second: Catherine_no_Effect_edit-sheet_61
+  - first:
+      213: 5241283257430211831
+    second: Catherine_no_Effect_edit-sheet_62
+  - first:
+      213: -987628077744499309
+    second: Catherine_no_Effect_edit-sheet_63
+  - first:
+      213: 2397213746755157162
+    second: Catherine_no_Effect_edit-sheet_64
+  - first:
+      213: -3551871296443345176
+    second: Catherine_no_Effect_edit-sheet_65
+  - first:
+      213: -1914618935266275587
+    second: Catherine_no_Effect_edit-sheet_66
+  - first:
+      213: 867435976855879867
+    second: Catherine_no_Effect_edit-sheet_67
+  - first:
+      213: -4561068599486352575
+    second: Catherine_no_Effect_edit-sheet_68
+  - first:
+      213: 2199057600244561916
+    second: Catherine_no_Effect_edit-sheet_69
+  - first:
+      213: -4820360355758579207
+    second: Catherine_no_Effect_edit-sheet_70
+  - first:
+      213: 7445336301688320493
+    second: Catherine_no_Effect_edit-sheet_71
+  - first:
+      213: -8636049256879313431
+    second: Catherine_no_Effect_edit-sheet_72
+  - first:
+      213: -1438306782920489526
+    second: Catherine_no_Effect_edit-sheet_73
+  - first:
+      213: -6397359301958038040
+    second: Catherine_no_Effect_edit-sheet_74
+  - first:
+      213: -5952392633003991430
+    second: Catherine_no_Effect_edit-sheet_75
+  - first:
+      213: 6846042060820100785
+    second: Catherine_no_Effect_edit-sheet_76
+  - first:
+      213: 9118330070083580896
+    second: Catherine_no_Effect_edit-sheet_77
+  - first:
+      213: 3971893435133205940
+    second: Catherine_no_Effect_edit-sheet_78
+  - first:
+      213: -6501772930757560335
+    second: Catherine_no_Effect_edit-sheet_79
+  - first:
+      213: 303409275102379475
+    second: Catherine_no_Effect_edit-sheet_80
+  - first:
+      213: -4441367459466484427
+    second: Catherine_no_Effect_edit-sheet_81
+  - first:
+      213: -3655589222685787685
+    second: Catherine_no_Effect_edit-sheet_82
+  - first:
+      213: 441131668518728390
+    second: Catherine_no_Effect_edit-sheet_83
+  - first:
+      213: -4672362070015119048
+    second: Catherine_no_Effect_edit-sheet_84
+  - first:
+      213: -2351193722304798792
+    second: Catherine_no_Effect_edit-sheet_85
+  - first:
+      213: 3230429576638015232
+    second: Catherine_no_Effect_edit-sheet_86
+  - first:
+      213: 5222779203002813259
+    second: Catherine_no_Effect_edit-sheet_87
+  - first:
+      213: 4938318061636345786
+    second: Catherine_no_Effect_edit-sheet_88
+  - first:
+      213: 7456501922184092235
+    second: Catherine_no_Effect_edit-sheet_89
+  - first:
+      213: 2472818393724337371
+    second: Catherine_no_Effect_edit-sheet_90
+  - first:
+      213: -8274984715092051379
+    second: Catherine_no_Effect_edit-sheet_91
+  - first:
+      213: -5936407907488398139
+    second: Catherine_no_Effect_edit-sheet_92
+  - first:
+      213: -3522249558283328216
+    second: Catherine_no_Effect_edit-sheet_93
+  - first:
+      213: 7312618016095247558
+    second: Catherine_no_Effect_edit-sheet_94
+  - first:
+      213: 1155558393400682387
+    second: Catherine_no_Effect_edit-sheet_95
+  - first:
+      213: -4726928167722555424
+    second: Catherine_no_Effect_edit-sheet_96
+  - first:
+      213: -6589404441156860795
+    second: Catherine_no_Effect_edit-sheet_97
+  - first:
+      213: 2897661449788905454
+    second: Catherine_no_Effect_edit-sheet_98
+  - first:
+      213: 2423661732255657841
+    second: Catherine_no_Effect_edit-sheet_99
+  - first:
+      213: -5585451065609372030
+    second: Catherine_no_Effect_edit-sheet_100
+  - first:
+      213: 1894990185870542240
+    second: Catherine_no_Effect_edit-sheet_101
+  - first:
+      213: -8583426981833183393
+    second: Catherine_no_Effect_edit-sheet_102
+  - first:
+      213: 6959400661803908708
+    second: Catherine_no_Effect_edit-sheet_103
+  - first:
+      213: -4152197910730250216
+    second: Catherine_no_Effect_edit-sheet_104
+  - first:
+      213: -5144332288932322808
+    second: Catherine_no_Effect_edit-sheet_105
+  - first:
+      213: 279420895252739310
+    second: Catherine_no_Effect_edit-sheet_106
+  - first:
+      213: -6062792140387122921
+    second: Catherine_no_Effect_edit-sheet_107
+  - first:
+      213: -2818192821582366405
+    second: Catherine_no_Effect_edit-sheet_108
+  - first:
+      213: -5551460965504460368
+    second: Catherine_no_Effect_edit-sheet_109
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 576
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 12e96ea71a26c71d0800000000000000
+      internalID: -3351695576979300831
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_1
+      rect:
+        serializedVersion: 2
+        x: 96
+        y: 576
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a220b53bfcd9f8100800000000000000
+      internalID: 112482031100428842
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_2
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 576
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fdc94d85b4b3f3b30800000000000000
+      internalID: 4269196166569434335
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_3
+      rect:
+        serializedVersion: 2
+        x: 288
+        y: 576
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 83d67546f3b351a00800000000000000
+      internalID: 726552058342632760
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_4
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 576
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c78cdf4bbbf16e460800000000000000
+      internalID: 7270533539492120700
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_5
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 576
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bfe64f37d829c4ea0800000000000000
+      internalID: -5887169476646637829
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_6
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 576
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 44a28094629a34fe0800000000000000
+      internalID: -1205934293306037692
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_7
+      rect:
+        serializedVersion: 2
+        x: 672
+        y: 576
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fc8918b3eb80a1850800000000000000
+      internalID: 6348396237867292879
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_8
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 576
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c34c9d85a7e2dbb90800000000000000
+      internalID: -7224567124220853188
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_9
+      rect:
+        serializedVersion: 2
+        x: 864
+        y: 576
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cddb935a14510ef80800000000000000
+      internalID: -8079434359813587492
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_10
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 512
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9d06d0d7c52e01ce0800000000000000
+      internalID: -1436399394268290855
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_11
+      rect:
+        serializedVersion: 2
+        x: 96
+        y: 512
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6b5b928c97cb93a40800000000000000
+      internalID: 5348513263714416054
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_12
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 512
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: be6a6ae4df2193bd0800000000000000
+      internalID: -2650066026575255829
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_13
+      rect:
+        serializedVersion: 2
+        x: 288
+        y: 512
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: eb775c7a8144f7d40800000000000000
+      internalID: 5584256935647344574
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_14
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 512
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0b1d5fdaf674fba40800000000000000
+      internalID: 5386102224343912880
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_15
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 512
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1a36b3450db32d7f0800000000000000
+      internalID: -589342835279699039
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_16
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 512
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 773fae544445528c0800000000000000
+      internalID: -4024718039778135177
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_17
+      rect:
+        serializedVersion: 2
+        x: 672
+        y: 512
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6d9c2c947ded98980800000000000000
+      internalID: -8536046602467227178
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_18
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 512
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b871efd03f4aaaf10800000000000000
+      internalID: 2281817525035341707
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_19
+      rect:
+        serializedVersion: 2
+        x: 864
+        y: 512
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 28708ba7181a21c10800000000000000
+      internalID: 2022856760124508034
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_20
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 448
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a380395254da5c400800000000000000
+      internalID: 343871459058452538
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_21
+      rect:
+        serializedVersion: 2
+        x: 96
+        y: 448
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1941eb60f245a75d0800000000000000
+      internalID: -3064044035518884719
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_22
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 448
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 11053df9993e64700800000000000000
+      internalID: 524356655586168849
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_23
+      rect:
+        serializedVersion: 2
+        x: 288
+        y: 448
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bd46fb3d61bfdb470800000000000000
+      internalID: 8412155754458342619
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_24
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 448
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 09d81537910aa29a0800000000000000
+      internalID: -6257012701108531824
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_25
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 448
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2cdd4b93a375f3e70800000000000000
+      internalID: 9097085679899565506
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_26
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 448
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ea7a236c027222c80800000000000000
+      internalID: -8349067737473833042
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_27
+      rect:
+        serializedVersion: 2
+        x: 672
+        y: 448
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dc8a61157eb0caab0800000000000000
+      internalID: -4995604798534932275
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_28
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 448
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7d1fb5e07ef35fb70800000000000000
+      internalID: 8932115697570148823
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_29
+      rect:
+        serializedVersion: 2
+        x: 864
+        y: 448
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7511c9ac593f60ad0800000000000000
+      internalID: -2736231898906095273
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_30
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 384
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 69b58460d4618d020800000000000000
+      internalID: 2366666124256893846
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_31
+      rect:
+        serializedVersion: 2
+        x: 96
+        y: 384
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8b8271e99f79115b0800000000000000
+      internalID: -5399367379885545288
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_32
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 384
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 649e2263e7b39bb60800000000000000
+      internalID: 7762300846009936198
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_33
+      rect:
+        serializedVersion: 2
+        x: 288
+        y: 384
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b40cd7bad3d36af80800000000000000
+      internalID: -8095715945072443317
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_34
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 384
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c21cd1aa64d114050800000000000000
+      internalID: 5782935585859420460
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_35
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 384
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 517cef5741640af60800000000000000
+      internalID: 8043505988176627477
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_36
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 384
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: eb81e0ea49f2ae680800000000000000
+      internalID: -8725109012455089986
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_37
+      rect:
+        serializedVersion: 2
+        x: 672
+        y: 384
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4a08e786801d670a0800000000000000
+      internalID: -6884085146346159964
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_38
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 384
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b6bd21d9eec9bb910800000000000000
+      internalID: 1854248220244499307
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_39
+      rect:
+        serializedVersion: 2
+        x: 864
+        y: 384
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 739131b09df403120800000000000000
+      internalID: 2391499195746031927
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_40
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 320
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 41cd87fe00fb10af0800000000000000
+      internalID: -431854078512276460
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_41
+      rect:
+        serializedVersion: 2
+        x: 96
+        y: 320
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cfabcf344fa226210800000000000000
+      internalID: 1324668469001370364
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_42
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 320
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 04ae1c526dbe1cd30800000000000000
+      internalID: 4450097211807754816
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_43
+      rect:
+        serializedVersion: 2
+        x: 288
+        y: 320
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fe6d2b064445dab90800000000000000
+      internalID: -7229029174202935569
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_44
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 320
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 28dd484c0ecce2650800000000000000
+      internalID: 6210126201932275074
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_45
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 320
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 57be1d393ca26f9d0800000000000000
+      internalID: -2740956303721370763
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_46
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 320
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5d3beb7de2e20d740800000000000000
+      internalID: 5174686750571672533
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_47
+      rect:
+        serializedVersion: 2
+        x: 672
+        y: 320
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 12c8d0df153514ff0800000000000000
+      internalID: -53670108948755423
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_48
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 320
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 15c2b0e005624af70800000000000000
+      internalID: 9197518464272247889
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_49
+      rect:
+        serializedVersion: 2
+        x: 864
+        y: 320
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a04853bb9ef239610800000000000000
+      internalID: 1626696571325613066
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_50
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 256
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c1c4bc1e7b6ea8310800000000000000
+      internalID: 1408191510948301852
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_51
+      rect:
+        serializedVersion: 2
+        x: 96
+        y: 256
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9c3ed025b7029f460800000000000000
+      internalID: 7275882387023455177
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_52
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 256
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 659d87b10991e0d10800000000000000
+      internalID: 2093638983500749142
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_53
+      rect:
+        serializedVersion: 2
+        x: 288
+        y: 256
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 46fa0f7b94b332150800000000000000
+      internalID: 5846581929061691236
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_54
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 256
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aa6d1fdfc0b58e370800000000000000
+      internalID: 8352025620316804778
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_55
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 256
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b4799ff4dc609fa90800000000000000
+      internalID: -7279779843787876533
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_56
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 256
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cfe7f32c4abb8cf40800000000000000
+      internalID: 5749051240646409980
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_57
+      rect:
+        serializedVersion: 2
+        x: 672
+        y: 256
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 664857a67e34f4b90800000000000000
+      internalID: -7255505813467986842
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_58
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 256
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 99df9268e415a6400800000000000000
+      internalID: 318156121383239065
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_59
+      rect:
+        serializedVersion: 2
+        x: 864
+        y: 256
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f72ed318d07b19280800000000000000
+      internalID: -9038241708525100417
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_60
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 192
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b5413e41270afa300800000000000000
+      internalID: 265607314875290715
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_61
+      rect:
+        serializedVersion: 2
+        x: 96
+        y: 192
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f6e9bd50b3e724870800000000000000
+      internalID: 8665627424980704879
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_62
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 192
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7fc74566a57ccb840800000000000000
+      internalID: 5241283257430211831
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_63
+      rect:
+        serializedVersion: 2
+        x: 288
+        y: 192
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 39556d7fe7d3b42f0800000000000000
+      internalID: -987628077744499309
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_64
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 192
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aac3602a33d944120800000000000000
+      internalID: 2397213746755157162
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_65
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 192
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8e6969fdfd735bec0800000000000000
+      internalID: -3551871296443345176
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_66
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 192
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dfe8733f838ed65e0800000000000000
+      internalID: -1914618935266275587
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_67
+      rect:
+        serializedVersion: 2
+        x: 672
+        y: 192
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bb083e1dc60c90c00800000000000000
+      internalID: 867435976855879867
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_68
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 192
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1437d6b3644d3b0c0800000000000000
+      internalID: -4561068599486352575
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_69
+      rect:
+        serializedVersion: 2
+        x: 864
+        y: 192
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cf7333f7c3f948e10800000000000000
+      internalID: 2199057600244561916
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_70
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 128
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9f162a9bbc3aa1db0800000000000000
+      internalID: -4820360355758579207
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_71
+      rect:
+        serializedVersion: 2
+        x: 96
+        y: 128
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: de1f3775be5235760800000000000000
+      internalID: 7445336301688320493
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_72
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 128
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9edaee4e4f6962880800000000000000
+      internalID: -8636049256879313431
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_73
+      rect:
+        serializedVersion: 2
+        x: 288
+        y: 128
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ac54df5f99b1a0ce0800000000000000
+      internalID: -1438306782920489526
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_74
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 128
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8ed004a0c930837a0800000000000000
+      internalID: -6397359301958038040
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_75
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 128
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a7e152aff6ad46da0800000000000000
+      internalID: -5952392633003991430
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_76
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 128
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1b6b0908bf6020f50800000000000000
+      internalID: 6846042060820100785
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_77
+      rect:
+        serializedVersion: 2
+        x: 672
+        y: 128
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0e3381443e0da8e70800000000000000
+      internalID: 9118330070083580896
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_78
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 128
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4bd12d609000f1730800000000000000
+      internalID: 3971893435133205940
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_79
+      rect:
+        serializedVersion: 2
+        x: 864
+        y: 128
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1f7f1f3a7ff05c5a0800000000000000
+      internalID: -6501772930757560335
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_80
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 64
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3dd3900d02de53400800000000000000
+      internalID: 303409275102379475
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_81
+      rect:
+        serializedVersion: 2
+        x: 96
+        y: 64
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5356585b3d71d52c0800000000000000
+      internalID: -4441367459466484427
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_82
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 64
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bd9311958fcb44dc0800000000000000
+      internalID: -3655589222685787685
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_83
+      rect:
+        serializedVersion: 2
+        x: 288
+        y: 64
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6c2fb315ae63f1600800000000000000
+      internalID: 441131668518728390
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_84
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 64
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8317dbad37f682fb0800000000000000
+      internalID: -4672362070015119048
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_85
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 64
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8bfd4e744c1ee5fd0800000000000000
+      internalID: -2351193722304798792
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_86
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 64
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 007ac6b959ac4dc20800000000000000
+      internalID: 3230429576638015232
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_87
+      rect:
+        serializedVersion: 2
+        x: 672
+        y: 64
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b4bc74f730a0b7840800000000000000
+      internalID: 5222779203002813259
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_88
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 64
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: abfdabbdc1e688440800000000000000
+      internalID: 4938318061636345786
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_89
+      rect:
+        serializedVersion: 2
+        x: 864
+        y: 64
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b4adcc2fdf0da7760800000000000000
+      internalID: 7456501922184092235
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_90
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bdcbdff3a37315220800000000000000
+      internalID: 2472818393724337371
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_91
+      rect:
+        serializedVersion: 2
+        x: 96
+        y: 0
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d4ab62f8e39592d80800000000000000
+      internalID: -8274984715092051379
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_92
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 0
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5c48558e574ad9da0800000000000000
+      internalID: -5936407907488398139
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_93
+      rect:
+        serializedVersion: 2
+        x: 288
+        y: 0
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 825ee3c30b47e1fc0800000000000000
+      internalID: -3522249558283328216
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_94
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 0
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6cc9a7b7753ab7560800000000000000
+      internalID: 7312618016095247558
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Catherine_no_Effect_edit-sheet_95
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 0
+        width: 96
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3976ed38c3e590010800000000000000
+      internalID: 1155558393400682387
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 052684e23878aba47a8d2fe6687a864a
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Catherine_no_Effect_edit-sheet_0: -3351695576979300831
+      Catherine_no_Effect_edit-sheet_1: 112482031100428842
+      Catherine_no_Effect_edit-sheet_10: -1436399394268290855
+      Catherine_no_Effect_edit-sheet_11: 5348513263714416054
+      Catherine_no_Effect_edit-sheet_12: -2650066026575255829
+      Catherine_no_Effect_edit-sheet_13: 5584256935647344574
+      Catherine_no_Effect_edit-sheet_14: 5386102224343912880
+      Catherine_no_Effect_edit-sheet_15: -589342835279699039
+      Catherine_no_Effect_edit-sheet_16: -4024718039778135177
+      Catherine_no_Effect_edit-sheet_17: -8536046602467227178
+      Catherine_no_Effect_edit-sheet_18: 2281817525035341707
+      Catherine_no_Effect_edit-sheet_19: 2022856760124508034
+      Catherine_no_Effect_edit-sheet_2: 4269196166569434335
+      Catherine_no_Effect_edit-sheet_20: 343871459058452538
+      Catherine_no_Effect_edit-sheet_21: -3064044035518884719
+      Catherine_no_Effect_edit-sheet_22: 524356655586168849
+      Catherine_no_Effect_edit-sheet_23: 8412155754458342619
+      Catherine_no_Effect_edit-sheet_24: -6257012701108531824
+      Catherine_no_Effect_edit-sheet_25: 9097085679899565506
+      Catherine_no_Effect_edit-sheet_26: -8349067737473833042
+      Catherine_no_Effect_edit-sheet_27: -4995604798534932275
+      Catherine_no_Effect_edit-sheet_28: 8932115697570148823
+      Catherine_no_Effect_edit-sheet_29: -2736231898906095273
+      Catherine_no_Effect_edit-sheet_3: 726552058342632760
+      Catherine_no_Effect_edit-sheet_30: 2366666124256893846
+      Catherine_no_Effect_edit-sheet_31: -5399367379885545288
+      Catherine_no_Effect_edit-sheet_32: 7762300846009936198
+      Catherine_no_Effect_edit-sheet_33: -8095715945072443317
+      Catherine_no_Effect_edit-sheet_34: 5782935585859420460
+      Catherine_no_Effect_edit-sheet_35: 8043505988176627477
+      Catherine_no_Effect_edit-sheet_36: -8725109012455089986
+      Catherine_no_Effect_edit-sheet_37: -6884085146346159964
+      Catherine_no_Effect_edit-sheet_38: 1854248220244499307
+      Catherine_no_Effect_edit-sheet_39: 2391499195746031927
+      Catherine_no_Effect_edit-sheet_4: 7270533539492120700
+      Catherine_no_Effect_edit-sheet_40: -431854078512276460
+      Catherine_no_Effect_edit-sheet_41: 1324668469001370364
+      Catherine_no_Effect_edit-sheet_42: 4450097211807754816
+      Catherine_no_Effect_edit-sheet_43: -7229029174202935569
+      Catherine_no_Effect_edit-sheet_44: 6210126201932275074
+      Catherine_no_Effect_edit-sheet_45: -2740956303721370763
+      Catherine_no_Effect_edit-sheet_46: 5174686750571672533
+      Catherine_no_Effect_edit-sheet_47: -53670108948755423
+      Catherine_no_Effect_edit-sheet_48: 9197518464272247889
+      Catherine_no_Effect_edit-sheet_49: 1626696571325613066
+      Catherine_no_Effect_edit-sheet_5: -5887169476646637829
+      Catherine_no_Effect_edit-sheet_50: 1408191510948301852
+      Catherine_no_Effect_edit-sheet_51: 7275882387023455177
+      Catherine_no_Effect_edit-sheet_52: 2093638983500749142
+      Catherine_no_Effect_edit-sheet_53: 5846581929061691236
+      Catherine_no_Effect_edit-sheet_54: 8352025620316804778
+      Catherine_no_Effect_edit-sheet_55: -7279779843787876533
+      Catherine_no_Effect_edit-sheet_56: 5749051240646409980
+      Catherine_no_Effect_edit-sheet_57: -7255505813467986842
+      Catherine_no_Effect_edit-sheet_58: 318156121383239065
+      Catherine_no_Effect_edit-sheet_59: -9038241708525100417
+      Catherine_no_Effect_edit-sheet_6: -1205934293306037692
+      Catherine_no_Effect_edit-sheet_60: 265607314875290715
+      Catherine_no_Effect_edit-sheet_61: 8665627424980704879
+      Catherine_no_Effect_edit-sheet_62: 5241283257430211831
+      Catherine_no_Effect_edit-sheet_63: -987628077744499309
+      Catherine_no_Effect_edit-sheet_64: 2397213746755157162
+      Catherine_no_Effect_edit-sheet_65: -3551871296443345176
+      Catherine_no_Effect_edit-sheet_66: -1914618935266275587
+      Catherine_no_Effect_edit-sheet_67: 867435976855879867
+      Catherine_no_Effect_edit-sheet_68: -4561068599486352575
+      Catherine_no_Effect_edit-sheet_69: 2199057600244561916
+      Catherine_no_Effect_edit-sheet_7: 6348396237867292879
+      Catherine_no_Effect_edit-sheet_70: -4820360355758579207
+      Catherine_no_Effect_edit-sheet_71: 7445336301688320493
+      Catherine_no_Effect_edit-sheet_72: -8636049256879313431
+      Catherine_no_Effect_edit-sheet_73: -1438306782920489526
+      Catherine_no_Effect_edit-sheet_74: -6397359301958038040
+      Catherine_no_Effect_edit-sheet_75: -5952392633003991430
+      Catherine_no_Effect_edit-sheet_76: 6846042060820100785
+      Catherine_no_Effect_edit-sheet_77: 9118330070083580896
+      Catherine_no_Effect_edit-sheet_78: 3971893435133205940
+      Catherine_no_Effect_edit-sheet_79: -6501772930757560335
+      Catherine_no_Effect_edit-sheet_8: -7224567124220853188
+      Catherine_no_Effect_edit-sheet_80: 303409275102379475
+      Catherine_no_Effect_edit-sheet_81: -4441367459466484427
+      Catherine_no_Effect_edit-sheet_82: -3655589222685787685
+      Catherine_no_Effect_edit-sheet_83: 441131668518728390
+      Catherine_no_Effect_edit-sheet_84: -4672362070015119048
+      Catherine_no_Effect_edit-sheet_85: -2351193722304798792
+      Catherine_no_Effect_edit-sheet_86: 3230429576638015232
+      Catherine_no_Effect_edit-sheet_87: 5222779203002813259
+      Catherine_no_Effect_edit-sheet_88: 4938318061636345786
+      Catherine_no_Effect_edit-sheet_89: 7456501922184092235
+      Catherine_no_Effect_edit-sheet_9: -8079434359813587492
+      Catherine_no_Effect_edit-sheet_90: 2472818393724337371
+      Catherine_no_Effect_edit-sheet_91: -8274984715092051379
+      Catherine_no_Effect_edit-sheet_92: -5936407907488398139
+      Catherine_no_Effect_edit-sheet_93: -3522249558283328216
+      Catherine_no_Effect_edit-sheet_94: 7312618016095247558
+      Catherine_no_Effect_edit-sheet_95: 1155558393400682387
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
