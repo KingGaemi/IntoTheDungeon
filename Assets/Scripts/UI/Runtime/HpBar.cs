@@ -1,3 +1,4 @@
+#if false
 using UnityEngine;
 using UnityEngine.UI;
 public class HpBar : MonoBehaviour
@@ -58,3 +59,4 @@ public class HpBar : MonoBehaviour
         ((RectTransform)transform).position = screenPos;
     }
 }
+#endif

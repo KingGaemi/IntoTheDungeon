@@ -40,7 +40,7 @@ public class CharacterCore : EntityBehaviour, IAuthoring
             AddComponent(new AnimationSyncComponent());
             AddComponent(new ActionPhaseComponent
             {
-                StartupDuration = 0.5f,
+                WindupDuration = 0.5f,
                 ActiveDuration = 0f,
                 RecoveryDuration = 0.5f,
                 CooldownDuration = 0f,

@@ -1,3 +1,4 @@
+#if false
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -36,3 +37,4 @@ public class HpBarManager : MonoBehaviour
         pool.Enqueue(hb);
     }
 }
+#endif

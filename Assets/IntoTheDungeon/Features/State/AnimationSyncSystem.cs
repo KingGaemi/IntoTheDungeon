@@ -28,10 +28,7 @@ namespace IntoTheDungeon.Features.Status
                         sync.PhaseDuration = action.GetCurrentPhaseDuration();
                         sync.DirtyFlag = 1;
                     }
-                    else
-                    {
-                        sync.DirtyFlag = 0;
-                    }
+            
 
                     sync.PhaseProgress = action.GetPhaseProgress();
                     sync.WholeProgress = action.GetWholeProgress();

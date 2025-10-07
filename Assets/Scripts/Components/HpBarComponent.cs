@@ -1,3 +1,4 @@
+#if false
 using UnityEngine;
 
 [DisallowMultipleComponent]
@@ -57,3 +58,4 @@ public class HpBarComponent : MonoBehaviour
         maxHp = Mathf.Max(1, max);
     }
 }
+#endif

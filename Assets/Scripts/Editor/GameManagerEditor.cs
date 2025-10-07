@@ -1,3 +1,4 @@
+#if false
 using UnityEngine;
 using UnityEditor;
 
@@ -23,3 +24,4 @@ public class GameManagerEditor : Editor
         }
     }
 }
+#endif

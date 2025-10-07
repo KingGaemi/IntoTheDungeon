@@ -1,3 +1,4 @@
+#if false
 using UnityEngine;
 
 public class HpBarLink : MonoBehaviour
@@ -25,3 +26,4 @@ public class HpBarLink : MonoBehaviour
         hb = null;
     }
 }
+#endif

@@ -5,23 +5,27 @@ namespace IntoTheDungeon.Features.State
     public struct ActionPhaseComponent : IComponentData
     {
         public ActionPhase ActionPhase;
-        public float StartupDuration;
+        public float WindupDuration;
         public float ActiveDuration;
         public float RecoveryDuration;
         public float CooldownDuration;
-        public readonly float WholeDuration => StartupDuration + ActiveDuration + RecoveryDuration;
+
+        public bool ReadyToAct;
+        public bool Activated;
+        public readonly float WholeDuration => WindupDuration + ActiveDuration + RecoveryDuration;
         public float PhaseTimer;
+        
+
 
         
         public void AdvancePhase()
         {
-            var before = ActionPhase;
-            
+         
             ActionPhase = ActionPhase switch
             {
                 ActionPhase.None => ActionPhase.Queued,
-                ActionPhase.Queued => ActionPhase.Startup,
-                ActionPhase.Startup => ActionPhase.Active,
+                ActionPhase.Queued => ActionPhase.Windup,
+                ActionPhase.Windup => ActionPhase.Active,
                 ActionPhase.Active => ActionPhase.Recovery,
                 ActionPhase.Recovery => ActionPhase.Cooldown,
                 ActionPhase.Cooldown => ActionPhase.None,
@@ -30,14 +34,14 @@ namespace IntoTheDungeon.Features.State
 
             PhaseTimer = 0f;  // 증가 방식이므로 0으로 리셋
 
-            UnityEngine.Debug.Log($"[Action] Phase Advanced: {before} => {ActionPhase}");
+            // UnityEngine.Debug.Log($"[Action] Phase Advanced: {before} => {ActionPhase}");
         }
 
         public readonly float GetCurrentPhaseDuration()
         {
             return ActionPhase switch
             {
-                ActionPhase.Startup => StartupDuration,
+                ActionPhase.Windup => WindupDuration,
                 ActionPhase.Active => ActiveDuration,
                 ActionPhase.Recovery => RecoveryDuration,
                 ActionPhase.Cooldown => CooldownDuration,
@@ -65,9 +69,9 @@ namespace IntoTheDungeon.Features.State
             // 이전 Phase들의 시간 + 현재 PhaseTimer
             float elapsedTotal = ActionPhase switch
             {
-                ActionPhase.Startup => PhaseTimer,
-                ActionPhase.Active => StartupDuration + PhaseTimer,
-                ActionPhase.Recovery => StartupDuration + ActiveDuration + PhaseTimer,
+                ActionPhase.Windup => PhaseTimer,
+                ActionPhase.Active => WindupDuration + PhaseTimer,
+                ActionPhase.Recovery => WindupDuration + ActiveDuration + PhaseTimer,
                 ActionPhase.Cooldown => wholeDuration,
                 _ => 0f
             };

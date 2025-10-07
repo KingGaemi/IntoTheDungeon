@@ -1,8 +1,8 @@
+#if false
 using UnityEngine;
 using MyGame.GamePlay.Party.Abstractions;
 using MyGame.GamePlay.Entity.Characters.Abstractions;
 
-[RequireComponent(typeof(StatusComponent))]
 public class OrderAdapter : MonoBehaviour
 {
     
@@ -66,3 +66,4 @@ public class OrderAdapter : MonoBehaviour
    
 
 }
+#endif

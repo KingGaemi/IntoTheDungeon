@@ -24,6 +24,8 @@ namespace IntoTheDungeon.Features.Character
         readonly string phaseProgressParam = "PhaseProgress";
         readonly string attackingParam = "Attacking";
         readonly string attackBlendParam = "AttackBlend";
+        readonly string windupParam = "Windup";
+        readonly string recoveryParam = "Recovery";
 
 
 
@@ -34,6 +36,8 @@ namespace IntoTheDungeon.Features.Character
         int hashMovementSpeed;
         int hashDeath;
         int hashPhaseProgress;
+        int hashWindup;
+        int hashRecovery;
 
         int hashAttack;
         int hashAttackBlend;
@@ -91,26 +95,35 @@ namespace IntoTheDungeon.Features.Character
 
             if (sync.DirtyFlag == 1)
             {
-                if (sync.CurrentPhase == ActionPhase.Startup)
+                if (sync.CurrentPhase == ActionPhase.Windup)
                 {
 
                     _animator.SetBool(hashAttacking, true);
                     _animator.SetTrigger(hashAttack);
-                }else if (sync.CurrentPhase == ActionPhase.None)
+                }                
+                else if (sync.CurrentPhase == ActionPhase.None)
                 {
                     // Idle로 복귀
                     _animator.SetBool(hashAttacking, false);
                 }
-                // else if (sync.CurrentPhase == ActionPhase.None)
-                // {
-                //     // Idle로 복귀
-                //     _animator.SetBool(hashAttacking, false);
-                // }
-                
+
+                sync.DirtyFlag = 0;
+
+               
+
 
             }
+
+            if (sync.CurrentPhase == ActionPhase.Windup)
+            {
+                _animator.SetFloat(hashWindup, sync.PhaseProgress);
+                
+            }
+            else if (sync.CurrentPhase == ActionPhase.Recovery)
+            {
+                _animator.SetFloat(hashRecovery, sync.PhaseProgress);
+            }
             
-            // 매 프레임 진행률 업데이트 (부드러운 애니메이션)
             _animator.SetFloat(hashPhaseProgress, sync.WholeProgress);
         }
         private void OnDisable()
@@ -164,6 +177,8 @@ namespace IntoTheDungeon.Features.Character
             hashPhaseProgress = Animator.StringToHash(phaseProgressParam);
             hashAttacking = Animator.StringToHash(attackingParam);
             hashAttackBlend = Animator.StringToHash(attackBlendParam);
+            hashWindup = Animator.StringToHash(windupParam);
+            hashRecovery = Animator.StringToHash(recoveryParam);
         }
 
         private void HandleAction(ActionState action)

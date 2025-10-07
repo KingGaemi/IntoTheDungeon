@@ -1,3 +1,4 @@
+#if false
 using UnityEngine;
 
 public class StageGeneration : MonoBehaviour
@@ -57,3 +58,4 @@ public class StageGeneration : MonoBehaviour
         Debug.Log("Round Set");
     }
 }
+#endif

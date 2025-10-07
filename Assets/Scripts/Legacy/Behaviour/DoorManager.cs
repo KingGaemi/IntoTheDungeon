@@ -1,3 +1,4 @@
+#if false
 using UnityEngine;
 using System;
 
@@ -25,3 +26,4 @@ public class DoorManager : MonoBehaviour
         
     }
 }
+#endif
