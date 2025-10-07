@@ -1,4 +1,4 @@
-using IntoTheDungeon.Core.ECS;
+using IntoTheDungeon.Core.ECS.Entities;
 
 namespace IntoTheDungeon.Core.Abstractions.Services
 {

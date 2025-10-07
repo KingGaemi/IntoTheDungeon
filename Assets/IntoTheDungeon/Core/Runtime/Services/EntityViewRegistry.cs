@@ -1,4 +1,4 @@
-using IntoTheDungeon.Core.ECS;
+using IntoTheDungeon.Core.ECS.Entities;
 using IntoTheDungeon.Core.Abstractions.Services;
 public sealed class EntityViewRegistry : IEntityViewRegistry
 {
