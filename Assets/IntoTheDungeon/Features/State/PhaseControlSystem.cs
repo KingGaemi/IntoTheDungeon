@@ -1,15 +1,14 @@
-using IntoTheDungeon.Core.ECS;
+using IntoTheDungeon.Core.ECS.Systems;
+using IntoTheDungeon.Core.ECS.Abstractions;
 using IntoTheDungeon.Features.Character;
-using IntoTheDungeon.Core.ECS.Entities;
-using IntoTheDungeon.Core.Util.Maths;
 using IntoTheDungeon.Features.State;
+using IntoTheDungeon.Core.ECS.Abstractions.Scheduling;
 
 namespace IntoTheDungeon.Features.Status
 {
     public class PhaseControlSystem : GameSystem, ITick
     {
-        public override int Priority => 600; // 다른 시스템들 이후 실행
-        
+      
         public void Tick(float dt)
         {
             foreach (var chunk in _world.EntityManager.GetChunks(typeof(ActionPhaseComponent),
@@ -54,7 +53,7 @@ namespace IntoTheDungeon.Features.Status
 
         private void NotifyPhaseChange(Entity entity, ActionPhaseComponent action, float phaseTime)
         {
-            var receiver = _world.EntityManager.GetManagedComponent<EventReceiver>(entity);
+            var receiver = _world.ManagedStore.GetManagedComponent<EventReceiver>(entity);
             if (receiver == null)
                 return;
 

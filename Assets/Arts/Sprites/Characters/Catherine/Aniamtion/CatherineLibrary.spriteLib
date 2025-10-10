@@ -233,6 +233,47 @@ MonoBehaviour:
       m_SpriteOverride: {fileID: 9097085679899565506, guid: b75341cb8d13a8249953924d134b5582, type: 3}
     m_FromMain: 0
     m_EntryOverrideCount: 7
+  - m_Name: DashAttack
+    m_Hash: 350963476
+    m_CategoryList: []
+    m_OverrideEntries:
+    - m_Name: Catherine_no_Effect_edit-sheet_74
+      m_Hash: 735319292
+      m_Sprite: {fileID: -6397359301958038040, guid: b75341cb8d13a8249953924d134b5582, type: 3}
+      m_FromMain: 0
+      m_SpriteOverride: {fileID: -6397359301958038040, guid: b75341cb8d13a8249953924d134b5582, type: 3}
+    - m_Name: Catherine_no_Effect_edit-sheet_75
+      m_Hash: 483599466
+      m_Sprite: {fileID: -5952392633003991430, guid: b75341cb8d13a8249953924d134b5582, type: 3}
+      m_FromMain: 0
+      m_SpriteOverride: {fileID: -5952392633003991430, guid: b75341cb8d13a8249953924d134b5582, type: 3}
+    - m_Name: Catherine_no_Effect_edit-sheet_76
+      m_Hash: 98203088
+      m_Sprite: {fileID: 6846042060820100785, guid: b75341cb8d13a8249953924d134b5582, type: 3}
+      m_FromMain: 0
+      m_SpriteOverride: {fileID: 6846042060820100785, guid: b75341cb8d13a8249953924d134b5582, type: 3}
+    - m_Name: Catherine_no_Effect_edit-sheet_77
+      m_Hash: 853361990
+      m_Sprite: {fileID: 9118330070083580896, guid: b75341cb8d13a8249953924d134b5582, type: 3}
+      m_FromMain: 0
+      m_SpriteOverride: {fileID: 9118330070083580896, guid: b75341cb8d13a8249953924d134b5582, type: 3}
+    - m_Name: Catherine_no_Effect_edit-sheet_78
+      m_Hash: 576870615
+      m_Sprite: {fileID: 3971893435133205940, guid: b75341cb8d13a8249953924d134b5582, type: 3}
+      m_FromMain: 0
+      m_SpriteOverride: {fileID: 3971893435133205940, guid: b75341cb8d13a8249953924d134b5582, type: 3}
+    - m_Name: Catherine_no_Effect_edit-sheet_79
+      m_Hash: 358967361
+      m_Sprite: {fileID: -6501772930757560335, guid: b75341cb8d13a8249953924d134b5582, type: 3}
+      m_FromMain: 0
+      m_SpriteOverride: {fileID: -6501772930757560335, guid: b75341cb8d13a8249953924d134b5582, type: 3}
+    - m_Name: Catherine_no_Effect_edit-sheet_80
+      m_Hash: 723635242
+      m_Sprite: {fileID: 303409275102379475, guid: b75341cb8d13a8249953924d134b5582, type: 3}
+      m_FromMain: 0
+      m_SpriteOverride: {fileID: 303409275102379475, guid: b75341cb8d13a8249953924d134b5582, type: 3}
+    m_FromMain: 0
+    m_EntryOverrideCount: 7
   m_PrimaryLibraryGUID: 
-  m_ModificationHash: 638953784715910418
+  m_ModificationHash: 638956068091863588
   m_Version: 1

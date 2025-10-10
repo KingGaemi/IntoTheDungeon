@@ -1,4 +1,4 @@
-using IntoTheDungeon.Core.ECS.Components;
+using IntoTheDungeon.Core.ECS.Abstractions;
 
 namespace IntoTheDungeon.Features.State
 {
@@ -15,7 +15,17 @@ namespace IntoTheDungeon.Features.State
         public readonly float WholeDuration => WindupDuration + ActiveDuration + RecoveryDuration;
         public float PhaseTimer;
         
-
+        public static readonly ActionPhaseComponent Default = new()
+        {
+            ActionPhase = ActionPhase.None,
+            WindupDuration = 0.5f,
+            ActiveDuration = 0f,
+            RecoveryDuration = 0.5f,
+            CooldownDuration = 0f,
+            ReadyToAct = false,
+            Activated = false,
+            PhaseTimer = 0f
+        };
 
         
         public void AdvancePhase()

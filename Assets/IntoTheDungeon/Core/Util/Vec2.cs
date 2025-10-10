@@ -1,5 +1,4 @@
-using IntoTheDungeon.Core.Util.Maths;
-namespace IntoTheDungeon.Core.Util.Physics
+namespace IntoTheDungeon.Core.Util
 {
     public struct Vec2
     {
@@ -47,7 +46,7 @@ namespace IntoTheDungeon.Core.Util.Physics
         {
             float dx = b.X - a.X;
             float dy = b.Y - a.Y;
-            return Maths.Mathx.Sqrt(dx * dx + dy * dy);
+            return Mathx.Sqrt(dx * dx + dy * dy);
         }
 
         // 거리 제곱 (제곱근 연산 생략 - 성능 최적화)

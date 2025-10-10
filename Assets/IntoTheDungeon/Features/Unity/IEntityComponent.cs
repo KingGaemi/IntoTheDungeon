@@ -1,5 +1,5 @@
-using IntoTheDungeon.Core.ECS.Entities;
-using IntoTheDungeon.Core.Runtime.World;
+using IntoTheDungeon.Core.ECS.Abstractions;
+using IntoTheDungeon.Core.World.Abstractions;
 namespace IntoTheDungeon.Features.Unity
 {
     public interface IEntityComponent : IEntityRootDependent, IWorldDependent

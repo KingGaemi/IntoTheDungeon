@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using IntoTheDungeon.Core.ECS.Components;
+using IntoTheDungeon.Core.ECS.Abstractions;
 
 namespace IntoTheDungeon.Features.Status
 {

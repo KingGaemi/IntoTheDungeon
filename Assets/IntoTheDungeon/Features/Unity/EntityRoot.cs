@@ -1,6 +1,7 @@
 using UnityEngine;
-using IntoTheDungeon.Core.ECS.Entities;
-using IntoTheDungeon.Core.Runtime.World;
+using IntoTheDungeon.Core.ECS.Abstractions;
+using IntoTheDungeon.Core.World.Abstractions;
+using IntoTheDungeon.Runtime.Unity.World;
 using IntoTheDungeon.Features.Character;
 using IntoTheDungeon.Features.Unity;
 
@@ -8,7 +9,7 @@ using IntoTheDungeon.Features.Unity;
 public class EntityRootBehaviour : MonoBehaviour, IEntityRoot, IAuthoring, IWorldInjectable
 {
     public Entity Entity { set; get; }
-    public GameWorld World { get; private set; }
+    public IWorld World { get; private set; }
     [SerializeField] VisualContainer visualContainer;
     [SerializeField] ScriptContainer scriptContainer;
     private EventNotifier EventNotifier;
@@ -19,7 +20,7 @@ public class EntityRootBehaviour : MonoBehaviour, IEntityRoot, IAuthoring, IWorl
 
     public Transform Transform { get => transform; }
 
-    public void Init(GameWorld world)
+    public void Init(IWorld world)
     {
         World = world;
         InjectWorldToDependents();
@@ -73,9 +74,9 @@ public class EntityRootBehaviour : MonoBehaviour, IEntityRoot, IAuthoring, IWorl
 
     public IBaker CreateBaker() => new EntityRootBaker();
 
-    class EntityRootBaker : Baker<EntityRootBehaviour>
+    class EntityRootBaker : UnityBaker<EntityRootBehaviour>
     {
-        public override void Bake(EntityRootBehaviour authoring)
+        protected override void Bake(EntityRootBehaviour authoring)
         {
             AddManagedComponent(new EventReceiver(authoring.Notifier));
         }

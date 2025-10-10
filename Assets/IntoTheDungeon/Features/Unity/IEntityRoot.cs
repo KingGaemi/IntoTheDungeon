@@ -1,4 +1,4 @@
-using IntoTheDungeon.Core.ECS.Entities;
+using IntoTheDungeon.Core.ECS.Abstractions;
 
 namespace IntoTheDungeon.Features.Unity
 {

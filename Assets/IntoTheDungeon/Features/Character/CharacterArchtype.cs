@@ -1,12 +1,12 @@
 using System;
-using IntoTheDungeon.Core.ECS.Components;
+using IntoTheDungeon.Core.ECS.Abstractions;
 using IntoTheDungeon.Features.State;
 using IntoTheDungeon.Features.Status;
 using IntoTheDungeon.Features.Command;
 
 namespace IntoTheDungeon.Features.Character
 {
-    public class CharacterCoreBundle : ComponentBundle
+    public class CharacterCoreBundle : IComponentBundle
     {
         public static readonly Type[] CoreBundle = new[]
         {

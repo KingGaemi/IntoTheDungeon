@@ -3,10 +3,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using IntoTheDungeon.Core.Runtime.World;
-using IntoTheDungeon.Core.ECS.Entities;
-using IntoTheDungeon.Core.ECS.Components;
-using IntoTheDungeon.Core.ECS;
+using IntoTheDungeon.Core.ECS.Abstractions;
+using IntoTheDungeon.Core.World.Abstractions;
+using IntoTheDungeon.Core.Abstractions.Debug;
 
 
 namespace IntoTheDungeon.Editor.ECS
@@ -15,23 +14,31 @@ namespace IntoTheDungeon.Editor.ECS
     /// World를 관찰만 하는 읽기 전용 인터페이스
     /// Chunk 기반 메모리 레이아웃 완전 노출
     /// </summary>
+
+#nullable enable
     public class WorldViewer
     {
-        readonly GameWorld _world;
+        readonly IWorld _world;
+        readonly IEntityDebugView _emd; // non-null
+        IEntityManager EM => _world.EntityManager;
 
-        public WorldViewer(GameWorld world)
+
+
+        public WorldViewer(IWorld world)
         {
             _world = world ?? throw new ArgumentNullException(nameof(world));
+             _emd = _world.EntityManager as IEntityDebugView
+           ?? throw new InvalidOperationException("EntityManager does not expose IEntityDebugView");
         }
 
         //  읽기 전용 API
-        public int EntityCount => _world.EntityManager.EntityCount;
-        public int ArchetypeCount => _world.EntityManager.ArchetypeCount;
+        public int EntityCount => EM.EntityCount;
+        public int ArchetypeCount => _emd.ArchetypeCount;
 
         //  Chunk 기반 순회 (성능 최적화)
         public IEnumerable<ArchetypeView> GetArchetypeViews()
         {
-            foreach (var archetype in _world.EntityManager.GetArchetypes())
+            foreach (var archetype in _emd.GetArchetypes())
             {
                 yield return new ArchetypeView(archetype);
             }
@@ -57,7 +64,7 @@ namespace IntoTheDungeon.Editor.ECS
         {
             // if (!entity.IsValid()) return null;
 
-            var archetype = _world.EntityManager.GetArchetype(entity);
+            var archetype = _emd.GetArchetype(entity);
             if (archetype == null) return null;
 
             return new EntityView(entity, _world);
@@ -65,8 +72,8 @@ namespace IntoTheDungeon.Editor.ECS
 
         public IEnumerable<SystemView> GetSystemViews()
         {
-    
-            foreach (var sys in _world.SystemManager.GetSystems())
+
+            foreach (var sys in _world.SystemManager.Systems)
             {
                 yield return new SystemView(sys);
             }
@@ -75,14 +82,14 @@ namespace IntoTheDungeon.Editor.ECS
         //  Component 조회 (읽기)
         public T GetComponent<T>(Entity entity) where T : struct, IComponentData
         {
-            return _world.EntityManager.GetComponent<T>(entity);
+            return EM.GetComponent<T>(entity);
         }
 
         public object GetComponentBoxed(Entity entity, Type componentType)
         {
             // EntityManager가 GetComponent<T> 메서드를 가져야 함
-            var method = typeof(IntoTheDungeon.Core.Runtime.ECS.Manager.EntityManager)
-                .GetMethod(nameof(IntoTheDungeon.Core.Runtime.ECS.Manager.EntityManager.GetComponent));
+            var method = typeof(IEntityManager)
+                .GetMethod(nameof(IEntityManager.GetComponent));
 
             if (method == null)
                 throw new InvalidOperationException("EntityManager.GetComponent method not found");
@@ -188,16 +195,20 @@ namespace IntoTheDungeon.Editor.ECS
         public int ChunkIndex { get; }
         public int IndexInChunk { get; }
 
-        public EntityView(Entity entity, GameWorld world)
+        public EntityView(Entity entity, IWorld world)
         {
             Entity = entity;
 
-            var archetype = world.EntityManager.GetArchetype(entity);
+            var _world = world ?? throw new ArgumentNullException(nameof(world));
+            var _emd = _world.EntityManager as IEntityDebugView
+           ?? throw new InvalidOperationException("EntityManager does not expose IEntityDebugView");
+
+            var archetype = _emd.GetArchetype(entity);
             ComponentTypes = archetype?.ComponentTypes ?? Array.Empty<Type>();
             ComponentCount = ComponentTypes.Count;
 
             // ✅ Chunk 위치 정보 (EntityManager 확장 필요)
-            (ChunkIndex, IndexInChunk) = world.EntityManager.GetEntityLocation(entity);
+            (ChunkIndex, IndexInChunk) = _emd.GetEntityLocation(entity);
         }
 
         public EntityView(Entity entity, IArchetype archetype)
@@ -211,23 +222,23 @@ namespace IntoTheDungeon.Editor.ECS
             IndexInChunk = -1;
         }
     }
-    
+
     public class SystemView
     {
         public string Name { get; }
         public string ShortName { get; }
         public int Priority { get; }
-        
+
         public bool RunsInUpdate { get; }
         public bool RunsInFixedUpdate { get; }
         public bool RunsInLateUpdate { get; }
-        
+
         public double LastExecutionTimeMs { get; }
         public double AverageExecutionTimeMs { get; }
         public long TotalExecutionCount { get; }
-        
+
         public bool IsEnabled { get; }
-        
+
         public SystemView(IGameSystem system)
         {
             Name = system.GetType().FullName;
@@ -235,7 +246,7 @@ namespace IntoTheDungeon.Editor.ECS
             Priority = system.Priority;
 
         }
-        
+
         public string GetExecutionPhase()
         {
             var phases = new List<string>();
@@ -245,5 +256,6 @@ namespace IntoTheDungeon.Editor.ECS
             return string.Join(", ", phases);
         }
     }
+    #nullable disable
 }
 #endif

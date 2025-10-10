@@ -1,0 +1,109 @@
+using IntoTheDungeon.Core.ECS;
+using IntoTheDungeon.Core.ECS.Entities;
+using IntoTheDungeon.Core.Runtime.ECS.Manager;
+using IntoTheDungeon.Core.Util.Physics;
+using IntoTheDungeon.Features.Status;
+using IntoTheDungeon.Features.Attack;
+using IntoTheDungeon.Core.ECS.Components.Physics;
+using UnityEngine;
+using IntoTheDungeon.Core.Physics.Collision;
+
+namespace IntoTheDungeon.Features.Attack
+{
+    public static class ProjectileFactory
+    {
+        public static Entity CreateProjectile(
+            EntityManager entityManager,
+            Entity owner,
+            Vec2 position,
+            Vec2 direction)
+        {
+            StatusComponent attackerStatus = entityManager.GetComponent<StatusComponent>(owner);
+            // 1. ??Entity ?ùÏÑ±
+            Entity projectile = entityManager.CreateEntity();
+
+            // 2. Transform Ïª¥Ìè¨?åÌä∏ (?ÑÏπò/?åÏ†Ñ)
+            entityManager.AddComponent(projectile, new TransformComponent
+            {
+                Position = position,
+                Direction = direction,
+                Rotation = Mathf.Atan2(direction.Y, direction.X) * Mathf.Rad2Deg
+            });
+
+            ProjectileType TypeMemo = ProjectileType.Normal;
+            // 3. Projectile Ïª¥Ìè¨?åÌä∏
+
+            
+            
+
+            entityManager.AddComponent(projectile, new ProjectileComponent
+            {
+                Owner = owner,
+                Damage = attackerStatus.Damage,
+                Speed = attackerStatus.ProjectileAcceleration,  // ?§Ï†ïÍ∞??êÎäî attackerStatus?êÏÑú
+                LifeTime = attackerStatus.ProjectileLifeTime,
+                ElapsedTime = 0f,
+                Direction = direction.Normalized,
+                Type = ProjectileType.Normal
+            });
+
+
+            switch (TypeMemo) {
+                case ProjectileType.Normal:
+                    entityManager.AddComponent(projectile, new CircleColliderComponent
+                    {
+                        Radius = 0.5f,
+                        LayerMask = LayerMask.GetMask("Enemy")  // ?ÑÏöî???àÏù¥??
+                    });
+
+                    break;
+            }
+            // 4. Ï∂©Îèå Ïª¥Ìè¨?åÌä∏
+           
+            // // 5. Visual Ïª¥Ìè¨?åÌä∏ (?†ÌÉù?¨Ìï≠)
+            // entityManager.AddComponent(projectile, new ProjectileVisualComponent
+            // {
+            //     PrefabID = 0  // Prefab Pool?êÏÑú Í∞Ä?∏Ïò¨ ID
+            // });
+
+            return projectile;
+        }
+
+        // AOE Í≥µÍ≤©??Factory
+        public static Entity CreateAOEEffect(
+            EntityManager entityManager,
+            Entity owner,
+            Vector2 center,
+            float radius)
+        {
+            if (!entityManager.TryGetComponent(owner, out StatusComponent attackerStatus))
+            {
+                
+            }
+            
+            Entity aoe = entityManager.CreateEntity();
+
+            entityManager.AddComponent(aoe, new TransformComponent
+            {
+                Position = center
+            });
+
+            entityManager.AddComponent(aoe, new AOEComponent
+            {
+                Owner = owner,
+                Damage = attackerStatus.AttackDamage,
+                Radius = radius,
+                Duration = 0.2f,  // AOE ÏßÄ?çÏãúÍ∞?
+                ElapsedTime = 0f
+            });
+
+            entityManager.AddComponent(aoe, new ColliderComponent
+            {
+                Radius = radius,
+                LayerMask = LayerMask.GetMask("Enemy")
+            });
+
+            return aoe;
+        }
+    }
+}

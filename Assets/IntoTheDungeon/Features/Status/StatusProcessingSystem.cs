@@ -1,14 +1,15 @@
-using IntoTheDungeon.Core.ECS;
+using IntoTheDungeon.Core.Util;
+using IntoTheDungeon.Core.ECS.Abstractions.Scheduling;
+using IntoTheDungeon.Core.ECS.Abstractions;
+using IntoTheDungeon.Core.ECS.Systems;
 using IntoTheDungeon.Features.Character;
-using IntoTheDungeon.Core.ECS.Entities;
-using IntoTheDungeon.Core.Util.Maths;
 using System.Diagnostics;
 
 namespace IntoTheDungeon.Features.Status
 {
     public class StatusProcessingSystem : GameSystem, ITick
     {
-        public override int Priority => 500; // 다른 시스템들 이후 실행
+        public StatusProcessingSystem(int priority = 0) : base(priority) { }
         
         public void Tick(float dt)
         {
@@ -21,7 +22,7 @@ namespace IntoTheDungeon.Features.Status
                 for (int i = 0; i < chunk.Count; i++)
                 {
                     ref var status = ref statuses[i];
-                    var queue = _world.EntityManager.GetManagedComponent<StatusModificationQueue>(entities[i]);
+                    var queue = _world.ManagedStore.GetManagedComponent<StatusModificationQueue>(entities[i]);
                     if (!status.IsAlive) continue;
                     if (queue.Count == 0)
                         continue;
@@ -95,7 +96,7 @@ namespace IntoTheDungeon.Features.Status
 
         private void NotifyChanges(Entity entity, ref StatusComponent status, int prevHp)
         {
-            var receiver = _world.EntityManager.GetManagedComponent<EventReceiver>(entity);
+            var receiver = _world.ManagedStore.GetManagedComponent<EventReceiver>(entity);
             if (receiver == null)
                 return;
 

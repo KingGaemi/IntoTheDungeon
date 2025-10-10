@@ -1,76 +1,94 @@
-using IntoTheDungeon.Core.ECS;
-using IntoTheDungeon.Core.ECS.Entities;
-using IntoTheDungeon.Core.Runtime.ECS.Manager;
-using IntoTheDungeon.Core.Util.Physics;
+using IntoTheDungeon.Core.Util;
+using IntoTheDungeon.Core.ECS.Abstractions;
+using IntoTheDungeon.Core.ECS.Components; //TransformComponent
+using IntoTheDungeon.Core.Physics.Collision.Components;
+using IntoTheDungeon.Core.Physics.Abstractions;
 using IntoTheDungeon.Features.Status;
-using IntoTheDungeon.Features.Attack;
-using UnityEngine;
-using IntoTheDungeon.Core.Physics.Collision;
+using IntoTheDungeon.Features.Physics.Components;
 
 namespace IntoTheDungeon.Features.Attack
 {
     public static class ProjectileFactory
     {
         public static Entity CreateProjectile(
-            EntityManager entityManager,
+            IEntityManager entityManager,
             Entity owner,
             Vec2 position,
-            Vec2 direction,
-            StatusComponent attackerStatus)
+            Vec2 direction)
         {
-            // 1. 새 Entity 생성
-            Entity projectile = entityManager.CreateEntity();
+            ref var attackerStatus = ref entityManager.GetComponent<StatusComponent>(owner);
+            var normDir = direction.Normalized;
+            var rotation = Mathx.Atan2(normDir.Y, normDir.X) * Mathx.Rad2Deg;
 
-            // 2. Transform 컴포넌트 (위치/회전)
+            var projectile = entityManager.CreateEntity();
+
             entityManager.AddComponent(projectile, new TransformComponent
             {
                 Position = position,
-                Rotation = Mathf.Atan2(direction.Y, direction.X) * Mathf.Rad2Deg
+                Direction = normDir,
+                Rotation = rotation
             });
 
-            ProjectileType TypeMemo = ProjectileType.Normal;
-            // 3. Projectile 컴포넌트
+            entityManager.AddComponent(projectile, new KinematicComponent
+            {
+                Direction = normDir,
+                Magnitude = attackerStatus.ProjectileAcceleration
+            });
+
+            entityManager.AddComponent(projectile, new SpriteComponent
+            {
+                SpriteId = 0, //TEMp
+                SortingLayer = 7, //Projectiles
+               
+            });
+
+
+
+
             entityManager.AddComponent(projectile, new ProjectileComponent
             {
                 Owner = owner,
                 Damage = attackerStatus.Damage,
-                Speed = attackerStatus.ProjectileAcceleration,  // 설정값 또는 attackerStatus에서
+                Speed = attackerStatus.ProjectileAcceleration,
                 LifeTime = attackerStatus.ProjectileLifeTime,
                 ElapsedTime = 0f,
-                Direction = direction.Normalized,
+                Direction = normDir,
                 Type = ProjectileType.Normal
             });
+            
+            entityManager.ViewOps.EnqueueSpawn(projectile, new ViewSpawnSpec {
+                PrefabId = 0,
+                SortingLayerId = 0,
+                OrderInLayer = 0,
+                Behaviours = new [] {
+                    new BehaviourSpec { TypeName = "IntoTheDungeon.View.ProjectileView", Payload = null }
+                }
+            });
 
+            // entityManager.AddComponent(projectile, new VisualTag { PrefabId = Prefabs.Projectile01 });
 
-            switch (TypeMemo) {
-                case ProjectileType.Normal:
-                    entityManager.AddComponent(projectile, new CircleColliderComponent
-                    {
-                        Radius = 0.5f,
-                        LayerMask = LayerMask.GetMask("Enemy")  // 필요한 레이어
-                    });
-
-                    break;
-            }
-            // 4. 충돌 컴포넌트
-           
-            // 5. Visual 컴포넌트 (선택사항)
-            entityManager.AddComponent(projectile, new ProjectileVisualComponent
+            entityManager.AddComponent(projectile, new CircleColliderComponent
             {
-                PrefabID = 0  // Prefab Pool에서 가져올 ID
+                Radius = 0.5f,
+                Layer = CollisionLayer.Projectile,
+                LayerMask = (int)CollisionLayer.Enemy
             });
 
             return projectile;
         }
 
-        // AOE 공격용 Factory
+        // AOE 공격 Factory
         public static Entity CreateAOEEffect(
-            EntityManager entityManager,
+            IEntityManager entityManager,
             Entity owner,
-            Vector2 center,
-            float radius,
-            StatusComponent attackerStatus)
+            Vec2 center,
+            float radius)
         {
+            if (!entityManager.TryGetComponent(owner, out StatusComponent attackerStatus))
+            {
+                
+            }
+            
             Entity aoe = entityManager.CreateEntity();
 
             entityManager.AddComponent(aoe, new TransformComponent
@@ -81,16 +99,18 @@ namespace IntoTheDungeon.Features.Attack
             entityManager.AddComponent(aoe, new AOEComponent
             {
                 Owner = owner,
-                Damage = attackerStatus.AttackDamage,
+                Damage = attackerStatus.Damage,
                 Radius = radius,
                 Duration = 0.2f,  // AOE 지속시간
                 ElapsedTime = 0f
             });
 
-            entityManager.AddComponent(aoe, new ColliderComponent
+            entityManager.AddComponent(aoe, new BoxColliderComponent
             {
-                Radius = radius,
-                LayerMask = LayerMask.GetMask("Enemy")
+                Size = new Vec2(radius, radius),
+                Layer = CollisionLayer.Enemy,
+                LayerMask = (int)CollisionLayer.Enemy,
+                IsTrigger = true
             });
 
             return aoe;

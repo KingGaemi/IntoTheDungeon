@@ -1,6 +1,5 @@
-using IntoTheDungeon.Core.Util.Physics;
-using IntoTheDungeon.Core.ECS.Components;
-using IntoTheDungeon.Core.ECS.Entities;
+using IntoTheDungeon.Core.Util;
+using IntoTheDungeon.Core.ECS.Abstractions;
 
 namespace IntoTheDungeon.Features.Attack
 {
@@ -9,16 +8,12 @@ namespace IntoTheDungeon.Features.Attack
         public Entity Owner;
         public int Damage;
         public Vec2 Direction;
-
         public float Speed;
-
         public float LifeTime;
         public float ElapsedTime;
-
         public float Rotation;
-
+        public int Penetration;
+        public bool Enable;
         public ProjectileType Type;
-        
-
     }
 }

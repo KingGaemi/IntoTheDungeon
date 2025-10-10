@@ -44,7 +44,7 @@ namespace IntoTheDungeon.Features.Command
                 && Facing == other.Facing
                 && TargetId == other.TargetId
                 && SkillId == other.SkillId
-                && IntoTheDungeon.Core.Util.Maths.Mathx.Approximately(Magnitude , other.Magnitude,  0.0001f);
+                && IntoTheDungeon.Core.Util.Mathx.Approximately(Magnitude , other.Magnitude,  0.0001f);
         }
 
     }

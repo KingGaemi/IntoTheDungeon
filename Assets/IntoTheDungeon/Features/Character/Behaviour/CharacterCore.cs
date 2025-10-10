@@ -1,12 +1,17 @@
 
 
 using UnityEngine;
-using IntoTheDungeon.Core.Runtime.World;
-using IntoTheDungeon.Core.ECS.Components.Physics;
+using IntoTheDungeon.Features.Physics.Components;
 using IntoTheDungeon.Features.State;
 using IntoTheDungeon.Features.Command;
 using IntoTheDungeon.Features.Status;
 using IntoTheDungeon.Core.Runtime.Physics;
+using IntoTheDungeon.Core.World.Abstractions;
+using IntoTheDungeon.Runtime.Unity.World;
+using IntoTheDungeon.Core.ECS.Components;
+using IntoTheDungeon.Features.Core.Components;
+using IntoTheDungeon.Core.Util;
+using IntoTheDungeon.Core.Physics.Abstractions;
 
 
 [DisallowMultipleComponent]
@@ -21,20 +26,42 @@ public class CharacterCore : EntityBehaviour, IAuthoring
 
     new public bool IsValid => IsValid();
 
-    class CharacterCoreBaker : Baker<CharacterCore>
+    class CharacterCoreBaker : UnityBaker<CharacterCore>
     {
-        public override void Bake(CharacterCore authoring)
+        protected override void Bake(CharacterCore authoring)
         {
-            
-            AddComponent(new StateComponent());
-            AddComponent(new StatusComponent
+            var entityRoot = authoring.GetComponentInParent<EntityRootBehaviour>();
+            if (entityRoot == null)
             {
-                CurrentHp = authoring.maxHealth,
-                MaxHp = authoring.maxHealth,
-                MovementSpeed = authoring.movementSpeed,
-                AttackSpeed = 1.0f,
-                IsAlive = true
+                Debug.LogError($"[CharacterCoreBaker] EntityRoot not found for {authoring.name}!");
+                return;
+            }
+
+            var entityTrans = entityRoot.Transform;
+            var euler = entityTrans.rotation.eulerAngles.z * Mathf.Deg2Rad;
+            if (!entityRoot.TryGetComponent<Rigidbody2D>(out var rb))
+            {
+                Debug.LogError($"[CharacterCoreBaker] Rigidbody2D not found on {entityRoot.name}"); 
+                return;
+            }
+
+            // (2) PhysicsBodyStore 획득
+            var store = World.Require<IPhysicsBodyStore>();
+
+            // (3) Add() 호출 → int handle 자동 발급
+            int handle = store.Add(new UnityPhysicsBody(rb));
+
+            // (4) ECS 컴포넌트로 저장
+            AddComponent(new PhysicsBodyRef { Handle = handle });
+            AddComponent(new PhysicsCommand());
+            AddComponent(new TransformComponent
+            {
+                Position = new Vec2(entityTrans.position.x, entityTrans.position.y),
+                Direction = new Vec2(Mathf.Cos(euler), Mathf.Sin(euler))
             });
+            AddComponent(new InformationComponent { DisplayName = entityRoot.name });
+            AddComponent(new StateComponent());
+            AddComponent(StatusComponent.Default);
             AddComponent(new KinematicComponent());
             AddComponent(new CharacterIntentBuffer());
             AddComponent(new AnimationSyncComponent());
@@ -42,26 +69,14 @@ public class CharacterCore : EntityBehaviour, IAuthoring
             {
                 WindupDuration = 0.5f,
                 ActiveDuration = 0f,
-                RecoveryDuration = 0.5f,
+                RecoveryDuration = 0.7f,
                 CooldownDuration = 0f,
                 ActionPhase = ActionPhase.None,
                 PhaseTimer = 0f
             });
+
             
-            var entityRoot = authoring.GetComponentInParent<EntityRootBehaviour>();        
-            if (entityRoot == null)
-            {
-                Debug.LogError($"[CharacterCoreBaker] EntityRoot not found for {authoring.name}!");
-                return;
-            }
             
-            //  EntityRoot에서 Rigidbody2D 찾기
-            if (!entityRoot.TryGetComponent<Rigidbody2D>(out var rb))
-            {
-                Debug.LogError($"[CharacterCoreBaker] Rigidbody2D not found on {entityRoot.name}!");
-                return;
-            }
-            AddManagedComponent(new UnityPhysicsBody(rb));
 
             AddManagedComponent(new StatusModificationQueue());
 
@@ -86,7 +101,7 @@ public class CharacterCore : EntityBehaviour, IAuthoring
     {
         if (IsValid())
         {
-            var queue = World.EntityManager.GetManagedComponent<StatusModificationQueue>(Entity);
+            var queue = World.ManagedStore.GetManagedComponent<StatusModificationQueue>(Entity);
             if (queue != null)
             {
                 queue.Enqueue(StatusModification.Damage(amount));
@@ -102,7 +117,7 @@ public class CharacterCore : EntityBehaviour, IAuthoring
     {
         if (IsValid())
         {
-            if (World.EntityManager.TryGetManagedComponent<StatusModificationQueue>(EntityRoot.Entity, out var queue))
+            if (World.ManagedStore.TryGetManagedComponent<StatusModificationQueue>(EntityRoot.Entity, out var queue))
             {
                 queue.Enqueue(StatusModification.Heal(amount));
             }
@@ -112,7 +127,7 @@ public class CharacterCore : EntityBehaviour, IAuthoring
     {
         if (IsValid())
         {
-            if (World.EntityManager.TryGetManagedComponent<StatusModificationQueue>(Entity, out var queue))
+            if (World.ManagedStore.TryGetManagedComponent<StatusModificationQueue>(Entity, out var queue))
             {
                 queue.Enqueue(StatusModification.AddAttackSpeed(speed));
 
@@ -123,7 +138,7 @@ public class CharacterCore : EntityBehaviour, IAuthoring
     {
         if (IsValid())
         {
-            if (World.EntityManager.TryGetManagedComponent<StatusModificationQueue>(Entity, out var queue))
+            if (World.ManagedStore.TryGetManagedComponent<StatusModificationQueue>(Entity, out var queue))
             {
                 queue.Enqueue(StatusModification.AddMovementSpeed(speed));
             }

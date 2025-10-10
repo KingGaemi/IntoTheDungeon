@@ -1,4 +1,4 @@
-using IntoTheDungeon.Core.ECS.Components;
+using IntoTheDungeon.Core.ECS.Abstractions;
 using IntoTheDungeon.Features.State;
 
 

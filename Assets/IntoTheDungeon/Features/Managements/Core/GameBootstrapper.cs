@@ -1,8 +1,10 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using IntoTheDungeon.Core.Runtime.Installation;
-using IntoTheDungeon.Core.Runtime.World;
-using IntoTheDungeon.Core.Runtime.Installation.Installers;
+using IntoTheDungeon.Core.World.Abstractions;
+using IntoTheDungeon.Core.World.Installation;
+using IntoTheDungeon.Runtime.Installation.Installers;
+using IntoTheDungeon.World.Implementaion;
+using IntoTheDungeon.Runtime.Unity.World;
 using System.Linq;
 
 [DefaultExecutionOrder(-10000)]
@@ -21,7 +23,7 @@ public sealed class GameBootstrapper : MonoBehaviour
     GameWorld _world;
 
     // 명시적 접근 메서드
-    public static GameWorld GetWorld()
+    public static IWorld GetWorld()
     {
         if (instance == null)
         {
@@ -32,7 +34,7 @@ public sealed class GameBootstrapper : MonoBehaviour
     }
 
     // 안전한 접근 (null 체크 포함)
-    public static bool TryGetWorld(out GameWorld world)
+    public static bool TryGetWorld(out IWorld world)
     {
         world = instance != null ? instance._world : null;
         return world != null;

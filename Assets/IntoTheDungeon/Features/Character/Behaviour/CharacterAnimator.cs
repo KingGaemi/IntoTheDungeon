@@ -14,8 +14,10 @@ namespace IntoTheDungeon.Features.Character
         [SerializeField] Animator _animator;               // Visual의 Animator
         [SerializeField] SpriteRenderer sprite;
         EventNotifier notifier;
-        AnimationSyncComponent animationSync;
         [SerializeField] float multiplier = 1.0f;           // 필요시 배수 / optional scale
+
+        [SerializeField] int hashWindup, hashActive, hashRecovery;
+        [SerializeField] float lenWindup, lenActive, lenRecovery; 
         readonly string attackSpeedParam = "AttackSpeed";
         readonly string movementSpeedParam = "MovementSpeed";
         readonly string deathParam = "Death";
@@ -24,6 +26,10 @@ namespace IntoTheDungeon.Features.Character
         readonly string phaseProgressParam = "PhaseProgress";
         readonly string attackingParam = "Attacking";
         readonly string attackBlendParam = "AttackBlend";
+        readonly string windupDoneParam = "WindupDone";
+        // readonly string recoveryDoneParam = "RecoveryDone";
+        // readonly string attackWindupParam =  "AttackWindup";
+        // readonly string attackRecoveryParam = "AttackRecovery";
         readonly string windupParam = "Windup";
         readonly string recoveryParam = "Recovery";
 
@@ -36,8 +42,12 @@ namespace IntoTheDungeon.Features.Character
         int hashMovementSpeed;
         int hashDeath;
         int hashPhaseProgress;
-        int hashWindup;
-        int hashRecovery;
+        int hashWindupDone;
+        // int hashRecoveryDone;
+
+        // int hashAttackWindup;
+        // int hashAttackRecovery;
+
 
         int hashAttack;
         int hashAttackBlend;
@@ -47,7 +57,6 @@ namespace IntoTheDungeon.Features.Character
 
         void Start()
         {
-        
             // 한 번만 체크
             _hasAnimationSync = EntityRoot.World?.EntityManager
                 .HasComponent<AnimationSyncComponent>(EntityRoot.Entity) ?? false;
@@ -67,11 +76,21 @@ namespace IntoTheDungeon.Features.Character
         }
 
         override protected void OnAwake()
-        {   
+        {
             if (!_animator) _animator = GetComponent<Animator>();
             if (!sprite) sprite = GetComponent<SpriteRenderer>();
             TryLinkNotifier();
             CacheAnimatorHashes();
+            
+            var clips = _animator.runtimeAnimatorController.animationClips;
+            foreach (var c in clips)
+            {
+                switch (c.name)
+                {
+                    case "AttackWindup": lenWindup = c.length; break;
+                    case "AttackRecovery": lenRecovery = c.length; break;
+                }
+            }
         }
 
         void OnEnable()
@@ -91,37 +110,37 @@ namespace IntoTheDungeon.Features.Character
         private void LateUpdate()  // System 이후 실행
         {
 
-            ref var sync = ref EntityRoot.World.EntityManager.GetComponent<AnimationSyncComponent>(EntityRoot.Entity);
-
+            ref var sync = ref World.EntityManager.GetComponent<AnimationSyncComponent>(Entity);            
             if (sync.DirtyFlag == 1)
             {
-                if (sync.CurrentPhase == ActionPhase.Windup)
+                float duration = Mathf.Max(0.001f, sync.PhaseDuration);
+                switch (sync.CurrentPhase)
                 {
-
-                    _animator.SetBool(hashAttacking, true);
-                    _animator.SetTrigger(hashAttack);
-                }                
-                else if (sync.CurrentPhase == ActionPhase.None)
-                {
-                    // Idle로 복귀
-                    _animator.SetBool(hashAttacking, false);
+                    case ActionPhase.Windup:
+                        _animator.SetTrigger(hashAttack);
+                        _animator.SetBool(hashAttacking, true);
+                        _animator.speed = (lenWindup > 0.001f) ? lenWindup / duration : 1f;
+                        _animator.SetFloat(hashWindup, sync.PhaseProgress);
+                        break;
+                    case ActionPhase.Recovery:
+                        // _animator.CrossFade(hashRecovery, 0f, 0, 0f);
+                        _animator.SetBool(hashWindupDone, true);
+                        _animator.SetFloat(hashRecovery, sync.PhaseProgress);
+                        _animator.speed = (lenRecovery > 0.001f) ? lenRecovery / duration : 1f;
+                        break;
+                    case ActionPhase.Cooldown:
+                        if(sync.WholeProgress>= 0.99f)
+                        _animator.SetBool(hashAttacking, false);
+                        _animator.SetBool(hashWindupDone, false);
+                        _animator.speed = 1f;
+                        break;
+                    case ActionPhase.None:
+                        _animator.SetBool(hashAttacking, false);
+                        _animator.SetBool(hashWindupDone, false);
+                        _animator.speed = 1f;
+                        break;
                 }
-
                 sync.DirtyFlag = 0;
-
-               
-
-
-            }
-
-            if (sync.CurrentPhase == ActionPhase.Windup)
-            {
-                _animator.SetFloat(hashWindup, sync.PhaseProgress);
-                
-            }
-            else if (sync.CurrentPhase == ActionPhase.Recovery)
-            {
-                _animator.SetFloat(hashRecovery, sync.PhaseProgress);
             }
             
             _animator.SetFloat(hashPhaseProgress, sync.WholeProgress);
@@ -179,6 +198,8 @@ namespace IntoTheDungeon.Features.Character
             hashAttackBlend = Animator.StringToHash(attackBlendParam);
             hashWindup = Animator.StringToHash(windupParam);
             hashRecovery = Animator.StringToHash(recoveryParam);
+            hashWindupDone = Animator.StringToHash(windupDoneParam);
+            // hashRecoveryDone = Animator.StringToHash(recoveryDoneParam);
         }
 
         private void HandleAction(ActionState action)

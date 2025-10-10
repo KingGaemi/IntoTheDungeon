@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using IntoTheDungeon.Core.Runtime.ECS.Manager;
+using IntoTheDungeon.Core.ECS.Abstractions;
 namespace IntoTheDungeon.Core.ECS.Entities
 {
     public class EntityQuery

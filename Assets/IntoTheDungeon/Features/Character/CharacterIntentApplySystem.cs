@@ -1,9 +1,11 @@
-using IntoTheDungeon.Core.ECS;
-using IntoTheDungeon.Features.State;
+using IntoTheDungeon.Core.ECS.Systems;
+using IntoTheDungeon.Core.ECS.Abstractions;
+using IntoTheDungeon.Core.ECS.Abstractions.Scheduling;
 using IntoTheDungeon.Features.Command;
+using IntoTheDungeon.Features.State;
 public struct StateChangedEvent
 {
-    public IntoTheDungeon.Core.ECS.Entities.Entity Entity;
+    public Entity Entity;
     public StateSnapshot Previous;
     public StateSnapshot Current;
     public ChangeMask Mask;
@@ -13,7 +15,6 @@ namespace IntoTheDungeon.Features.Character
 {
     public class CharacterIntentApplySystem : GameSystem, ITick
     {
-        override public int Priority => 100;
         public void Tick(float dt)
         {
             foreach (var chunk in _world.EntityManager.GetChunks(
@@ -41,9 +42,9 @@ namespace IntoTheDungeon.Features.Character
                     {
                         var mask = Apply(ref state, in next);
 
-                        if (_world.EntityManager.HasManagedComponent<EventReceiver>(entities[i]))
+                        if (_world.ManagedStore.HasManagedComponent<EventReceiver>(entities[i]))
                         {
-                            var reciver = _world.EntityManager.GetManagedComponent<EventReceiver>(entities[i]);
+                            var reciver = _world.ManagedStore.GetManagedComponent<EventReceiver>(entities[i]);
                             reciver?.NotifyStateChange(state.Current, mask);
                         }
                     }

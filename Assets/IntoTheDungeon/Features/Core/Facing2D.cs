@@ -1,4 +1,4 @@
-using IntoTheDungeon.Core.Util.Physics;
+using IntoTheDungeon.Core.Util;
 namespace IntoTheDungeon.Features.Core
 {
     public enum Facing2D { Left, Right }

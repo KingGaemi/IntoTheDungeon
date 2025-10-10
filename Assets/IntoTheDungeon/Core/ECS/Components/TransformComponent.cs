@@ -1,3 +1,5 @@
+using IntoTheDungeon.Core.ECS.Abstractions;
+using IntoTheDungeon.Core.Util;
 
 namespace IntoTheDungeon.Core.ECS.Components
 {

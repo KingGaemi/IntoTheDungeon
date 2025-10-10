@@ -1,4 +1,4 @@
-using IntoTheDungeon.Core.ECS.Components;
+using IntoTheDungeon.Core.ECS.Abstractions;
 
 namespace IntoTheDungeon.Features.Status
 {
@@ -16,5 +16,17 @@ namespace IntoTheDungeon.Features.Status
         public float ProjectileLifeTime;
 
         public readonly float HpRatio => MaxHp > 0 ? (float)CurrentHp / MaxHp : 0f;
+
+        public static readonly StatusComponent Default = new()
+        {
+            MaxHp = 100,
+            CurrentHp = 100,
+            Damage = 1,
+            AttackSpeed = 1f,
+            MovementSpeed = 1f,
+            IsAlive = true,
+            ProjectileAcceleration = 5f,
+            ProjectileLifeTime = 1f
+        };
     }
 }

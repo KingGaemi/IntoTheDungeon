@@ -1,8 +1,6 @@
-/// <summary>
-/// 특정 Component 조합을 가진 Entity들의 저장소
-/// </summary>
 using System;
 using System.Collections.Generic;
+using IntoTheDungeon.Core.ECS.Abstractions;
 
 
 namespace IntoTheDungeon.Core.ECS.Entities

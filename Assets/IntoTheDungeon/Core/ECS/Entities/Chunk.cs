@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System;
-using IntoTheDungeon.Core.ECS.Components;
+using IntoTheDungeon.Core.ECS.Abstractions;
 
 namespace IntoTheDungeon.Core.ECS.Entities
 {

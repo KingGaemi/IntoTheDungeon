@@ -1,4 +1,4 @@
-namespace IntoTheDungeon.Core.Util.Maths
+namespace IntoTheDungeon.Core.Util
 {
     public static class Mathx
     {

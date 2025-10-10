@@ -60,5 +60,11 @@ TagManager:
   - name: Test_UI
     uniqueID: 11680473
     locked: 0
+  - name: Characters
+    uniqueID: 3144319183
+    locked: 0
+  - name: Projectiles
+    uniqueID: 715104125
+    locked: 0
   m_RenderingLayers:
   - Default

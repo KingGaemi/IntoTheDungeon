@@ -158,6 +158,52 @@ MonoBehaviour:
   m_InstancedGameObject: {fileID: 0}
   m_Flags: 3
   m_ColliderType: 1
+--- !u!1 &1026557189
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1026557191}
+  - component: {fileID: 1026557190}
+  m_Layer: 0
+  m_Name: View
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1026557190
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1026557189}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cbaf6e4df001a44b810a7dacd10d10f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Prefabs:
+  - {fileID: 0}
+--- !u!4 &1026557191
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1026557189}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -2.972609, y: -5.676563, z: -0.04658245}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1052537896
 GameObject:
   m_ObjectHideFlags: 0
@@ -414,11 +460,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8375346020598000778, guid: d90d0adf33d597a4e9d70704c658c505, type: 3}
       propertyPath: m_labelHash
-      value: 4.1652613e-36
+      value: 5.636837e-37
       objectReference: {fileID: 0}
     - target: {fileID: 8375346020598000778, guid: d90d0adf33d597a4e9d70704c658c505, type: 3}
       propertyPath: m_SpriteHash
       value: 288990334
+      objectReference: {fileID: 0}
+    - target: {fileID: 8375346020598000778, guid: d90d0adf33d597a4e9d70704c658c505, type: 3}
+      propertyPath: m_CategoryHash
+      value: 1.6083344e-32
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -12201,3 +12251,4 @@ SceneRoots:
   - {fileID: 2023555703}
   - {fileID: 1479196899}
   - {fileID: 1534836819}
+  - {fileID: 1026557191}
