@@ -2,7 +2,7 @@ using IntoTheDungeon.Core.ECS.Abstractions.Scheduling;
 using IntoTheDungeon.Core.ECS.Systems;
 using IntoTheDungeon.Core.Physics.Abstractions;
 using IntoTheDungeon.Core.Runtime.Physics;
-using IntoTheDungeon.Core.World.Abstractions;
+using IntoTheDungeon.Core.Abstractions.World;
 
 using IntoTheDungeon.Features.Physics.Components;
 

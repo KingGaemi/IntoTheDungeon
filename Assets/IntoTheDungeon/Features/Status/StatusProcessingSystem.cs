@@ -1,118 +1,103 @@
 using IntoTheDungeon.Core.Util;
 using IntoTheDungeon.Core.ECS.Abstractions.Scheduling;
-using IntoTheDungeon.Core.ECS.Abstractions;
 using IntoTheDungeon.Core.ECS.Systems;
-using IntoTheDungeon.Features.Character;
-using System.Diagnostics;
+using IntoTheDungeon.Core.Abstractions.World;
+using IntoTheDungeon.Core.Abstractions.Services;
+
 
 namespace IntoTheDungeon.Features.Status
 {
     public class StatusProcessingSystem : GameSystem, ITick
     {
+        private IEventHub _hub;
+        public override void Initialize(IWorld world)
+        {
+            base.Initialize(world);
+            if (!_world.TryGet(out _hub)) Enabled = false;
+        }
         public StatusProcessingSystem(int priority = 0) : base(priority) { }
         
         public void Tick(float dt)
         {
             foreach (var chunk in _world.EntityManager.GetChunks(
-                typeof(StatusComponent)))
+                typeof(StatusComponent),
+                typeof(StatusModificationQueue)))
             {
                 var statuses = chunk.GetComponentArray<StatusComponent>();
+                var queues   = chunk.GetComponentArray<StatusModificationQueue>();
                 var entities = chunk.GetEntities();
+
                 
                 for (int i = 0; i < chunk.Count; i++)
                 {
-                    ref var status = ref statuses[i];
-                    var queue = _world.ManagedStore.GetManagedComponent<StatusModificationQueue>(entities[i]);
-                    if (!status.IsAlive) continue;
-                    if (queue.Count == 0)
-                        continue;
+                    ref var s = ref statuses[i];
+                    ref var queue = ref queues[i];
+                    StatusDirty dirty = StatusDirty.None;
+                    int applied = 0;
 
-                    // 수정 전 상태 저장
-                    var prevHp = status.CurrentHp;
-
-                    // 모든 수정사항 일괄 처리
-                    foreach (var mod in queue.Modifications)
+                    while (queue.TryDequeue(out var m))
                     {
-                        ApplyModification(ref status, mod);
+                        ApplyModification(ref s, m, ref dirty);
+                        applied++;
                     }
-
+                    
                     // 이벤트 발행
-                    NotifyChanges(entities[i], ref status, prevHp);
-
+                     if (applied > 0 && dirty != StatusDirty.None)
+                        _hub.Publish(new StatusChanged(entities[i], dirty, s.Damage, s.Armor, s.AttackSpeed, s.MovementSpeed));
                     // 큐 비우기
                     queue.Clear();
                 }
             }
         }
         
-        private void ApplyModification(ref StatusComponent status, StatusModification mod)
+        static void ApplyModification(ref StatusComponent s, in StatusModification mod, ref StatusDirty dirty)
         {
             switch (mod.ModType)
             {
-                case StatusModification.Type.Damage:
-                    int damageAfterArmor = Mathx.Max(0, (int)mod.Value - status.Armor);
-                    status.CurrentHp = Mathx.Max(0, status.CurrentHp - damageAfterArmor);
+                case StatusModification.Type.AddDamage:
+                    s.Damage = Mathx.Max(0, s.Damage + (int)mod.Value);
+                    dirty |= StatusDirty.Damage;
                     break;
 
-                case StatusModification.Type.Heal:
-                    status.CurrentHp = Mathx.Min(status.MaxHp, status.CurrentHp + (int)mod.Value);
+                case StatusModification.Type.AddArmor:
+                    s.Armor = Mathx.Max(0, s.Armor + (int)mod.Value);
+                    dirty |= StatusDirty.Armor;
                     break;
 
-                case StatusModification.Type.SetHp:
-                    status.CurrentHp = Mathx.Clamp((int)mod.Value, 0, status.MaxHp);
+                case StatusModification.Type.AddAttackSpeed:
+                    s.AttackSpeed = Mathx.Max(0.1f, s.AttackSpeed + mod.Value);
+                    dirty |= StatusDirty.AtkSpd;
                     break;
 
-                case StatusModification.Type.ModifyDamage:
-                    status.Damage = Mathx.Max(0, status.Damage + (int)mod.Value);
+                case StatusModification.Type.AddMovementSpeed:
+                    s.MovementSpeed = Mathx.Max(0, s.MovementSpeed + mod.Value);
+                    dirty |= StatusDirty.MovSpd;
                     break;
 
-                case StatusModification.Type.Armor:
-                    status.Armor = Mathx.Max(0, status.Armor + (int)mod.Value);
+                case StatusModification.Type.SetDamage:
+                    s.Damage = Mathx.Max(0, (int)mod.Value);
+                    dirty |= StatusDirty.Damage;
                     break;
 
-                case StatusModification.Type.AttackSpeed:
-                    status.AttackSpeed = Mathx.Max(0.1f, status.AttackSpeed + mod.Value);
+                case StatusModification.Type.SetArmor:
+                    s.Armor = Mathx.Max(0, (int)mod.Value);
+                    dirty |= StatusDirty.Armor;
                     break;
 
-                case StatusModification.Type.MovementSpeed:
-                    status.MovementSpeed = Mathx.Max(0, status.MovementSpeed + mod.Value);
+                case StatusModification.Type.SetAttackSpeed:
+                    s.AttackSpeed = Mathx.Max(0.1f, mod.Value);
+                    dirty |= StatusDirty.AtkSpd;
                     break;
 
-                case StatusModification.Type.ModifyArmor:
-                    status.Armor = Mathx.Max(0, (int)mod.Value);
+                case StatusModification.Type.SetMovementSpeed:
+                    s.MovementSpeed = Mathx.Max(0, mod.Value);
+                    dirty |= StatusDirty.MovSpd;
                     break;
 
-                case StatusModification.Type.ModifyAttackSpeed:
-                    status.AttackSpeed = Mathx.Max(0.1f, mod.Value);
-                    break;
-
-                case StatusModification.Type.ModifyMovementSpeed:
-                    status.MovementSpeed = Mathx.Max(0, mod.Value);
-                    break;
                 case StatusModification.Type.Init:
                     break;
             }
         }
 
-        private void NotifyChanges(Entity entity, ref StatusComponent status, int prevHp)
-        {
-            var receiver = _world.ManagedStore.GetManagedComponent<EventReceiver>(entity);
-            if (receiver == null)
-                return;
-
-            // HP 변경 이벤트
-            if (status.CurrentHp != prevHp)
-            {
-                receiver.NotifyHpChange(status.CurrentHp, prevHp);
-
-                // 사망 체크
-                if (status.CurrentHp <= 0 && prevHp > 0)
-                {
-                    status.IsAlive = false;
-                }
-            }
-            receiver.NotifyASChange(status.AttackSpeed);
-            receiver.NotifyMSChange(status.MovementSpeed);
-        }
     }
 }

@@ -1,6 +1,6 @@
 // Core.Runtime/Unity/Components
 using UnityEngine;
-using IntoTheDungeon.Core.World.Abstractions;
+using IntoTheDungeon.Core.Abstractions.World;
 using IntoTheDungeon.Features.Physics.Components;
 using IntoTheDungeon.Runtime.Unity.World;
 

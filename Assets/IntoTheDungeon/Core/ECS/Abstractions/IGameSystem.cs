@@ -1,5 +1,5 @@
 
-using IntoTheDungeon.Core.World.Abstractions;
+using IntoTheDungeon.Core.Abstractions.World;
 
 namespace IntoTheDungeon.Core.ECS.Abstractions
 {

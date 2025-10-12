@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using IntoTheDungeon.Core.Abstractions.World;
 using IntoTheDungeon.Core.ECS.Abstractions;
 using IntoTheDungeon.Core.ECS.Abstractions.Scheduling;
 
@@ -7,7 +8,7 @@ namespace IntoTheDungeon.Core.ECS.Systems
 {
     public sealed class SystemManager : ISystemManager
     {
-        private readonly World.Abstractions.IWorld _world;
+        private readonly IWorld _world;
         private readonly Dictionary<System.Type, IGameSystem> _registry = new();
         private readonly List<IGameSystem> _flat = new();
         private readonly List<(IGameSystem S, int Seq)> _systems = new();
@@ -15,7 +16,7 @@ namespace IntoTheDungeon.Core.ECS.Systems
         private bool _needsSort;
         
         public IReadOnlyList<IGameSystem> Systems => _flat.AsReadOnly();
-        public SystemManager(World.Abstractions.IWorld world) => _world = world;
+        public SystemManager(IWorld world) => _world = world;
 
 
         public void Add<T>(T system) where T : IGameSystem

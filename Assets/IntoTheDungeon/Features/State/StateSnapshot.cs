@@ -1,3 +1,4 @@
+using IntoTheDungeon.Core.Abstractions.Types;
 
 namespace IntoTheDungeon.Features.State
 {
@@ -6,7 +7,7 @@ namespace IntoTheDungeon.Features.State
         public ActionState Action;
         public MovementState Movement;
         public ControlState Control;
-        public Core.Facing2D Facing;
+        public Facing2D Facing;
         public uint Version;
     }
 }

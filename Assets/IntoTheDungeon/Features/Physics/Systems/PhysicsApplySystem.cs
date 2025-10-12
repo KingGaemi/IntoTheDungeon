@@ -1,6 +1,6 @@
 using IntoTheDungeon.Core.ECS.Abstractions.Scheduling;
 using IntoTheDungeon.Core.Physics.Abstractions;
-using IntoTheDungeon.Core.World.Abstractions;
+using IntoTheDungeon.Core.Abstractions.World;
 using IntoTheDungeon.Core.ECS.Systems;
 
 namespace IntoTheDungeon.Features.Physics.Systems

@@ -1,12 +1,12 @@
 using IntoTheDungeon.Core.ECS.Abstractions;
 using IntoTheDungeon.Core.Runtime.World;
-using IntoTheDungeon.Core.World.Abstractions;
+using IntoTheDungeon.Core.Abstractions.World;
 using IntoTheDungeon.Features.Unity;
 using UnityEngine;
 public abstract class EntityBehaviour : MonoBehaviour, IEntityComponent
 {
     public EntityRootBehaviour EntityRoot { get; set; }
-    public IntoTheDungeon.Core.World.Abstractions.IWorld World { get; set; }
+    public IntoTheDungeon.Core.Abstractions.World.IWorld World { get; set; }
     private Entity _entity;
     private bool _entityCached;
 

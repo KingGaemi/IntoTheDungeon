@@ -1,0 +1,17 @@
+{
+    "name": "IntoTheDungeon.Features.State",
+    "rootNamespace": "IntoTheDungeon.Features.State",
+    "references": [
+        "GUID:88833cabe3c18a44582ec8992e43ad7f",
+        "GUID:ddaa2dbed341cf141bb4af58a5427795"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

@@ -1,8 +1,8 @@
 using UnityEngine;
 using IntoTheDungeon.Core.ECS.Abstractions;
-using IntoTheDungeon.Core.World.Abstractions;
+using IntoTheDungeon.Core.Abstractions.World;
 using IntoTheDungeon.Runtime.Unity.World;
-using IntoTheDungeon.Features.Character;
+using IntoTheDungeon.Features.Event;
 using IntoTheDungeon.Features.Unity;
 
 [DisallowMultipleComponent]

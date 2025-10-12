@@ -1,31 +1,29 @@
-using System.Collections.Generic;
+
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using IntoTheDungeon.Core.Collections;
 using IntoTheDungeon.Core.ECS.Abstractions;
 
 namespace IntoTheDungeon.Features.Status
 {
-    public class StatusModificationQueue : IManagedComponent, INeedInit
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct StatusModificationQueue : IComponentData
     {
-        private readonly List<StatusModification> _modifications = new(8);
+        RingBuffer8<StatusModification> _buffer;
 
-        public List<StatusModification> Modifications => _modifications;
+        public readonly int Count => _buffer.Count;
 
-        public void Enqueue(StatusModification mod)
-        {
-            Modifications.Add(mod);
-        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Enqueue(in StatusModification modification)
+            => _buffer.Enqueue(in modification);
 
-        public void Clear()
-        {
-            Modifications?.Clear();
-        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryDequeue(out StatusModification modification)
+            => _buffer.TryDequeue(out modification);
 
-        public void Initialize()
-        {
-            Modifications.Add(StatusModification.Init());
-        }
-
-        public int Count => _modifications.Count;
-
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Clear() => _buffer.Clear();
     }
+
 }
