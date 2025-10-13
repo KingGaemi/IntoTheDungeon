@@ -3,6 +3,8 @@ using IntoTheDungeon.Core.ECS.Abstractions.Scheduling;
 using IntoTheDungeon.Core.ECS.Systems;
 using IntoTheDungeon.Core.Abstractions.World;
 using IntoTheDungeon.Core.Abstractions.Services;
+using IntoTheDungeon.Core.Abstractions.Messages.Combat;
+using System;
 
 
 namespace IntoTheDungeon.Features.Status
@@ -16,7 +18,7 @@ namespace IntoTheDungeon.Features.Status
             if (!_world.TryGet(out _hub)) Enabled = false;
         }
         public StatusProcessingSystem(int priority = 0) : base(priority) { }
-        
+
         public void Tick(float dt)
         {
             foreach (var chunk in _world.EntityManager.GetChunks(
@@ -24,10 +26,10 @@ namespace IntoTheDungeon.Features.Status
                 typeof(StatusModificationQueue)))
             {
                 var statuses = chunk.GetComponentArray<StatusComponent>();
-                var queues   = chunk.GetComponentArray<StatusModificationQueue>();
+                var queues = chunk.GetComponentArray<StatusModificationQueue>();
                 var entities = chunk.GetEntities();
 
-                
+
                 for (int i = 0; i < chunk.Count; i++)
                 {
                     ref var s = ref statuses[i];
@@ -40,57 +42,57 @@ namespace IntoTheDungeon.Features.Status
                         ApplyModification(ref s, m, ref dirty);
                         applied++;
                     }
-                    
+
                     // 이벤트 발행
-                     if (applied > 0 && dirty != StatusDirty.None)
-                        _hub.Publish(new StatusChanged(entities[i], dirty, s.Damage, s.Armor, s.AttackSpeed, s.MovementSpeed));
+                    if (applied > 0 && dirty != StatusDirty.None)
+                        _hub.Publish(new StatusChangedEvent(entities[i], dirty, s.Damage, s.Armor, s.AttackSpeed, s.MovementSpeed));
                     // 큐 비우기
                     queue.Clear();
                 }
             }
         }
-        
+
         static void ApplyModification(ref StatusComponent s, in StatusModification mod, ref StatusDirty dirty)
         {
             switch (mod.ModType)
             {
                 case StatusModification.Type.AddDamage:
-                    s.Damage = Mathx.Max(0, s.Damage + (int)mod.Value);
+                    s.Damage = Math.Max(0, s.Damage + (int)mod.Value);
                     dirty |= StatusDirty.Damage;
                     break;
 
                 case StatusModification.Type.AddArmor:
-                    s.Armor = Mathx.Max(0, s.Armor + (int)mod.Value);
+                    s.Armor = Math.Max(0, s.Armor + (int)mod.Value);
                     dirty |= StatusDirty.Armor;
                     break;
 
                 case StatusModification.Type.AddAttackSpeed:
-                    s.AttackSpeed = Mathx.Max(0.1f, s.AttackSpeed + mod.Value);
+                    s.AttackSpeed = Math.Max(0.1f, s.AttackSpeed + mod.Value);
                     dirty |= StatusDirty.AtkSpd;
                     break;
 
                 case StatusModification.Type.AddMovementSpeed:
-                    s.MovementSpeed = Mathx.Max(0, s.MovementSpeed + mod.Value);
+                    s.MovementSpeed = Math.Max(0, s.MovementSpeed + mod.Value);
                     dirty |= StatusDirty.MovSpd;
                     break;
 
                 case StatusModification.Type.SetDamage:
-                    s.Damage = Mathx.Max(0, (int)mod.Value);
+                    s.Damage = Math.Max(0, (int)mod.Value);
                     dirty |= StatusDirty.Damage;
                     break;
 
                 case StatusModification.Type.SetArmor:
-                    s.Armor = Mathx.Max(0, (int)mod.Value);
+                    s.Armor = Math.Max(0, (int)mod.Value);
                     dirty |= StatusDirty.Armor;
                     break;
 
                 case StatusModification.Type.SetAttackSpeed:
-                    s.AttackSpeed = Mathx.Max(0.1f, mod.Value);
+                    s.AttackSpeed = Math.Max(0.1f, mod.Value);
                     dirty |= StatusDirty.AtkSpd;
                     break;
 
                 case StatusModification.Type.SetMovementSpeed:
-                    s.MovementSpeed = Mathx.Max(0, mod.Value);
+                    s.MovementSpeed = Math.Max(0, mod.Value);
                     dirty |= StatusDirty.MovSpd;
                     break;
 

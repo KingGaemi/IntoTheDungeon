@@ -14,7 +14,7 @@ namespace IntoTheDungeon.Core.ECS.Systems
         private readonly List<(IGameSystem S, int Seq)> _systems = new();
         private int _seq;
         private bool _needsSort;
-        
+
         public IReadOnlyList<IGameSystem> Systems => _flat.AsReadOnly();
         public SystemManager(IWorld world) => _world = world;
 
@@ -29,11 +29,11 @@ namespace IntoTheDungeon.Core.ECS.Systems
                 return;
             }
 
+            system.Initialize(_world);
             _registry[type] = system;
             _systems.Add((system, ++_seq));
             _flat.Add(system);
             _needsSort = true;
-            system.Initialize(_world);
         }
         public T Get<T>() where T : IGameSystem
             => (T)_registry[typeof(T)];
@@ -41,12 +41,14 @@ namespace IntoTheDungeon.Core.ECS.Systems
         public bool Has<T>() where T : IGameSystem
             => _registry.ContainsKey(typeof(T));
 
+
         public void ExecuteUpdate(float dt)
         {
             EnsureSorted();
             foreach (var (S, _) in _systems)
                 if (S.Enabled && S is ITick t) t.Tick(dt);
         }
+
 
         public void ExecuteFixed(float dt)
         {
@@ -58,14 +60,15 @@ namespace IntoTheDungeon.Core.ECS.Systems
         public void ExecuteLate(float dt)
         {
             EnsureSorted();
-            foreach (var (S, _)in _systems)
+            foreach (var (S, _) in _systems)
                 if (S.Enabled && S is ILateTick l) l.LateTick(dt);
         }
 
         private void EnsureSorted()
         {
             if (!_needsSort) return;
-            _systems.Sort((x, y) => {
+            _systems.Sort((x, y) =>
+            {
                 int c = x.S.Priority.CompareTo(y.S.Priority);
                 return c != 0 ? c : x.Seq.CompareTo(y.Seq);
             });
@@ -73,8 +76,30 @@ namespace IntoTheDungeon.Core.ECS.Systems
             for (int i = 0; i < _systems.Count; i++) _flat.Add(_systems[i].S);
             _needsSort = false;
         }
+#if DEBUG
+        public void DebugPrint()
+        {
+            UnityEngine.Debug.Log($"=== SystemManager: {_flat.Count} systems ===");
 
- 
+            EnsureSorted();
+
+            foreach (var (sys, order) in _systems)
+            {
+                var type = sys.GetType();
+                var enabled = sys.Enabled ? "✓" : "✗";
+                var interfaces = new List<string>();
+
+                if (sys is ITick) interfaces.Add("Update");
+                if (sys is IFixedTick) interfaces.Add("Fixed");
+                if (sys is ILateTick) interfaces.Add("Late");
+
+                var stages = string.Join(", ", interfaces);
+
+                UnityEngine.Debug.Log($"  [{enabled}] {type.Name} (order={order}, stages={stages})");
+            }
+        }
+#endif
+
         public void Dispose()
         {
             for (int i = _systems.Count - 1; i >= 0; i--)

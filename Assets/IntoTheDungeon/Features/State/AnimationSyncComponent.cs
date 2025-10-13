@@ -1,3 +1,4 @@
+using IntoTheDungeon.Core.Abstractions.Types;
 using IntoTheDungeon.Core.ECS.Abstractions;
 
 namespace IntoTheDungeon.Features.State

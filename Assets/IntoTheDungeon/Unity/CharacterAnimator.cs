@@ -1,263 +1,271 @@
 using UnityEngine;
-using IntoTheDungeon.Features.Core;
+using IntoTheDungeon.Core.ECS.Abstractions;
+using IntoTheDungeon.Unity.Bridge;
 using IntoTheDungeon.Features.State;
-using IntoTheDungeon.Core.Runtime.World;
+using IntoTheDungeon.Core.Abstractions.Types;
+using IntoTheDungeon.Core.Abstractions.Messages.Combat;
+using IntoTheDungeon.Core.Abstractions.Messages.Animation;
+using IntoTheDungeon.Core.Abstractions.World;
+using IntoTheDungeon.Unity.View;
 
 namespace IntoTheDungeon.Features.Character
 {
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(Animator),
-                    typeof(SpriteRenderer))]
-    public class CharacterAnimator : EntityBehaviour
+    [RequireComponent(typeof(Animator), typeof(SpriteRenderer))]
+    public sealed class CharacterAnimator : MonoBehaviour,
+        IViewComponent,
+        IStateEventListener,
+        IStatusEventListener,
+        IAnimationEventListener,
+        IAuthoringProvider  // 
     {
-
-        [SerializeField] Animator _animator;               // Visual의 Animator
-        [SerializeField] SpriteRenderer sprite;
-        EventNotifier notifier;
-        [SerializeField] float multiplier = 1.0f;           // 필요시 배수 / optional scale
-
-        [SerializeField] int hashWindup, hashActive, hashRecovery;
-        [SerializeField] float lenWindup, lenActive, lenRecovery; 
-        readonly string attackSpeedParam = "AttackSpeed";
-        readonly string movementSpeedParam = "MovementSpeed";
-        readonly string deathParam = "Death";
-        readonly string attackParam = "Attack";
-        readonly string runParam = "Run";
-        readonly string phaseProgressParam = "PhaseProgress";
-        readonly string attackingParam = "Attacking";
-        readonly string attackBlendParam = "AttackBlend";
-        readonly string windupDoneParam = "WindupDone";
-        // readonly string recoveryDoneParam = "RecoveryDone";
-        // readonly string attackWindupParam =  "AttackWindup";
-        // readonly string attackRecoveryParam = "AttackRecovery";
-        readonly string windupParam = "Windup";
-        readonly string recoveryParam = "Recovery";
-
-
-
-        private bool _hasAnimationSync;
-
-        int hashAttacking;
-        int hashAttackSpeed;
-        int hashMovementSpeed;
-        int hashDeath;
-        int hashPhaseProgress;
-        int hashWindupDone;
-        // int hashRecoveryDone;
-
-        // int hashAttackWindup;
-        // int hashAttackRecovery;
-
-
-        int hashAttack;
-        int hashAttackBlend;
-        int hashRun;
-
-
-
-        void Start()
+        public RecipeId recipeId;
+        public int sortingLayerId;
+        public int orderInLayer;
+        public IAuthoring BuildAuthoring()
+        => new ViewAuthoring
         {
-            // 한 번만 체크
-            _hasAnimationSync = EntityRoot.World?.EntityManager
-                .HasComponent<AnimationSyncComponent>(EntityRoot.Entity) ?? false;
-            
-            if (!_hasAnimationSync)
-            {
-                Debug.LogWarning($"[{name}] AnimationSyncComponent not found. Animator disabled.");
-                enabled = false;  // Update 비활성화
-            }
-        }
+            recipeId = recipeId,
+            sortingLayerId = sortingLayerId,
+            orderInLayer = orderInLayer
+        };
+
+        [SerializeField] Animator _animator;
+        [SerializeField] SpriteRenderer _sprite;
+        [SerializeField] float _multiplier = 1f;
+
+        public ViewBridge ViewBridge { get; set; }
+
+        Entity _entity;
+        IEntityManager _em;
+
+        // Animation Parameters
+        static readonly int HashAttack = Animator.StringToHash("Attack");
+        static readonly int HashRun = Animator.StringToHash("Run");
+        static readonly int HashAttackSpeed = Animator.StringToHash("AttackSpeed");
+        static readonly int HashMovementSpeed = Animator.StringToHash("MovementSpeed");
+        static readonly int HashDeath = Animator.StringToHash("Death");
+        static readonly int HashPhaseProgress = Animator.StringToHash("PhaseProgress");
+        static readonly int HashAttacking = Animator.StringToHash("Attacking");
+        static readonly int HashWindup = Animator.StringToHash("Windup");
+        static readonly int HashRecovery = Animator.StringToHash("Recovery");
+        static readonly int HashWindupDone = Animator.StringToHash("WindupDone");
+
+        // Animation Clip Lengths
+        float _lenWindup;
+        float _lenRecovery;
+
+        // State Tracking
+        MovementState _lastMovement;
+        Facing2D _lastFacing;
+
         void Reset()
         {
             if (!_animator) _animator = GetComponent<Animator>();
-            if (!sprite) sprite = GetComponent<SpriteRenderer>();
-            TryLinkNotifier();
-
+            if (!_sprite) _sprite = GetComponent<SpriteRenderer>();
         }
 
-        override protected void OnAwake()
+        void Awake()
         {
             if (!_animator) _animator = GetComponent<Animator>();
-            if (!sprite) sprite = GetComponent<SpriteRenderer>();
-            TryLinkNotifier();
-            CacheAnimatorHashes();
-            
-            var clips = _animator.runtimeAnimatorController.animationClips;
-            foreach (var c in clips)
+            if (!_sprite) _sprite = GetComponent<SpriteRenderer>();
+            CacheClipLengths();
+        }
+
+        public void Initialize(Entity entity, IEntityManager em, byte[] payload)
+        {
+            _entity = entity;
+            _em = em;
+
+
+            // payload 처리 (팀 색상)
+            if (payload != null && payload.Length >= 4)
             {
-                switch (c.name)
+                int teamId = System.BitConverter.ToInt32(payload, 0);
+                if (_sprite != null && teamId > 0)
                 {
-                    case "AttackWindup": lenWindup = c.length; break;
-                    case "AttackRecovery": lenRecovery = c.length; break;
+                    _sprite.color = GetTeamColor(teamId);
                 }
             }
-        }
-
-        void OnEnable()
-        {
-            if (notifier != null)
-            {
-                notifier.OnStateChanged += OnStateChanged;
-                notifier.OnASChange += HandleAttackSpeedChanged;
-                notifier.OnMSChange += HandleMovementSpeedChanged;
-            }
-            else
-            {
-                Debug.LogWarning("EventReceiver is null in OnEnable!", this);
-            }
+            SyncInitialStateFromComponent();
+            Debug.Log($"StateChangedEvent AQN: {typeof(StateChangedEvent).AssemblyQualifiedName}");
 
         }
-        private void LateUpdate()  // System 이후 실행
+        void SyncInitialStateFromComponent()
         {
+            if (!_em.TryGetComponent(_entity, out StateComponent state))
+                return;
 
-            ref var sync = ref World.EntityManager.GetComponent<AnimationSyncComponent>(Entity);            
-            if (sync.DirtyFlag == 1)
+            _lastMovement = state.Current.Movement;
+            _lastFacing = state.Current.Facing;
+
+            HandleMovement(state.Current.Movement);
+            HandleFacing(state.Current.Facing);
+
+            if (state.Current.Control == ControlState.Dead)
             {
-                float duration = Mathf.Max(0.001f, sync.PhaseDuration);
-                switch (sync.CurrentPhase)
-                {
-                    case ActionPhase.Windup:
-                        _animator.SetTrigger(hashAttack);
-                        _animator.SetBool(hashAttacking, true);
-                        _animator.speed = (lenWindup > 0.001f) ? lenWindup / duration : 1f;
-                        _animator.SetFloat(hashWindup, sync.PhaseProgress);
-                        break;
-                    case ActionPhase.Recovery:
-                        // _animator.CrossFade(hashRecovery, 0f, 0, 0f);
-                        _animator.SetBool(hashWindupDone, true);
-                        _animator.SetFloat(hashRecovery, sync.PhaseProgress);
-                        _animator.speed = (lenRecovery > 0.001f) ? lenRecovery / duration : 1f;
-                        break;
-                    case ActionPhase.Cooldown:
-                        if(sync.WholeProgress>= 0.99f)
-                        _animator.SetBool(hashAttacking, false);
-                        _animator.SetBool(hashWindupDone, false);
+                HandleDeath();
+            }
+        }
+
+
+        // ============================================
+        // Event Handlers 
+        // ============================================
+
+        public void OnStateChanged(in StateChangedEvent evt)
+        {
+            // Movement 변경
+            Debug.Log("OnStateChanged");
+            if (evt.HasMovement && _lastMovement != evt.MovementState)
+            {
+                _lastMovement = evt.MovementState;
+                HandleMovement(evt.MovementState);
+            }
+
+            // Facing 변경
+            if (evt.HasFacing && _lastFacing != evt.Facing2D)
+            {
+                _lastFacing = evt.Facing2D;
+                HandleFacing(evt.Facing2D);
+            }
+
+            // Control 변경 (Death)
+            if (evt.HasControl && evt.ControlState == ControlState.Dead)
+            {
+                HandleDeath();
+            }
+
+            // Action 변경 (Attack)
+            if (evt.HasAction && evt.ActionState == ActionState.Attack)
+            {
+                _animator.SetTrigger(HashAttack);
+            }
+        }
+
+        public void OnStatusChanged(in StatusChangedEvent evt)
+        {
+            if ((evt.Dirty & StatusDirty.AtkSpd) != 0)
+            {
+                _animator.SetFloat(HashAttackSpeed, evt.AttackSpeed * _multiplier);
+            }
+
+            if ((evt.Dirty & StatusDirty.MovSpd) != 0)
+            {
+                _animator.SetFloat(HashMovementSpeed, evt.MovementSpeed * _multiplier);
+            }
+        }
+
+        //  AnimationPhase 이벤트 처리
+        public void OnAnimationPhaseChanged(in AnimationPhaseChangedEvent evt)
+        {
+            if (!_animator || !_animator.isActiveAndEnabled) return;
+
+            float duration = Mathf.Max(0.001f, evt.PhaseDuration);
+
+            switch (evt.Phase)
+            {
+                case ActionPhase.Windup:
+                    _animator.SetBool(HashAttacking, true);
+                    _animator.speed = (_lenWindup > 0.001f) ? _lenWindup / duration : 1f;
+                    _animator.SetFloat(HashWindup, evt.PhaseProgress);
+                    break;
+
+                case ActionPhase.Recovery:
+                    _animator.SetBool(HashWindupDone, true);
+                    _animator.SetFloat(HashRecovery, evt.PhaseProgress);
+                    _animator.speed = (_lenRecovery > 0.001f) ? _lenRecovery / duration : 1f;
+                    break;
+
+                case ActionPhase.Cooldown:
+                    if (evt.WholeProgress >= 0.99f)
+                    {
+                        _animator.SetBool(HashAttacking, false);
+                        _animator.SetBool(HashWindupDone, false);
                         _animator.speed = 1f;
-                        break;
-                    case ActionPhase.None:
-                        _animator.SetBool(hashAttacking, false);
-                        _animator.SetBool(hashWindupDone, false);
-                        _animator.speed = 1f;
-                        break;
-                }
-                sync.DirtyFlag = 0;
-            }
-            
-            _animator.SetFloat(hashPhaseProgress, sync.WholeProgress);
-        }
-        private void OnDisable()
-        {
-            if (notifier != null)
-            {
-                notifier.OnStateChanged -= OnStateChanged;
-                notifier.OnASChange -= HandleAttackSpeedChanged;
-                notifier.OnMSChange -= HandleMovementSpeedChanged;
-            }
-        }
-
-        private void OnStateChanged(StateSnapshot curr, ChangeMask mask)
-        {
-            // Action 변경 체크
-            if ((mask & ChangeMask.Action) != 0)
-            {
-                HandleAction(curr.Action);
-            }
-            
-            // Movement 변경 체크
-            if ((mask & ChangeMask.Movement) != 0)
-            {
-                HandleMovement(curr.Movement);
-            }
-            
-            // Facing 변경 체크
-            if ((mask & ChangeMask.Facing) != 0)
-            {
-                HandleFacing(curr.Facing);
-            }
-        }
-        private void TryLinkNotifier()
-        {
-            if (notifier != null) return;
-            
-            var root = GetComponentInParent<EntityRootBehaviour>(true);
-            if (root != null && root.Notifier != null)
-            {
-                notifier = root.Notifier;
-            }
-        }
-
-        private void CacheAnimatorHashes()
-        {
-            hashAttack = Animator.StringToHash(attackParam);
-            hashRun = Animator.StringToHash(runParam);
-            hashAttackSpeed = Animator.StringToHash(attackSpeedParam);
-            hashMovementSpeed = Animator.StringToHash(movementSpeedParam);
-            hashDeath = Animator.StringToHash(deathParam);
-            hashPhaseProgress = Animator.StringToHash(phaseProgressParam);
-            hashAttacking = Animator.StringToHash(attackingParam);
-            hashAttackBlend = Animator.StringToHash(attackBlendParam);
-            hashWindup = Animator.StringToHash(windupParam);
-            hashRecovery = Animator.StringToHash(recoveryParam);
-            hashWindupDone = Animator.StringToHash(windupDoneParam);
-            // hashRecoveryDone = Animator.StringToHash(recoveryDoneParam);
-        }
-
-        private void HandleAction(ActionState action)
-        {
-            switch (action)
-            {
-                case ActionState.Attack:
-                    // _animator.SetTrigger(hashAttack);
+                    }
                     break;
-                    
-                case ActionState.Idle:
-                    // 필요시 처리
+
+                case ActionPhase.None:
+                    _animator.SetBool(HashAttacking, false);
+                    _animator.SetBool(HashWindupDone, false);
+                    _animator.speed = 1f;
                     break;
             }
+
+            _animator.SetFloat(HashPhaseProgress, evt.WholeProgress);
         }
 
-        private void HandleMovement(MovementState movement)
+        // ============================================
+        // State Handlers
+        // ============================================
+
+
+
+        void HandleMovement(MovementState movement)
         {
-            switch (movement)
+            bool isMoving = movement switch
             {
-                case MovementState.Idle:
-                    _animator.SetBool(hashRun, false);
-                    break;
-                
-                case MovementState.Move:
-                case MovementState.Walk:
-                case MovementState.Run:
-                    _animator.SetBool(hashRun, true);
-                    break;
-                
-                case MovementState.Jump:
-                    // Jump 처리
-                    break;
-            }
+                MovementState.Move or MovementState.Walk or MovementState.Run => true,
+                _ => false
+            };
+
+            _animator.SetBool(HashRun, isMoving);
         }
 
-        private void HandleFacing(Facing2D facing)
+        void HandleFacing(Facing2D facing)
         {
-            sprite.flipX = facing == Facing2D.Left;
-        }
-
-        void HandleAttackSpeedChanged(float spd)
-        {
-            if (_animator)
-                _animator.SetFloat(hashAttackSpeed, spd * multiplier);
-        }
-
-        void HandleMovementSpeedChanged(float spd)
-        {
-            if (_animator)
-                _animator.SetFloat(hashMovementSpeed, spd * multiplier);
+            _sprite.flipX = facing == Facing2D.Left;
         }
 
         void HandleDeath()
         {
-            if (_animator)
-                _animator.SetTrigger(hashDeath);
+            _animator.SetTrigger(HashDeath);
         }
 
+        // ============================================
+        // Utilities
+        // ============================================
+
+        void CacheClipLengths()
+        {
+            if (_animator?.runtimeAnimatorController == null) return;
+
+            var clips = _animator.runtimeAnimatorController.animationClips;
+            foreach (var clip in clips)
+            {
+                switch (clip.name)
+                {
+                    case "AttackWindup":
+                        _lenWindup = clip.length;
+                        break;
+                    case "AttackRecovery":
+                        _lenRecovery = clip.length;
+                        break;
+                }
+            }
+        }
+
+        bool IsEntityValid()
+        {
+            return ViewBridge != null
+                && ViewBridge.IsEntityValid(_entity);
+        }
+
+        Color GetTeamColor(int teamId)
+        {
+            return teamId switch
+            {
+                1 => new Color(0.3f, 0.6f, 1f),
+                2 => new Color(1f, 0.3f, 0.3f),
+                _ => Color.white
+            };
+        }
+
+        void OnDestroy()
+        {
+            _entity = default;
+            _em = null;
+        }
     }
 }

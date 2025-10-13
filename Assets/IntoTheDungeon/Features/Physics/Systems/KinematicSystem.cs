@@ -12,14 +12,14 @@ using IntoTheDungeon.Features.Physics.Components;
 
 namespace IntoTheDungeon.Features.Physics.Systems
 {
-    public sealed class KinematicSystem : GameSystem, ILateTick
+    public sealed class KinematicSystem : GameSystem, IFixedTick
     {
         public KinematicSystem(int priority = 0) : base(priority) { }
         override public void Initialize(IWorld world)
         {
             _world = world;
         }
-        public void LateTick(float dt)
+        public void FixedTick(float dt)
         {
             var chunks = _world.EntityManager.GetChunks(typeof(KinematicComponent),
                                                         typeof(PhysicsCommand));

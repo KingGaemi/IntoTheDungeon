@@ -14,5 +14,8 @@ namespace IntoTheDungeon.Core.ECS.Abstractions
         void ExecuteUpdate(float dt);
         void ExecuteFixed(float dt);
         void ExecuteLate(float dt);
+#if DEBUG
+        void DebugPrint();
+#endif
     }
 }

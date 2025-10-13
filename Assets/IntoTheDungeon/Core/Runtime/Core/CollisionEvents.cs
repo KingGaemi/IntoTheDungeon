@@ -3,7 +3,7 @@ using IntoTheDungeon.Core.ECS.Abstractions;
 using System.Collections.Generic;
 
 
-namespace IntoTheDungeon.Runtime.Core
+namespace IntoTheDungeon.Core.Physics.Runtime
 {
     public sealed class CollisionEvents : ICollisionEvents
     {

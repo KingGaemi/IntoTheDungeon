@@ -5,7 +5,7 @@ using IntoTheDungeon.Core.ECS.Abstractions;
 
 
 namespace IntoTheDungeon.Features.State
-{   
+{
 
     public struct StateComponent : IComponentData
     {
@@ -19,7 +19,6 @@ namespace IntoTheDungeon.Features.State
             Current.Facing = Facing2D.Right;
             Current.Version = 0;
         }
-
         public readonly float FacingToSign() => Current.Facing.ToSign();
         public bool IsMoving => Current.Movement is MovementState.Move or MovementState.Walk or MovementState.Run;
         // 편의 계산 프로퍼티(읽기 전용)는 허용

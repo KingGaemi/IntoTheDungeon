@@ -1,3 +1,4 @@
+using IntoTheDungeon.Core.Abstractions.Types;
 using IntoTheDungeon.Core.ECS.Abstractions;
 
 namespace IntoTheDungeon.Features.State
@@ -9,12 +10,11 @@ namespace IntoTheDungeon.Features.State
         public float ActiveDuration;
         public float RecoveryDuration;
         public float CooldownDuration;
-
         public bool ReadyToAct;
         public bool Activated;
         public readonly float WholeDuration => WindupDuration + ActiveDuration + RecoveryDuration;
         public float PhaseTimer;
-        
+        public bool DirtyPhase;
         public static readonly ActionPhaseComponent Default = new()
         {
             ActionPhase = ActionPhase.None,
@@ -24,13 +24,14 @@ namespace IntoTheDungeon.Features.State
             CooldownDuration = 0f,
             ReadyToAct = false,
             Activated = false,
+            DirtyPhase = false,
             PhaseTimer = 0f
         };
 
-        
+
         public void AdvancePhase()
         {
-         
+
             ActionPhase = ActionPhase switch
             {
                 ActionPhase.None => ActionPhase.Queued,
@@ -43,7 +44,7 @@ namespace IntoTheDungeon.Features.State
             };
 
             PhaseTimer = 0f;  // 증가 방식이므로 0으로 리셋
-
+            DirtyPhase = true;
             // UnityEngine.Debug.Log($"[Action] Phase Advanced: {before} => {ActionPhase}");
         }
 
@@ -70,12 +71,12 @@ namespace IntoTheDungeon.Features.State
             float duration = GetCurrentPhaseDuration();
             return duration > 0f ? PhaseTimer / duration : 1f;
         }
-        
+
         public readonly float GetWholeProgress()
         {
             float wholeDuration = WholeDuration;
             if (wholeDuration <= 0f) return 1f;
-            
+
             // 이전 Phase들의 시간 + 현재 PhaseTimer
             float elapsedTotal = ActionPhase switch
             {
@@ -85,7 +86,7 @@ namespace IntoTheDungeon.Features.State
                 ActionPhase.Cooldown => wholeDuration,
                 _ => 0f
             };
-            
+
             return elapsedTotal / wholeDuration;
         }
     }

@@ -5,7 +5,7 @@ using IntoTheDungeon.Core.ECS.Systems;
 
 namespace IntoTheDungeon.Features.Physics.Systems
 {
-    public sealed class PhysicsApplySystem : GameSystem, ILateTick
+    public sealed class PhysicsApplySystem : GameSystem, IFixedTick
     {
         public PhysicsApplySystem(int priority = 0) : base(priority) { }        
         private IPhysicsBodyStore _store;
@@ -15,7 +15,7 @@ namespace IntoTheDungeon.Features.Physics.Systems
             _world = world;
             _store = _world.Require<IPhysicsBodyStore>();
         }
-        public void LateTick(float dt)
+        public void FixedTick(float dt)
         {
             foreach (var ch in _world.EntityManager.GetChunks(typeof(PhysicsCommand),
                                                             typeof(PhysicsBodyRef)))

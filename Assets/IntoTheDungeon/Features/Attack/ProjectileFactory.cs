@@ -5,6 +5,7 @@ using IntoTheDungeon.Core.Physics.Collision.Components;
 using IntoTheDungeon.Core.Physics.Abstractions;
 using IntoTheDungeon.Features.Status;
 using IntoTheDungeon.Features.Physics.Components;
+using System;
 
 namespace IntoTheDungeon.Features.Attack
 {
@@ -18,7 +19,7 @@ namespace IntoTheDungeon.Features.Attack
         {
             ref var attackerStatus = ref entityManager.GetComponent<StatusComponent>(owner);
             var normDir = direction.Normalized;
-            var rotation = Mathx.Atan2(normDir.Y, normDir.X) * Mathx.Rad2Deg;
+            var rotation = MathF.Atan2(normDir.Y, normDir.X) * Mathx.Rad2Deg;
 
             var projectile = entityManager.CreateEntity();
 
@@ -39,7 +40,7 @@ namespace IntoTheDungeon.Features.Attack
             {
                 SpriteId = 0, //TEMp
                 SortingLayer = 7, //Projectiles
-               
+
             });
 
 
@@ -55,12 +56,13 @@ namespace IntoTheDungeon.Features.Attack
                 Direction = normDir,
                 Type = ProjectileType.Normal
             });
-            
-            entityManager.ViewOps.EnqueueSpawn(projectile, new ViewSpawnSpec {
+
+            entityManager.ViewOps.EnqueueSpawn(projectile, new ViewSpawnSpec
+            {
                 PrefabId = 0,
                 SortingLayerId = 0,
                 OrderInLayer = 0,
-                Behaviours = new [] {
+                Behaviours = new[] {
                     new BehaviourSpec { TypeName = "IntoTheDungeon.View.ProjectileView", Payload = null }
                 }
             });
@@ -86,9 +88,9 @@ namespace IntoTheDungeon.Features.Attack
         {
             if (!entityManager.TryGetComponent(owner, out StatusComponent attackerStatus))
             {
-                
+
             }
-            
+
             Entity aoe = entityManager.CreateEntity();
 
             entityManager.AddComponent(aoe, new TransformComponent

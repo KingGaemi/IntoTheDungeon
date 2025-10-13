@@ -113,5 +113,13 @@
             "type_traits": "cpp",
             "typeinfo": "cpp",
             "variant": "cpp"
-        }
+        },
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "ms-dotnettools.csharp",
+    "editor.codeActionsOnSave": {
+    "source.organizeImports": "always",
+    "source.removeUnusedImports": "always"
+  },
+  "csharp.format.enable": true
+        
 }

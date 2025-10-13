@@ -1,3 +1,5 @@
+using System;
+
 namespace IntoTheDungeon.Core.Util
 {
     public static class PhysicsUtility
@@ -30,8 +32,8 @@ namespace IntoTheDungeon.Core.Util
             Vec2 halfB = sizeB * 0.5f;
 
             // 각 축별로 겹치는지 확인
-            bool xOverlap = Mathx.Abs(centerA.X - centerB.X) <= (halfA.X + halfB.X);
-            bool yOverlap = Mathx.Abs(centerA.Y - centerB.Y) <= (halfA.Y + halfB.Y);
+            bool xOverlap = MathF.Abs(centerA.X - centerB.X) <= (halfA.X + halfB.X);
+            bool yOverlap = MathF.Abs(centerA.Y - centerB.Y) <= (halfA.Y + halfB.Y);
 
             return xOverlap && yOverlap;
         }

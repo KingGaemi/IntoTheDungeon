@@ -24,21 +24,20 @@ namespace IntoTheDungeon.Core.ECS.Entities
         // 빈 Archetype (Component 없는 Entity)
         private Archetype _emptyArchetype;
 
-        private readonly Dictionary<Entity, Dictionary<Type, IManagedComponent>> _managedComponents 
+        private readonly Dictionary<Entity, Dictionary<Type, IManagedComponent>> _managedComponents
             = new();
 
         public int EntityCount => _entityCount;
 
         public int ArchetypeCount => _archetypes.Count;
 
-        IViewOpQueue ViewOps { get; }
-
-        IViewOpQueue IEntityManager.ViewOps => ViewOps;
+        IViewOpQueue _viewOps;
+        public IViewOpQueue ViewOps => _viewOps;
 
         public EntityManager()
         {
             _emptyArchetype = GetOrCreateArchetype(Array.Empty<Type>());
-
+            _viewOps = new ViewOpQueue(512);
         }
 
         // ============================================
@@ -94,6 +93,7 @@ namespace IntoTheDungeon.Core.ECS.Entities
                 Version = version
             };
 
+
             _entityCount++;
             return entity;
         }
@@ -147,8 +147,8 @@ namespace IntoTheDungeon.Core.ECS.Entities
             if (!Exists(entity))
                 return;
 
-            
-             // Managed Component 정리
+
+            // Managed Component 정리
             if (_managedComponents.TryGetValue(entity, out var components))
             {
                 foreach (var kvp in components)
@@ -158,7 +158,7 @@ namespace IntoTheDungeon.Core.ECS.Entities
                 }
                 _managedComponents.Remove(entity);
             }
-            
+
 
             var meta = _entityMetadata[entity.Index];
             var chunk = meta.Chunk;
@@ -206,19 +206,19 @@ namespace IntoTheDungeon.Core.ECS.Entities
         /// <summary>
         /// Component 추가 (다른 Archetype으로 이동)
         /// </summary>
-        public void AddComponent<T>(Entity entity) where T : struct , IComponentData
+        public void AddComponent<T>(Entity entity) where T : struct, IComponentData
         {
             AddComponent(entity, default(T));
         }
 
-        public void AddComponent<T>(Entity entity, T component) where T : struct , IComponentData
+        public void AddComponent<T>(Entity entity, T component) where T : struct, IComponentData
         {
             if (!Exists(entity))
                 throw new ArgumentException("Entity does not exist");
 
             if (HasComponent<T>(entity))
                 return;
-            
+
             var meta = _entityMetadata[entity.Index];
             var oldArchetype = meta.Chunk.Archetype;
 
@@ -261,7 +261,7 @@ namespace IntoTheDungeon.Core.ECS.Entities
             // Entity 이동
             MoveEntity(entity, newArchetype);
         }
-        
+
 
         // ManagedComponent
         public void AddManagedComponent<T>(Entity entity, T component) where T : class, IManagedComponent
@@ -282,7 +282,7 @@ namespace IntoTheDungeon.Core.ECS.Entities
             if (components.ContainsKey(type))
                 throw new InvalidOperationException($"Entity {entity} already has {type.Name}");
             if (component is INeedInit needInit)
-            { 
+            {
                 needInit.Initialize();
             }
 
@@ -293,30 +293,30 @@ namespace IntoTheDungeon.Core.ECS.Entities
         {
             if (!_managedComponents.TryGetValue(entity, out var components))
                 throw new InvalidOperationException($"Entity {entity} has no managed components");
-            
+
             var type = typeof(T);
             if (!components.TryGetValue(type, out var component))
                 throw new InvalidOperationException($"Entity {entity} does not have {type.Name}");
-            
+
             return (T)component;
         }
 
         public bool TryGetManagedComponent<T>(Entity entity, out T component) where T : class
         {
             component = null;
-            
+
             if (!_managedComponents.TryGetValue(entity, out var components))
                 return false;
-            
+
             var type = typeof(T);
             if (!components.TryGetValue(type, out var obj))
                 return false;
-            
+
             component = (T)obj;
             return true;
         }
 
-        
+
         // Managed Component 존재 확인
         public bool HasManagedComponent<T>(Entity entity) where T : class, IManagedComponent
         {
@@ -325,22 +325,22 @@ namespace IntoTheDungeon.Core.ECS.Entities
 
             return components.ContainsKey(typeof(T));
         }
-        
+
         // Managed Component 제거
         public void RemoveManagedComponent<T>(Entity entity) where T : class, IManagedComponent
         {
             if (!_managedComponents.TryGetValue(entity, out var components))
                 return;
-            
+
             var type = typeof(T);
             if (components.TryGetValue(type, out var component))
             {
                 // IDisposable 처리
                 if (component is IDisposable disposable)
                     disposable.Dispose();
-                
+
                 components.Remove(type);
-                
+
                 // 빈 Dictionary 정리
                 if (components.Count == 0)
                     _managedComponents.Remove(entity);
@@ -398,7 +398,7 @@ namespace IntoTheDungeon.Core.ECS.Entities
         // ============================================
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool HasComponent<T>(Entity entity) where T : struct , IComponentData
+        public bool HasComponent<T>(Entity entity) where T : struct, IComponentData
         {
             if (!Exists(entity))
                 return false;
@@ -407,7 +407,7 @@ namespace IntoTheDungeon.Core.ECS.Entities
             return meta.Chunk.Archetype.HasComponent(typeof(T));
         }
 
-        public ref T GetComponent<T>(Entity entity) where T : struct , IComponentData
+        public ref T GetComponent<T>(Entity entity) where T : struct, IComponentData
         {
             if (!Exists(entity))
                 throw new ArgumentException("Entity does not exist");
@@ -420,7 +420,7 @@ namespace IntoTheDungeon.Core.ECS.Entities
             return ref meta.Chunk.GetComponent<T>(meta.IndexInChunk);
         }
 
-        public void SetComponent<T>(Entity entity, T component) where T : struct , IComponentData
+        public void SetComponent<T>(Entity entity, T component) where T : struct, IComponentData
         {
             GetComponent<T>(entity) = component;
         }
@@ -500,12 +500,12 @@ namespace IntoTheDungeon.Core.ECS.Entities
         }
 
         public IEnumerable<IChunk> GetChunks(IArchetype archetype)
-        {           
+        {
             foreach (var chunk in archetype.Chunks)
             {
                 if (chunk.Count > 0)
                     yield return chunk;
-            }                  
+            }
         }
 
         /// <summary>
@@ -579,5 +579,5 @@ namespace IntoTheDungeon.Core.ECS.Entities
         }
     }
 }
-    
+
 

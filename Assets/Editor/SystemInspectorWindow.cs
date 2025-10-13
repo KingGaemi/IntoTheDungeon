@@ -2,6 +2,8 @@
 using UnityEditor;
 using UnityEngine;
 using IntoTheDungeon.Editor.ECS;
+using IntoTheDungeon.Runtime;
+using IntoTheDungeon.Unity;
 public class ECSDebugWindow : EditorWindow
 {
     private WorldViewer _viewer;
@@ -20,15 +22,6 @@ public class ECSDebugWindow : EditorWindow
             return;
         }
         
-        // GameBootstrapper에서 World 가져오기
-        if (GameBootstrapper.TryGetWorld(out var world))
-        {
-            _viewer = new WorldViewer(world);
-        }
-        else
-        {
-            _viewer = null;
-        }
 
     
         

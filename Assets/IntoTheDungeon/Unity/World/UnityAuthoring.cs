@@ -4,7 +4,7 @@ using IntoTheDungeon.Core.Abstractions.World;
 
 namespace IntoTheDungeon.Unity.World
 {
-    public sealed class UnityAuthoring : IAuthoring
+    public class UnityAuthoring : IAuthoring
     {
         public MonoBehaviour Behaviour { get; }
         public UnityAuthoring(MonoBehaviour mb) => Behaviour = mb;

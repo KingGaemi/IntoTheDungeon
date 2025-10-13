@@ -1,8 +1,7 @@
 using IntoTheDungeon.Core.ECS.Abstractions;
-using IntoTheDungeon.Core.Runtime.World;
-using IntoTheDungeon.Core.Abstractions.World;
 using IntoTheDungeon.Features.Unity;
 using UnityEngine;
+using IntoTheDungeon.Unity.World;
 public abstract class EntityBehaviour : MonoBehaviour, IEntityComponent
 {
     public EntityRootBehaviour EntityRoot { get; set; }

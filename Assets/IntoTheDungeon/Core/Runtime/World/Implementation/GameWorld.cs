@@ -9,7 +9,7 @@ namespace IntoTheDungeon.Core.Runtime.World
 {
     public sealed class GameWorld : IWorld
     {
-        private readonly EntityManager _entityManager = new();
+        private readonly EntityManager _entityManager;
         private readonly SystemManager _systemManager;
 
         IEntityManager IWorld.EntityManager => _entityManager;
@@ -17,15 +17,18 @@ namespace IntoTheDungeon.Core.Runtime.World
 
         public IEntityManager EntityManager => _entityManager;
         public ISystemManager SystemManager => _systemManager;
-        #nullable enable
+#nullable enable
         IManagedComponentStore? IWorld.ManagedStore => _entityManager;
-        #nullable restore
+#nullable restore
 
-        private readonly Dictionary<Type, object> _services = new();
+        private readonly Dictionary<Type, object> _services;
 
         public GameWorld()
         {
+            _services = new Dictionary<Type, object>();
+            _entityManager = new EntityManager();
             _systemManager = new SystemManager(this);
+
 
             // 서비스 이중 등록
             Set<EntityManager>(_entityManager);
@@ -34,9 +37,7 @@ namespace IntoTheDungeon.Core.Runtime.World
             Set<SystemManager>(_systemManager);
             Set<ISystemManager>(_systemManager);
 
-            // 필요 시
-            if (_entityManager is IManagedComponentStore mcs)
-                Set<IManagedComponentStore>(mcs);
+
         }
 
         public void Set<T>(T svc) where T : class

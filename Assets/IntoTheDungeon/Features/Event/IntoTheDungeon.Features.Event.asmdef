@@ -1,0 +1,16 @@
+{
+    "name": "IntoTheDungeon.Features.Event",
+    "rootNamespace": "IntoTheDungeon.Features.Event",
+    "references": [
+        "GUID:88833cabe3c18a44582ec8992e43ad7f"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

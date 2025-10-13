@@ -3,6 +3,7 @@
 using UnityEditor;
 using UnityEngine;
 using IntoTheDungeon.Editor.ECS;
+using IntoTheDungeon.Unity.Bridge;
 
 public class EntityInspectorWindow : EditorWindow
 {
@@ -33,15 +34,13 @@ public class EntityInspectorWindow : EditorWindow
     
     void RefreshViewer()
     {
-        // GameBootstrapper에서 World 가져오기
-        if (GameBootstrapper.TryGetWorld(out var world))
-        {
+
+
+       var world = ViewBridgeRuntimeBridge.World; // 가져오기
+        if (world != null)
             _viewer = new WorldViewer(world);
-        }
         else
-        {
             _viewer = null;
-        }
     }
     
     void OnGUI()
@@ -52,16 +51,16 @@ public class EntityInspectorWindow : EditorWindow
             EditorGUILayout.HelpBox("Enter Play Mode to inspect entities", MessageType.Info);
             return;
         }
-        
-        // Viewer 없으면 재생성 시도
         if (_viewer == null)
         {
-            RefreshViewer();
-            if (_viewer == null)
+            EditorGUILayout.HelpBox("ViewBridge/World not available", MessageType.Warning);
+            if (GUILayout.Button("Find Now"))
             {
-                EditorGUILayout.HelpBox("World not available", MessageType.Warning);
-                return;
+                // 최후의 수단: 검색
+                var vb = FindFirstObjectByType<ViewBridge>(FindObjectsInactive.Include);
+                if (vb != null) _viewer = new WorldViewer(vb.World);
             }
+            return;
         }
         
         DrawContent();

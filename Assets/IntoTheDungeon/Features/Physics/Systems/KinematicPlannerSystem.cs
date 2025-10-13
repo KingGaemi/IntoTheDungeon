@@ -9,10 +9,10 @@ using IntoTheDungeon.Features.Status;
 // KinematicComponent의 Velocity를 이용해 Tick당 Velocity를 IPhysicsBody에 부여
 namespace IntoTheDungeon.Features.Physics.Systems
 {
-    public sealed class KinematicPlannerSystem : GameSystem, ITick
+    public sealed class KinematicPlannerSystem : GameSystem, IFixedTick
     {
         public KinematicPlannerSystem(int priority = 0) : base(priority) { }
-        public void Tick(float dt)
+        public void FixedTick(float dt)
         {
             foreach (var chunk in _world.EntityManager.GetChunks(typeof(StateComponent), typeof(StatusComponent), typeof(KinematicComponent)))
             {

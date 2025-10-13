@@ -2,7 +2,8 @@
 using UnityEngine;
 using IntoTheDungeon.Core.Abstractions.World;
 using IntoTheDungeon.Features.Physics.Components;
-using IntoTheDungeon.Runtime.Unity.World;
+using IntoTheDungeon.Unity.World;
+
 
 
 

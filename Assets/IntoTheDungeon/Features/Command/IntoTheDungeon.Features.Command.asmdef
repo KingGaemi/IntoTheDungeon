@@ -2,7 +2,9 @@
     "name": "IntoTheDungeon.Features.Command",
     "rootNamespace": "IntoTheDungeon.Features.Command",
     "references": [
-        "GUID:88833cabe3c18a44582ec8992e43ad7f"
+        "GUID:88833cabe3c18a44582ec8992e43ad7f",
+        "GUID:374cc1e30af48724cbdde9b49e9f99e0",
+        "GUID:5112e446e339c2b4bbd059ca6d985685"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

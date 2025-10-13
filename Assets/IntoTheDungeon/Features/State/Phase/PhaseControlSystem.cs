@@ -1,13 +1,26 @@
 using IntoTheDungeon.Core.ECS.Systems;
-using IntoTheDungeon.Core.ECS.Abstractions;
 using IntoTheDungeon.Core.ECS.Abstractions.Scheduling;
 using IntoTheDungeon.Features.Status;
+using IntoTheDungeon.Core.Abstractions.Types;
+using IntoTheDungeon.Core.ECS.Abstractions;
+using IntoTheDungeon.Core.Abstractions.Messages.Animation;
+using IntoTheDungeon.Core.Abstractions.Services;
+using IntoTheDungeon.Core.Abstractions.World;
 
 namespace IntoTheDungeon.Features.State
 {
     public class PhaseControlSystem : GameSystem, ITick
     {
-      
+        IEventHub _hub;
+
+        public override void Initialize(IWorld world)
+        {
+            base.Initialize(world);
+            if (!_world.TryGet(out _hub))
+            {
+                Enabled = false;
+            }
+        }
         public void Tick(float dt)
         {
             foreach (var chunk in _world.EntityManager.GetChunks(typeof(ActionPhaseComponent),
@@ -17,6 +30,7 @@ namespace IntoTheDungeon.Features.State
                 var actions = chunk.GetComponentArray<ActionPhaseComponent>();
                 var states = chunk.GetComponentArray<StateComponent>();
                 var statuses = chunk.GetComponentArray<StatusComponent>();
+                var entities = chunk.GetEntities();
                 for (int i = 0; i < chunk.Count; i++)
                 {
                     ref var state = ref states[i];
@@ -26,6 +40,7 @@ namespace IntoTheDungeon.Features.State
                     {
                         // Attack 시작
                         action.AdvancePhase();
+                        action.AdvancePhase();
                     }
                     if (action.ActionPhase != ActionPhase.None)
                     {
@@ -34,6 +49,7 @@ namespace IntoTheDungeon.Features.State
                         if (action.IsPhaseComplete())
                         {
                             action.AdvancePhase();
+
                             if (action.ActionPhase == ActionPhase.None)
                             {
                                 state.Current.Action = ActionState.Idle;
@@ -44,10 +60,25 @@ namespace IntoTheDungeon.Features.State
                                 action.ReadyToAct = true;
                             }
                         }
-                    }                   
+                        if (action.DirtyPhase)
+                        {
+                            PublishPhaseEvent(entities[i], ref action);
+                            action.DirtyPhase = false; // 플래그 클리어
+                        }
+                    }
                 }
             }
         }
-        
+        void PublishPhaseEvent(Entity entity, ref ActionPhaseComponent action)
+        {
+            _hub.Publish(new AnimationPhaseChangedEvent(
+                entity,
+                action.ActionPhase,
+                action.GetCurrentPhaseDuration(),
+                action.GetPhaseProgress(),
+                action.GetWholeProgress()
+            ));
+        }
+
     }
 }

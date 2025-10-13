@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using IntoTheDungeon.Core.Abstractions.World;
+using IntoTheDungeon.Core.Runtime.World;
 using UnityEngine;
 
 namespace IntoTheDungeon.Unity.World
@@ -7,7 +9,7 @@ namespace IntoTheDungeon.Unity.World
     public static class WorldAccessExtensions
     {
         private static readonly Dictionary<Transform, IWorld> Cache = new();
-        #nullable enable        
+#nullable enable
         public static IWorld? GetWorld(this MonoBehaviour mono)
         {
             if (mono is IWorldDependent dependent && dependent.World != null)
@@ -37,7 +39,9 @@ namespace IntoTheDungeon.Unity.World
 
             return world;
         }
-        #nullable restore
+#nullable restore
+
+
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ClearCache()
@@ -45,4 +49,14 @@ namespace IntoTheDungeon.Unity.World
             Cache.Clear();
         }
     }
+    public static class WorldServicesExt
+    {
+        public static void SetOnce<T>(this GameWorld w, T svc) where T : class
+        {
+            if (w == null) throw new ArgumentNullException(nameof(w));
+            if (svc == null) throw new ArgumentNullException(nameof(svc));
+            if (!w.TryGet(out T _)) w.Set(svc);
+        }
+    }
+
 }
