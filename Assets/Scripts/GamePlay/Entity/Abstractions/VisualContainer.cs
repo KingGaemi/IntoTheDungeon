@@ -2,21 +2,10 @@ using UnityEngine;
 
 public class VisualContainer : MonoBehaviour
 {
-    string _visualTag = "Visual_";
+    readonly string _visualTag = "Visual_";
 
-    void Awake()
+    public void SetName(in string Name)
     {
-        UpdateName();
-    }
-    void Reset()
-    {
-        UpdateName();
-    }
-
-    private void UpdateName()
-    {
-
-        name = _visualTag + transform.root.name;
-
+        name = _visualTag + Name;
     }
 }

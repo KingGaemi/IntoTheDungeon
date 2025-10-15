@@ -14,6 +14,9 @@ using IntoTheDungeon.Core.Physics.Abstractions;
 using IntoTheDungeon.Unity.World;
 using IntoTheDungeon.Core.Abstractions.Types;
 using IntoTheDungeon.Core.Abstractions.Gameplay;
+using IntoTheDungeon.Features.Character;
+using IntoTheDungeon.Core.ECS.Abstractions;
+using IntoTheDungeon.Core.Abstractions.Messages.Spawn;
 
 
 
@@ -36,40 +39,14 @@ namespace IntoTheDungeon.Unity.Behaviour
         {
             protected override void Bake(CharacterCoreAuthoring a)
             {
+                var reg = RequireService<IRecipeRegistry>();
                 var store = RequireService<IPhysicsBodyStore>();
                 int handle = store.Add(new UnityPhysicsBody(a.rb));
+                var r = new CharacterCoreRecipe(RecipeIds.Character, handle, a.displayName,
+                    new Vec2(a.pos.x, a.pos.y), new Vec2(a.dir.x, a.dir.y),
+                    a.maxHp, a.movementSpeed, a.attackSpeed);
 
-                AddComponent(new PlayerTag());
-                AddComponent(new PhysicsBodyRef { Handle = handle });
-                AddComponent(new TransformComponent
-                {
-                    Position = new Vec2(a.pos.x, a.pos.y),
-                    Direction = new Vec2(a.dir.x, a.dir.y)
-                });
-                AddComponent(new InformationComponent { DisplayName = a.displayName });
-                AddComponent(new StateComponent(ActionState.Idle));
-                AddComponent(new StatusComponent
-                {
-                    MaxHp = a.maxHp,
-                    CurrentHp = a.maxHp,
-                    MovementSpeed = a.movementSpeed,
-                    AttackSpeed = a.attackSpeed,
-                    Damage = 10
-                });
-                AddComponent(new KinematicComponent());
-                AddComponent(new CharacterIntentBuffer());
-                AddComponent(new AnimationSyncComponent());
-                AddComponent(new ActionPhaseComponent
-                {
-                    WindupDuration = 0.5f,
-                    ActiveDuration = 0f,
-                    RecoveryDuration = 0.7f,
-                    CooldownDuration = 0f,
-                    ActionPhase = ActionPhase.None,
-                    PhaseTimer = 0f
-                });
-                AddComponent(new StatusModificationQueue());
-                AddComponent(new HpModificationQueue());
+                ApplyRecipe(r);
             }
         }
         public IBaker CreateBaker() => new Baker();

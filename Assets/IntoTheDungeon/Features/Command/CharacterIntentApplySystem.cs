@@ -15,18 +15,23 @@ namespace IntoTheDungeon.Features.Command
     {
         private IEventHub _hub;
         ILogger _logger;
+        int Id(object o) => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(o);
+
         public override void Initialize(IWorld world)
         {
             base.Initialize(world);
             if (!world.TryGet(out _hub))
             {
                 Enabled = false;
+                return;
             }
             if (!world.TryGet(out _logger))
             {
                 Enabled = false;
+                return;
 
             }
+            _logger.Log($"Hub(PUB)={Id(_hub)}");
             _logger.Log($"StateChangedEvent AQN: {typeof(StateChangedEvent).AssemblyQualifiedName}");
 
         }
@@ -62,8 +67,11 @@ namespace IntoTheDungeon.Features.Command
                         }
 
                         var mask = Apply(ref state, next);
-                        if (mask != ChangeMask.None)
-                            PublishStateChanged(e, prev, state.Current, mask);
+                        if (mask == ChangeMask.None) continue;
+
+                        PublishStateChanged(e, prev, state.Current, mask);
+                        PublishDerived(e, prev, state.Current, mask); // 추가
+                        processedCount++;
                     }
 
                     buf.Clear();
@@ -75,8 +83,8 @@ namespace IntoTheDungeon.Features.Command
 
                 }
             }
-            // if (processedCount > 0)
-            // _logger.Log($"[IntentApply] Processed {processedCount} intents this frame");
+            if (processedCount > 0)
+                _logger.Log($"[IntentApply] Processed {processedCount} intents this frame");
 
         }
         // ============================================
@@ -230,57 +238,37 @@ namespace IntoTheDungeon.Features.Command
             return changed;
         }
 
-        void PublishStateChanged(Entity entity, in StateSnapshot previous, in StateSnapshot current, ChangeMask mask)
+
+        void PublishStateChanged(Entity e, in StateSnapshot prev, in StateSnapshot cur, ChangeMask mask)
         {
-            // 1. 간단한 변경 이벤트 (View 동기화용)
-            _logger.Log($"[IntentApply] Publishing StateChangedEvent: Entity={entity.Index}, Mask={mask}");
-            var evt = StateChangedEvent.FromSnapshot(entity, current, mask);
-            _logger.Log($"[IntentApply] Event created: Movement={evt.MovementState}, HasMovement={evt.HasMovement}");
+            _hub.Publish(StateChangedEvent.FromSnapshot(e, cur, mask));
+            _logger.Log($"StateChanged PUB e={e.Index} mask={mask}");
+            _logger.Log($"PUB count={_hub.Count<StateChangedEvent>()}");
 
-            _hub.Publish(evt);
-            // 2. 상세 전환 이벤트 (로깅/분석용)
-            _hub.Publish(new StateTransitionEvent(
-                entity,
-                mask,
-                previous,
-                current
-            ));
+        }
 
-            // 3. 특정 상태 진입 이벤트 (사운드/VFX용)
-            if ((mask & ChangeMask.Action) != 0 && previous.Action != current.Action)
-            {
-                _hub.Publish(new ActionStateEvent(
-                    entity,
-                    current.Action,
-                    previous.Action,
-                    isEnter: true,
-                    current.Version
-                ));
-            }
+        void PublishDerived(Entity e, in StateSnapshot prev, in StateSnapshot cur, ChangeMask mask)
+        {
+            if (mask.Has(ChangeMask.Action) && prev.Action != cur.Action)
+                _hub.Publish(new ActionStateEvent(e, cur.Action, prev.Action, cur.Version));
 
-            if ((mask & ChangeMask.Control) != 0 && previous.Control != current.Control)
-            {
-                _hub.Publish(new ControlStateEvent(
-                    entity,
-                    current.Control,
-                    previous.Control,
-                    isEnter: true,
-                    current.Version
-                // Duration은 별도 컴포넌트에서 가져올 수 있음
-                ));
-            }
+            if (mask.Has(ChangeMask.Control) && prev.Control != cur.Control)
+                _hub.Publish(new ControlStateEvent(e, cur.Control, prev.Control, cur.Version));
+
+            if (mask.Has(ChangeMask.Movement) && prev.Movement != cur.Movement)
+                _hub.Publish(new MovementStateEvent(e, cur.Movement, prev.Movement, cur.Version));
         }
 
         void PublishTransitionDenied(Entity entity, in StateSnapshot previous, in StateSnapshot attempted, DenyReason reason)
         {
             // 실패한 전환 이벤트 (UI 피드백용: "스턴 상태라 이동 불가" 등)
-            _hub.Publish(new StateTransitionEvent(
-                entity,
-                ChangeMask.None,
-                previous,
-                attempted,
-                reason
-            ));
+            // _hub.Publish(new StateTransitionEvent(
+            //     entity,
+            //     ChangeMask.None,
+            //     previous,
+            //     attempted,
+            //     reason
+            // ));
         }
 
     }

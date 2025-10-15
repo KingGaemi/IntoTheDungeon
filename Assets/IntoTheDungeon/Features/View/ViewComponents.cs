@@ -7,8 +7,6 @@ namespace IntoTheDungeon.Features.View
         public int RecipeId;
         public int SortingLayerId;  // 0이면 기본
         public int OrderInLayer;
-        BehaviourSpec[] Behaviours;
-        byte[] Payload;
     }
     struct ViewSpawnedTag : IComponentData { }
     struct PendingDespawnTag : IComponentData { }

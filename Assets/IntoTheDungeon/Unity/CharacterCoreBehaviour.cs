@@ -1,3 +1,4 @@
+using IntoTheDungeon.Core.Abstractions.Messages.Spawn;
 using IntoTheDungeon.Core.Abstractions.World;
 using UnityEngine;
 
@@ -9,6 +10,8 @@ namespace IntoTheDungeon.Unity.Behaviour
         public int maxHp = 100;
         public float movementSpeed = 5f;
         public float attackSpeed = 5f;
+
+        public RecipeId recipeId;
 
         public IAuthoring BuildAuthoring()
         {

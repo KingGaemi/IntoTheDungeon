@@ -6,6 +6,7 @@ using IntoTheDungeon.Core.Abstractions.World;
 using IntoTheDungeon.Core.ECS.Abstractions;
 using ILogger = IntoTheDungeon.Core.Abstractions.Messages.ILogger;
 using IntoTheDungeon.Features.Unity;
+using System.Collections.Generic;
 
 
 namespace IntoTheDungeon.Unity.World
@@ -30,27 +31,49 @@ namespace IntoTheDungeon.Unity.World
             var roots = UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None)
                 .OfType<IEntityRoot>()
                 .ToArray();
-
+            var injected = new HashSet<Component>();
             foreach (var root in roots)
             {
-                var e = world.EntityManager.CreateEntity();
-                root.Entity = e;
+                var em = world.EntityManager;
+                var e = em.Exists(root.Entity) ? root.Entity : em.CreateEntity();
+                bool createdHere = root.Entity == Entity.Null;
 
-                // ③ AuthoringProvider 수집
-                var providers = root.Transform.GetComponentsInChildren<MonoBehaviour>(true)
-                    .OfType<IAuthoringProvider>()
-                    .ToArray();
 
-                int ok = 0;
-                foreach (var p in providers)
+                try
                 {
-                    try { if (world.BakeAuthoring(p, e) != Entity.Null) ok++; }
-                    catch (Exception ex) { Debug.LogError(ex); }
-                }
+                    root.Entity = e;
 
-                // ⑤ 월드 주입은 베이크 끝나고
-                foreach (var inj in root.Transform.GetComponentsInChildren<MonoBehaviour>(true).OfType<IWorldInjectable>())
-                    inj.Init(world);
+                    var providers = root.Transform.GetComponentsInChildren<MonoBehaviour>(true)
+                                       .OfType<IAuthoringProvider>().ToArray();
+
+                    foreach (var p in providers)
+                        world.BakeAuthoring(p, e);
+
+                    // 베이크 완료 후 월드 주입
+                    foreach (var inj in root.Transform.GetComponentsInChildren<MonoBehaviour>(true)
+                                                      .OfType<IWorldInjectable>())
+                    {
+                        inj.Init(world);
+                        injected.Add((Component)inj);
+                    }
+                }
+                catch
+                {
+                    if (createdHere) world.EntityManager.DestroyEntity(e); // 롤백
+                    throw;
+                }
+            }
+            var services = UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None)
+                       .OfType<IWorldInjectable>();
+
+            foreach (var s in services)
+            {
+                var c = (Component)s;
+                if (injected.Contains(c)) continue;                 // 이미 1)에서 주입됨
+                if (c.GetComponentInParent<IEntityRoot>() != null)  // 루트 하위는 1)에서 처리
+                    continue;
+
+                s.Init(world); // ViewBridge, UI 시스템, 전역 매니저 등
             }
         }
 

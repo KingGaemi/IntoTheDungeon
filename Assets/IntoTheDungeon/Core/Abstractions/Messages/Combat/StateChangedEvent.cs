@@ -3,145 +3,148 @@ using IntoTheDungeon.Core.Abstractions.Types;
 
 namespace IntoTheDungeon.Core.Abstractions.Messages.Combat
 {
+    /// <summary>
+    /// 상태 변경 이벤트 (View 동기화용)
+    /// </summary>
     public readonly struct StateChangedEvent
     {
         public readonly Entity Entity;
         public readonly ChangeMask Mask;
-        public readonly ActionState ActionState;      // Action → ActionState로 변경
-        public readonly MovementState MovementState;  // Movement → MovementState로 변경
-        public readonly ControlState ControlState;
-        public readonly Facing2D Facing2D;
-        public readonly uint Version;
+        public readonly StateSnapshot Snapshot;
 
-        public StateChangedEvent(
-            Entity entity,
-            ChangeMask mask,
-            ActionState action,
-            MovementState movement,
-            ControlState control,
-            Facing2D facing,
-            uint version)
+        public StateChangedEvent(Entity entity, ChangeMask mask, in StateSnapshot snapshot)
         {
             Entity = entity;
             Mask = mask;
-            ActionState = action;
-            MovementState = movement;
-            ControlState = control;
-            Facing2D = facing;
-            Version = version;
+            Snapshot = snapshot;
         }
 
-        // Factory 메서드: 특정 상태만 변경
-        public static StateChangedEvent Action(Entity e, ActionState action, uint ver)
-            => new(e, ChangeMask.Action, action, default, default, default, ver);
-
-        public static StateChangedEvent Movement(Entity e, MovementState movement, uint ver)
-            => new(e, ChangeMask.Movement, default, movement, default, default, ver);
-
-        public static StateChangedEvent Control(Entity e, ControlState control, uint ver)
-            => new(e, ChangeMask.Control, default, default, control, default, ver);
-
-        public static StateChangedEvent Facing(Entity e, Facing2D facing, uint ver)
-            => new(e, ChangeMask.Facing, default, default, default, facing, ver);
-
-        // 전체 상태 변경
-        public static StateChangedEvent Full(
-            Entity e,
-            ActionState action,
-            MovementState movement,
-            ControlState control,
-            Facing2D facing,
-            uint ver)
-            => new(e, ChangeMask.All, action, movement, control, facing, ver);
-
-        // 스냅샷 기반 생성
+        // Factory 메서드
         public static StateChangedEvent FromSnapshot(Entity e, in StateSnapshot snapshot, ChangeMask mask)
-            => new(e, mask, snapshot.Action, snapshot.Movement, snapshot.Control, snapshot.Facing, snapshot.Version);
+            => new(e, mask, snapshot);
 
-        // 유틸리티
+        // 편의 접근자
+        public ActionState ActionState => Snapshot.Action;
+        public MovementState MovementState => Snapshot.Movement;
+        public ControlState ControlState => Snapshot.Control;
+        public Facing2D Facing => Snapshot.Facing;
+        public uint Version => Snapshot.Version;
+
+        // 변경 플래그
         public bool HasAction => (Mask & ChangeMask.Action) != 0;
         public bool HasMovement => (Mask & ChangeMask.Movement) != 0;
         public bool HasControl => (Mask & ChangeMask.Control) != 0;
         public bool HasFacing => (Mask & ChangeMask.Facing) != 0;
     }
 
-    // 상태 전환 이벤트 (Before/After 포함)
+    /// <summary>
+    /// 상태 전환 이벤트 (로깅/분석용)
+    /// </summary>
     public readonly struct StateTransitionEvent
     {
         public readonly Entity Entity;
-        public readonly ChangeMask Mask;
         public readonly StateSnapshot Previous;
         public readonly StateSnapshot Current;
-        public readonly DenyReason DenyReason; // 전환 실패시
+        public readonly ChangeMask Mask;
+        public readonly DenyReason DenyReason;
 
         public StateTransitionEvent(
             Entity entity,
-            ChangeMask mask,
             in StateSnapshot previous,
             in StateSnapshot current,
+            ChangeMask mask,
             DenyReason denyReason = DenyReason.None)
         {
             Entity = entity;
-            Mask = mask;
             Previous = previous;
             Current = current;
+            Mask = mask;
             DenyReason = denyReason;
         }
 
         public bool IsSuccess => DenyReason == DenyReason.None;
-        public bool IsActionChanged => (Mask & ChangeMask.Action) != 0 && Previous.Action != Current.Action;
-        public bool IsMovementChanged => (Mask & ChangeMask.Movement) != 0 && Previous.Movement != Current.Movement;
-        public bool IsControlChanged => (Mask & ChangeMask.Control) != 0 && Previous.Control != Current.Control;
-        public bool IsFacingChanged => (Mask & ChangeMask.Facing) != 0 && !Previous.Facing.Equals(Current.Facing);
+        public bool IsDenied => DenyReason != DenyReason.None;
+
+        public bool ActionChanged => (Mask & ChangeMask.Action) != 0;
+        public bool MovementChanged => (Mask & ChangeMask.Movement) != 0;
+        public bool ControlChanged => (Mask & ChangeMask.Control) != 0;
+        public bool FacingChanged => (Mask & ChangeMask.Facing) != 0;
     }
 
-    // 특정 상태 진입/이탈 이벤트
+    /// <summary>
+    /// Action 상태 진입/이탈 (애니메이션/사운드용)
+    /// </summary>
     public readonly struct ActionStateEvent
     {
         public readonly Entity Entity;
         public readonly ActionState State;
-        public readonly ActionState PreviousState;
-        public readonly bool IsEnter; // true: Enter, false: Exit
+        public readonly ActionState Previous;
         public readonly uint Version;
 
-        public ActionStateEvent(Entity entity, ActionState state, ActionState previous, bool isEnter, uint version)
+        public ActionStateEvent(Entity entity, ActionState state, ActionState previous, uint version)
         {
             Entity = entity;
             State = state;
-            PreviousState = previous;
-            IsEnter = isEnter;
+            Previous = previous;
             Version = version;
         }
 
-        public bool IsExit => !IsEnter;
+        public bool IsIdle => State == ActionState.Idle;
+        public bool IsAttack => State == ActionState.Attack;
+        public bool WasIdle => Previous == ActionState.Idle;
     }
 
+    /// <summary>
+    /// Control 상태 진입/이탈 (CC 효과용)
+    /// </summary>
     public readonly struct ControlStateEvent
     {
         public readonly Entity Entity;
         public readonly ControlState State;
-        public readonly ControlState PreviousState;
-        public readonly bool IsEnter;
+        public readonly ControlState Previous;
         public readonly uint Version;
-        public readonly float Duration; // CC 지속시간 (Stunned, Rooted 등)
 
-        public ControlStateEvent(
-            Entity entity,
-            ControlState state,
-            ControlState previous,
-            bool isEnter,
-            uint version,
-            float duration = 0f)
+        public ControlStateEvent(Entity entity, ControlState state, ControlState previous, uint version)
         {
             Entity = entity;
             State = state;
-            PreviousState = previous;
-            IsEnter = isEnter;
+            Previous = previous;
             Version = version;
-            Duration = duration;
         }
 
-        public bool IsExit => !IsEnter;
+        public bool IsNormal => State == ControlState.Normal;
         public bool IsCrowdControl => State is ControlState.Stunned or ControlState.Rooted or ControlState.Silenced;
+        public bool IsDead => State == ControlState.Dead;
+
+        public bool EnteredCC => !WasCC && IsCrowdControl;
+        public bool ExitedCC => WasCC && !IsCrowdControl;
+
+        private bool WasCC => Previous is ControlState.Stunned or ControlState.Rooted or ControlState.Silenced;
+    }
+
+    /// <summary>
+    /// Movement 상태 변경 (물리/이동용)
+    /// </summary>
+    public readonly struct MovementStateEvent
+    {
+        public readonly Entity Entity;
+        public readonly MovementState State;
+        public readonly MovementState Previous;
+        public readonly uint Version;
+
+        public MovementStateEvent(Entity entity, MovementState state, MovementState previous, uint version)
+        {
+            Entity = entity;
+            State = state;
+            Previous = previous;
+            Version = version;
+        }
+
+        public bool IsIdle => State == MovementState.Idle;
+        public bool IsMoving => State == MovementState.Move;
+        public bool WasMoving => Previous == MovementState.Move;
+
+        public bool StartedMoving => IsMoving && !WasMoving;
+        public bool StoppedMoving => !IsMoving && WasMoving;
     }
 }

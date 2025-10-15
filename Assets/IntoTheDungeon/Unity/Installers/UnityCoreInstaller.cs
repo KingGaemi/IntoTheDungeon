@@ -15,10 +15,15 @@ using IntoTheDungeon.Features.View;
 using IntoTheDungeon.Features.Input;
 using IntoTheDungeon.Core.ECS.Systems;
 using IntoTheDungeon.Unity.World;
+using IntoTheDungeon.Core.Runtime.ECS;
+using IntoTheDungeon.Unity.View;
+using IntoTheDungeon.Core.ECS.Abstractions;
 namespace IntoTheDungeon.Unity
 {
     public class UnityCoreInstaller : MonoGameInstaller
     {
+        [SerializeField] EntityRecipeRegistry coreRecipeRegistry;
+        [SerializeField] ScriptableObject viewRecipeRegistry;
         public override void Install(GameWorld world)
         {
             Debug.Log("[Installer] A");
@@ -32,6 +37,11 @@ namespace IntoTheDungeon.Unity
 
             Debug.Log("[Installer] D");
             world.SetOnce<IPhysicsBodyStore>(new PhysicsBodyStore());
+
+            coreRecipeRegistry.ForceRebuild();
+            if (!coreRecipeRegistry) { Debug.LogError("coreRecipeRegistry null"); return; }
+            world.SetOnce<IRecipeRegistry>(coreRecipeRegistry);
+            // world.SetOnce((ViewRecipeRegistry)viewRecipeRegistry);
 
             Debug.Log("[Installer] E");
             world.SystemManager.AddUnique(new KinematicPlannerSystem());
@@ -55,7 +65,11 @@ namespace IntoTheDungeon.Unity
             world.SystemManager.AddUnique(new CharacterIntentApplySystem());
 
             Debug.Log("[Installer] L");
+            world.SystemManager.AddUnique(new SpawnSystem());
+
+            Debug.Log("[Installer] M");
             world.SystemManager.AddUnique(new CharacterViewSpawnSystem());
+
 
             Debug.Log("[Installer] OK");
         }

@@ -1,3 +1,5 @@
+using IntoTheDungeon.Core.Abstractions.Messages;
+using IntoTheDungeon.Core.Abstractions.World;
 using IntoTheDungeon.Core.ECS.Abstractions.Scheduling;
 using IntoTheDungeon.Core.ECS.Systems;
 using IntoTheDungeon.Core.Util;
@@ -11,7 +13,14 @@ namespace IntoTheDungeon.Features.Physics.Systems
 {
     public sealed class KinematicPlannerSystem : GameSystem, IFixedTick
     {
+        ILogger _log;
         public KinematicPlannerSystem(int priority = 0) : base(priority) { }
+
+        public override void Initialize(IWorld world)
+        {
+            base.Initialize(world);
+            _world.TryGet(out _log);
+        }
         public void FixedTick(float dt)
         {
             foreach (var chunk in _world.EntityManager.GetChunks(typeof(StateComponent), typeof(StatusComponent), typeof(KinematicComponent)))
@@ -33,6 +42,7 @@ namespace IntoTheDungeon.Features.Physics.Systems
                         kineComp.Magnitude = s;
                         kineComp.Magnitude = status.MovementSpeed;
                         kineComp.Direction.X = state.FacingToSign();
+
                     }
                     else
                     {

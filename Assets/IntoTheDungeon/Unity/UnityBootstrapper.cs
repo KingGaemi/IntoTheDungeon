@@ -58,7 +58,7 @@ namespace IntoTheDungeon.Unity
         [Tooltip("명시적으로 등록할 설치자들")]
         [SerializeField] List<MonoGameInstaller> installers = new();
 
-        [SerializeField] ViewRecipeRegistry registry;
+
 #if UNITY_EDITOR
         public static event System.Action<IWorld> WorldChanged; // null이면 파괴 의미
 #endif
@@ -109,7 +109,6 @@ namespace IntoTheDungeon.Unity
 
             Debug.Log("[Bootstrapper] Calling Init()");
             _bootstrap.Init();
-            World.Set(registry);
 
             Debug.Log("[Bootstrapper] Calling BakeScene()");
             World.BakeScene();

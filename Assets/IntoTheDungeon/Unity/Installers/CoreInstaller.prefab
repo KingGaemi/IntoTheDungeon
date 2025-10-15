@@ -44,3 +44,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6c82895266ffb49489bfbd79bf4dbf75, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  coreRecipeRegistry: {fileID: 11400000, guid: 9edda026e64eb99468c96bef0d406ddb, type: 2}
+  viewRecipeRegistry: {fileID: 11400000, guid: 7d8088304cd73d34191d1019f82d8c2e, type: 2}

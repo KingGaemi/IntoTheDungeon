@@ -6,10 +6,15 @@ using UnityEngine;
 namespace IntoTheDungeon.Unity.Behaviour
 {
     [DisallowMultipleComponent]
-    public sealed class CharacterDebugBehaviour : MonoBehaviour, IWorldDependent
+    public sealed class CharacterDebugBehaviour : MonoBehaviour, IWorldInjectable
     {
         public IWorld World { get; set; }
         [SerializeField] EntityRootBehaviour root;
+
+        public void Init(IWorld world)
+        {
+            World = world;
+        }
 
         public bool TrySnapshot(out StatusComponent s)
         {
@@ -30,5 +35,7 @@ namespace IntoTheDungeon.Unity.Behaviour
         public void ApplyHeal(int amount) { /* 동일 패턴 */ }
         public void AddAttackSpeed(float v) { /* StatusModificationQueue에 enqueue */ }
         public void AddMoveSpeed(float v) { /* 동일 */ }
+
+
     }
 }

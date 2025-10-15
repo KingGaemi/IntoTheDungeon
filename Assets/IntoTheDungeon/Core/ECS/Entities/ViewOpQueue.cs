@@ -14,16 +14,27 @@ namespace IntoTheDungeon.Core.ECS.Entities
             _count = 0;
         }
 
-        public void EnqueueSpawn(Entity e, in ViewSpawnSpec spec)
+        public void EnqueueSpawn(Entity e, in SpawnData data)
         {
             if (_count >= _buffer.Length) return;
-            _buffer[_count++] = new ViewOp { Kind = ViewOpKind.Spawn, Entity = e, Spawn = spec };
+            int idx = ViewDataStores.Spawn.Count;
+            ViewDataStores.Spawn.Add(data);
+            _buffer[_count++] = new ViewOp { Kind = ViewOpKind.Spawn, Entity = e, DataIndex = idx };
+        }
+
+        public void EnqueueSetTransform(Entity e, in TransformData transformData)
+        {
+            if (_count >= _buffer.Length) return;
+            int idx = ViewDataStores.Xform.Count;
+            ViewDataStores.Xform.Add(transformData);
+            _buffer[_count++] = new ViewOp { Kind = ViewOpKind.SetTransform, Entity = e, DataIndex = idx };
         }
 
         public void EnqueueDespawn(Entity e)
         {
             if (_count >= _buffer.Length) return;
-            _buffer[_count++] = new ViewOp { Kind = ViewOpKind.Despawn, Entity = e };
+            int idx = ViewDataStores.Despawn.Count;
+            _buffer[_count++] = new ViewOp { Kind = ViewOpKind.Despawn, Entity = e, DataIndex = idx };
         }
 
         public int Drain(ViewOp[] sink, ref int count)
@@ -34,6 +45,26 @@ namespace IntoTheDungeon.Core.ECS.Entities
             _count = 0;
             return n;
         }
+
+        public void Enqueue(Entity e, in TransformData transformData)
+        {
+            EnqueueSetTransform(e, transformData);
+
+
+        }
+        public void Enqueue(Entity e)
+        {
+
+            EnqueueDespawn(e);
+
+
+
+        }
+        public void Enqueue(Entity e, in SpawnData spawnData)
+        {
+            EnqueueSpawn(e, spawnData);
+        }
+
 
     }
 }

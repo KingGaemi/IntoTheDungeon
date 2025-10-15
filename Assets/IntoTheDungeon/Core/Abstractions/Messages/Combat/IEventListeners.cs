@@ -20,3 +20,16 @@ namespace IntoTheDungeon.Core.Abstractions.Messages.Animation
         void OnAnimationPhaseChanged(in AnimationPhaseChangedEvent evt);
     }
 }
+
+
+namespace IntoTheDungeon.Core.Abstractions.Messages.Spawn
+{
+    public interface ISpawnEventListener
+    {
+        void OnEntitySpawned(in SpawnEvent evt);
+    }
+    public interface ISpawnFailedEventListener
+    {
+        void OnEntitySpawnFailed(in SpawnFailedEvent evt);
+    }
+}

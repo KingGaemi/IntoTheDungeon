@@ -19,6 +19,8 @@ namespace IntoTheDungeon.Unity.World
 
         public void Execute(IAuthoring authoring, IWorld world, Entity entity)
         {
+            if (entity == Entity.Null) throw new InvalidOperationException("Baker needs a valid Entity");
+            if (!world.EntityManager.Exists(entity)) throw new InvalidOperationException("entity not in EM");
             var mono = ResolveAuthoring(authoring);
 
             Authoring = mono;
@@ -107,6 +109,13 @@ namespace IntoTheDungeon.Unity.World
         {
             if (World.TryGet(out TService s)) return s;
             throw new InvalidOperationException($"Service missing: {typeof(TService).Name}");
+        }
+
+        protected void ApplyRecipe(IEntityRecipe recipe)
+        {
+            if (Entity == Entity.Null) throw new InvalidOperationException("ApplyRecipe needs a valid Entity");
+            recipe.Apply(EM, Entity);
+
         }
 
     }

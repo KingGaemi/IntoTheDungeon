@@ -68,6 +68,10 @@ PrefabInstance:
       propertyPath: m_SpriteLibraryAsset
       value: 
       objectReference: {fileID: 7108339969198208228, guid: 839133ce86788254584c071d0d9134fe, type: 3}
+    - target: {fileID: 3224555012646047507, guid: 7451138185871834cb08ae8901153bfc, type: 3}
+      propertyPath: recipeId.Value
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3354785502842417222, guid: 7451138185871834cb08ae8901153bfc, type: 3}
       propertyPath: m_LocalScale.x
       value: 3

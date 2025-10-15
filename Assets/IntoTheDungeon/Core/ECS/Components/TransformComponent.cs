@@ -8,6 +8,7 @@ namespace IntoTheDungeon.Core.ECS.Components
         public Vec2 Position;
         public Vec2 Direction;
 
-        public float Rotation;
+        public float Rotation; // Radian
+        public bool Moved; // for View
     }
 }

@@ -108,7 +108,6 @@ namespace IntoTheDungeon.Runtime
             if (!IsInitialized) return;
             _world.SystemManager.ExecuteUpdate(dt);
             _world.SystemManager.ExecuteLate(dt);
-            _hub?.ClearFrame();
         }
 
         public void FixedTick(float dt)
