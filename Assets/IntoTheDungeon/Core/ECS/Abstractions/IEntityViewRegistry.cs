@@ -1,10 +1,12 @@
+using IntoTheDungeon.Core.Abstractions.Messages.Spawn;
+
 namespace IntoTheDungeon.Core.ECS.Abstractions
 {
-    public interface IEntityViewRegistry
+    public interface IEntityViewMapRegistry
     {
-        void Register(Entity e, UnityEngine.GameObject go);
-        bool TryGetView(Entity e, out UnityEngine.GameObject go);
-        bool TryGetEntity(UnityEngine.GameObject go, out Entity e);
-        bool Unregister(Entity e);
+        void Register(RecipeId e, ViewId go);
+        bool TryGetView(RecipeId e, out ViewId go);
+        bool TryGetEntity(ViewId go, out RecipeId e);
+        bool Unregister(RecipeId e);
     }
 }

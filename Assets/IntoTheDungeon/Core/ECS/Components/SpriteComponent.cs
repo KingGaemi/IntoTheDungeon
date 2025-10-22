@@ -9,6 +9,7 @@ namespace IntoTheDungeon.Core.ECS.Components
         public int OrderInLayer;    // 소트 순서
         public bool FlipX;
         public bool FlipY;
+        public float Scale;
         public uint TintRGBA;       // 0xAARRGGBB
     }
 

@@ -9,7 +9,6 @@ namespace IntoTheDungeon.Core.Abstractions.World
         IEntityManager EntityManager { get; }
         ISystemManager SystemManager { get; }
 
-        IManagedComponentStore? ManagedStore { get; }
     }
 
 }

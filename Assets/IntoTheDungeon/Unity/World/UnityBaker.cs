@@ -29,15 +29,6 @@ namespace IntoTheDungeon.Unity.World
             World.EntityManager.AddComponent(Entity, component);
         }
 
-        protected void AddManagedComponent<TComponent>(TComponent component) where TComponent : class, IManagedComponent
-        {
-            if (World.ManagedStore == null)
-            {
-                throw new InvalidOperationException("World does not provide a managed component store.");
-            }
-
-            World.ManagedStore.AddManagedComponent(Entity, component);
-        }
 
         protected TComponent GetComponent<TComponent>() where TComponent : Component
         {

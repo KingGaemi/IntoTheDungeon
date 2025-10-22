@@ -10,11 +10,11 @@ namespace IntoTheDungeon.Core.Abstractions.Services
         void Clear<T>() where T : unmanaged;
         int Count<T>() where T : unmanaged;
         bool HasEvents<T>() where T : unmanaged;
-        
 
-        #if DEBUG
+
+#if DEBUG
         string GetStatistics();
         EventStatistics? GetStatistics<T>() where T : unmanaged;
-        #endif
+#endif
     }
 }

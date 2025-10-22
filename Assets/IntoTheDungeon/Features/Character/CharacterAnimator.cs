@@ -1,13 +1,10 @@
 using UnityEngine;
-using IntoTheDungeon.Core.ECS.Abstractions;
-using IntoTheDungeon.Unity.Bridge;
-using IntoTheDungeon.Features.State;
 using IntoTheDungeon.Core.Abstractions.Types;
 using IntoTheDungeon.Core.Abstractions.Messages.Combat;
 using IntoTheDungeon.Core.Abstractions.Messages.Animation;
-using IntoTheDungeon.Core.Abstractions.World;
+using IntoTheDungeon.Core.Abstractions.Messages.Spawn;
 using IntoTheDungeon.Unity.View;
-using IntoTheDungeon.Features.Status;
+using IntoTheDungeon.Features.View;
 
 namespace IntoTheDungeon.Features.Character
 {
@@ -17,30 +14,19 @@ namespace IntoTheDungeon.Features.Character
         IViewComponent,
         IStateEventListener,
         IStatusEventListener,
-        IAnimationEventListener,
-        IAuthoringProvider  // 
+        IAnimationEventListener // 
     {
         public RecipeId recipeId;
-        public int sortingLayerId;
-        public int orderInLayer;
+        public short sortingLayerId;
+        public short orderInLayer;
 
-
-        public IAuthoring BuildAuthoring()
-        => new ViewAuthoring
-        {
-
-            recipeId = recipeId,
-            sortingLayerId = sortingLayerId,
-            orderInLayer = orderInLayer,
-        };
 
         [SerializeField] Animator _animator;
         [SerializeField] SpriteRenderer _sprite;
         [SerializeField] float _multiplier = 1f;
 
-        public ViewBridge ViewBridge { get; set; }
 
-        Entity _entity;
+
 
         // Animation Parameters
         static readonly int HashAttack = Animator.StringToHash("Attack");
@@ -62,6 +48,8 @@ namespace IntoTheDungeon.Features.Character
         MovementState _lastMovement;
         Facing2D _lastFacing;
 
+        public ViewBridge ViewBridge { get; }
+
         void Reset()
         {
             if (!_animator) _animator = GetComponent<Animator>();
@@ -73,38 +61,6 @@ namespace IntoTheDungeon.Features.Character
             if (!_animator) _animator = GetComponent<Animator>();
             if (!_sprite) _sprite = GetComponent<SpriteRenderer>();
             CacheClipLengths();
-        }
-
-        public void Initialize(Entity entity, IEntityManager em, byte[] payload)
-        {
-            _entity = entity;
-
-
-
-            // payload 처리 (팀 색상)
-            if (payload != null && payload.Length >= 4)
-            {
-                int teamId = System.BitConverter.ToInt32(payload, 0);
-                if (_sprite != null && teamId > 0)
-                {
-                    _sprite.color = GetTeamColor(teamId);
-                }
-            }
-            SyncInitialStateFromComponent(em);
-            // Debug.Log($"StateChangedEvent AQN: {typeof(StateChangedEvent).AssemblyQualifiedName}");
-
-        }
-        void SyncInitialStateFromComponent(IEntityManager em)
-        {
-            if (!em.TryGetComponent(_entity, out StateComponent state)) return;
-            if (!em.TryGetComponent(_entity, out StatusComponent status)) return;
-            _animator.SetFloat(HashAttackSpeed, status.AttackSpeed * _multiplier);
-            _animator.SetFloat(HashMovementSpeed, status.MovementSpeed * _multiplier);
-            _lastMovement = state.Current.Movement;
-            _lastFacing = state.Current.Facing;
-            HandleMovement(_lastMovement);
-            HandleFacing(_lastFacing);
-            if (state.Current.Control == ControlState.Dead) HandleDeath();
         }
 
 
@@ -244,12 +200,6 @@ namespace IntoTheDungeon.Features.Character
             }
         }
 
-        bool IsEntityValid()
-        {
-            return ViewBridge != null
-                && ViewBridge.IsEntityValid(_entity);
-        }
-
         Color GetTeamColor(int teamId)
         {
             return teamId switch
@@ -260,9 +210,5 @@ namespace IntoTheDungeon.Features.Character
             };
         }
 
-        void OnDestroy()
-        {
-            _entity = default;
-        }
     }
 }

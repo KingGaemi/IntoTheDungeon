@@ -25,5 +25,7 @@ namespace IntoTheDungeon.Core.Util
 
         public static float InverseLerp(float a, float b, float v)
             => (b - a) != 0f ? Clamp01((v - a) / (b - a)) : 0f;
+        public static int RoundToInt(float f)
+       => (int)MathF.Round(f, MidpointRounding.AwayFromZero);
     }
 }

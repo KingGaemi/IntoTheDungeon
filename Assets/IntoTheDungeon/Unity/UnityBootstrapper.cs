@@ -1,53 +1,14 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using IntoTheDungeon.Core.Abstractions.World;
-
-using IntoTheDungeon.Core.Runtime.World;
 using System.Collections.Generic;
-using IntoTheDungeon.Core.Abstractions.Services;
-using IntoTheDungeon.Runtime.Abstractions;
 using IntoTheDungeon.Runtime;
 using IntoTheDungeon.Core.Runtime.Event;
 using IntoTheDungeon.Unity.World;
-using IntoTheDungeon.Unity.Bridge;
 using IntoTheDungeon.Unity.View;
 
 namespace IntoTheDungeon.Unity
 {
-    sealed class UnitySceneGraph : ISceneGraph
-    {
-        public IEnumerable<IWorldInjectable> EnumerateInjectables()
-        {
-
-            foreach (var mb in Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None))
-                if (mb is IWorldInjectable inj) yield return inj;
-        }
-
-    }
-
-    // Unity 구현체들
-    sealed class UnityClock : IClock
-    {
-        public float TimeSinceStartup => UnityEngine.Time.realtimeSinceStartup;
-        public float DeltaTime => UnityEngine.Time.deltaTime;
-        public float FixedDeltaTime => UnityEngine.Time.fixedDeltaTime;
-        public float Time => UnityEngine.Time.time;
-        public float UnscaledTime => UnityEngine.Time.unscaledTime;
-        public float UnscaledDeltaTime => UnityEngine.Time.unscaledDeltaTime;
-    }
-
-    sealed class UnityLogger : Core.Abstractions.Messages.ILogger
-    {
-        public void Log(string msg) => Debug.Log(msg);
-        public void Warn(string msg) => Debug.LogWarning(msg);
-        public void Error(string msg) => Debug.LogError(msg);
-    }
-
-    // 설치자(MonoBehaviour) → IGameInstaller 브릿지
-    public abstract class MonoGameInstaller : MonoBehaviour, IGameInstaller
-    {
-        public abstract void Install(GameWorld world);
-    }
 
     [DefaultExecutionOrder(-10000)]
     public sealed class UnityBootstrapper : MonoBehaviour
@@ -65,12 +26,12 @@ namespace IntoTheDungeon.Unity
 
 
         GameBootstrapper _bootstrap;
+        ViewBridge _viewBridge;
         public IWorld World => _bootstrap?.World;
 
         UnitySceneGraph _sceneGraph;
         UnityClock _clock;
         UnityLogger _logger;
-
         EventHub _hub;
 
         void Awake()
@@ -110,6 +71,7 @@ namespace IntoTheDungeon.Unity
             Debug.Log("[Bootstrapper] Calling Init()");
             _bootstrap.Init();
 
+
             Debug.Log("[Bootstrapper] Calling BakeScene()");
             World.BakeScene();
 
@@ -148,9 +110,29 @@ namespace IntoTheDungeon.Unity
 #endif
         void Start()
         {
-            var bridge = FindFirstObjectByType<ViewBridge>();
-            bridge.Init(World);
-            BindSceneViews(bridge);
+            CreateViewBridge();
+        }
+
+        void CreateViewBridge()
+        {
+            GameObject bridgeGO;
+
+
+
+            bridgeGO = new GameObject("[ViewBridge]");
+            _viewBridge = bridgeGO.AddComponent<ViewBridge>();
+
+
+            if (_viewBridge == null)
+            {
+                Debug.LogError("[Bootstrapper] ViewBridge component not found!");
+                return;
+            }
+
+            // World 주입
+            _viewBridge.Init(World);
+
+            Debug.Log("[Bootstrapper] ViewBridge created");
         }
 
         void OnDestroy()
@@ -179,13 +161,6 @@ namespace IntoTheDungeon.Unity
             // 새 씬의 IInjectable 재주입
             _bootstrap?.ReinjectScene();
         }
-        void BindSceneViews(ViewBridge bridge)
-        {
-            foreach (var root in FindObjectsByType<EntityRootBehaviour>(FindObjectsSortMode.InstanceID))
-            {
-                var go = root.Visual ? root.Visual.gameObject : root.gameObject;
-                bridge.BindExisting(go, root.Entity, payload: null); // ← 여기서 CharacterAnimator.Initialize 호출됨
-            }
-        }
+
     }
 }

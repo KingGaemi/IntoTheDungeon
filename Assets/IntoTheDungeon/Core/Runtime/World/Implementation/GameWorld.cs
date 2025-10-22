@@ -4,6 +4,7 @@ using IntoTheDungeon.Core.ECS.Abstractions;
 using IntoTheDungeon.Core.ECS.Entities;
 using IntoTheDungeon.Core.ECS.Systems;
 using IntoTheDungeon.Core.Abstractions.World;
+using IntoTheDungeon.Core.Abstractions.Messages;
 
 namespace IntoTheDungeon.Core.Runtime.World
 {
@@ -17,12 +18,10 @@ namespace IntoTheDungeon.Core.Runtime.World
 
         public IEntityManager EntityManager => _entityManager;
         public ISystemManager SystemManager => _systemManager;
-#nullable enable
-        IManagedComponentStore? IWorld.ManagedStore => _entityManager;
-#nullable restore
 
         private readonly Dictionary<Type, object> _services;
-
+        bool _initialized;
+        public void MarkInitialized() => _initialized = true;
         public GameWorld()
         {
             _services = new Dictionary<Type, object>();
@@ -52,13 +51,10 @@ namespace IntoTheDungeon.Core.Runtime.World
 
         public bool TryGet<T>(out T svc) where T : class
         {
-            if (_services.TryGetValue(typeof(T), out var existing))
-            {
-                svc = (T)existing;
-                return true;
-            }
-
+            if (_services.TryGetValue(typeof(T), out var obj)) { svc = (T)obj; return true; }
             svc = null!;
+            if (_initialized && _services.TryGetValue(typeof(ILogger), out var lo) && lo is ILogger log)
+                log.Warn($"[GameWorld] Service not found: {typeof(T).FullName}");
             return false;
         }
 

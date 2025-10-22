@@ -1,5 +1,22 @@
+using System;
+using IntoTheDungeon.Core.Abstractions.Messages.Spawn;
+
 namespace IntoTheDungeon.Core.ECS.Abstractions
 {
+    public struct ViewId : IEquatable<ViewId>
+    {
+        public int Value;
+        public ViewId(int value) => Value = value;
+
+        public readonly bool Equals(ViewId other) => Value == other.Value;
+        public override readonly bool Equals(object obj) => obj is ViewId id && Equals(id);
+        public override readonly int GetHashCode() => Value;
+
+        public static implicit operator int(ViewId id) => id.Value;
+        public static implicit operator ViewId(int value) => new(value);
+
+        public override string ToString() => $"RecipeId({Value})";
+    }
     public enum ViewOpKind { None, Spawn, Despawn, SetTransform }
 
     // 고정 길이 헤더 + 확장 가능한 사양
@@ -16,12 +33,11 @@ namespace IntoTheDungeon.Core.ECS.Abstractions
     }
 
     // 유니티가 해석할 스폰 사양
-    public struct SpawnData
+    public struct ViewSpawnData
     {
-        public int PrefabId;
+        public RecipeId RecipeId;
         public short SortingLayerId;
         public short OrderInLayer;
-        public BehaviourSpec[] Behaviours;
 
     }
 
@@ -31,9 +47,4 @@ namespace IntoTheDungeon.Core.ECS.Abstractions
     }
 
 
-    public struct BehaviourSpec
-    {
-        public int TypeId;
-        public byte[] Payload;
-    }
 }

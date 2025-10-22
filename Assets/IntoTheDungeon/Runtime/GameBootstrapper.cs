@@ -44,6 +44,8 @@ namespace IntoTheDungeon.Runtime
 
             _world = new GameWorld();
             _world.Set(_log);
+            _world.Set(_clock);
+            _world.Set(_scene);
 
             _log.Log("[Bootstrap] Starting installation...");
 
@@ -92,6 +94,7 @@ namespace IntoTheDungeon.Runtime
             InjectScene();
 
             IsInitialized = true;
+            _world.MarkInitialized();
             _log.Log("[Bootstrap] Initialized.");
         }
 

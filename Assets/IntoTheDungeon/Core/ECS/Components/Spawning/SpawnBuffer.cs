@@ -4,21 +4,15 @@ using IntoTheDungeon.Core.ECS.Abstractions;
 
 namespace IntoTheDungeon.Core.ECS.Spawning
 {
-    public struct SpawnBuffer : IComponentData
+    public struct SpawnOutbox : IComponentData
     {
-        public SpawnRequest Value;
         public bool HasValue;
-
-        public void Set(in SpawnRequest request)
+        public SpawnOrder Value;
+        public void Clear() => HasValue = false;
+        public void Set(in SpawnOrder order)
         {
-            Value = request;
+            Value = order;
             HasValue = true;
-        }
-
-        public void Clear()
-        {
-            Value = default;
-            HasValue = false;
         }
     }
 }

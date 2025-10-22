@@ -1,5 +1,4 @@
 // Core.ECS.Abstractions
-using IntoTheDungeon.Core.Abstractions.World;
 
 namespace IntoTheDungeon.Core.ECS.Abstractions
 {
@@ -9,7 +8,6 @@ namespace IntoTheDungeon.Core.ECS.Abstractions
 
         // 엔티티 수명
         Entity CreateEntity();
-        Entity CreateEntity(IEntityRecipe recipe);
         Entity CreateEntity(params System.Type[] componentTypes);
         Entity Instantiate(Entity src);
         void DestroyEntity(Entity e);
@@ -23,10 +21,7 @@ namespace IntoTheDungeon.Core.ECS.Abstractions
         void AddComponent<T>(Entity e) where T : struct, IComponentData;
         void AddComponent<T>(Entity e, T c) where T : struct, IComponentData;
         void RemoveComponent<T>(Entity e) where T : struct, IComponentData;
-
         // 쿼리(구현 세부 노출 최소화)
         System.Collections.Generic.IEnumerable<IChunk> GetChunks(params System.Type[] componentTypes);
-
-        IViewOpQueue ViewOps { get; }
     }
 }

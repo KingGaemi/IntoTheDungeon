@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36104fb62a668f241b82baf65fc87cae, type: 3}
   m_Name: EntityRecipeRegistry
   m_EditorClassIdentifier: 
-  _entries:
-  - factoryAsset: {fileID: 11400000, guid: 4fc30b4274beed545a274ca0065e226a, type: 2}
+  factoryAssets:
+  - {fileID: 11400000, guid: 4fc30b4274beed545a274ca0065e226a, type: 2}

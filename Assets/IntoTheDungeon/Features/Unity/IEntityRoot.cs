@@ -6,5 +6,8 @@ namespace IntoTheDungeon.Features.Unity
     {
         Entity Entity { set; get; }
         UnityEngine.Transform Transform { get; }
+        UnityEngine.Rigidbody2D Rigidbody { get; }
+        UnityEngine.Collider2D Collider { get; }
+        int PhysicsHandle { get; set; }
     }
 }

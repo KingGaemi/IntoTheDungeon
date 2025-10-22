@@ -5,7 +5,7 @@ namespace IntoTheDungeon.Core.ECS.Abstractions
     public interface IEntityRecipeFactory
     {
         RecipeId RecipeId { get; }
-        IEntityRecipe Create(in SpawnParams p);
-
+        IEntityRecipe Create(in SpawnSpec p);
+        bool HasView { get; }
     }
 }

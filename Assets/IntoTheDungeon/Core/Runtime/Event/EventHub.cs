@@ -9,18 +9,18 @@ namespace IntoTheDungeon.Core.Runtime.Event
     {
         readonly Dictionary<Type, IEventBuffer> _buffers = new(32);
 
-        #if DEBUG
+#if DEBUG
         readonly Dictionary<Type, EventStats> _stats = new();
-        #endif
+#endif
 
         public void Publish<T>(in T ev) where T : unmanaged
         {
             var buffer = GetBuffer<T>();
             buffer.Add(ev);
 
-            #if DEBUG
+#if DEBUG
             TrackStats<T>(buffer.Count);
-            #endif
+#endif
         }
 
         public ReadOnlySpan<T> Consume<T>() where T : unmanaged
@@ -42,8 +42,8 @@ namespace IntoTheDungeon.Core.Runtime.Event
 
         public int Count<T>() where T : unmanaged
         {
-            return _buffers.TryGetValue(typeof(T), out var buffer) 
-                ? buffer.Count 
+            return _buffers.TryGetValue(typeof(T), out var buffer)
+                ? buffer.Count
                 : 0;
         }
 
@@ -65,7 +65,7 @@ namespace IntoTheDungeon.Core.Runtime.Event
 
         #region Debug Statistics
 
-        #if DEBUG
+#if DEBUG
         void TrackStats<T>(int currentCount)
         {
             var type = typeof(T);
@@ -74,7 +74,7 @@ namespace IntoTheDungeon.Core.Runtime.Event
                 stats = new EventStats();
                 _stats[type] = stats;
             }
-            
+
             stats.Update(currentCount);
         }
 
@@ -85,7 +85,7 @@ namespace IntoTheDungeon.Core.Runtime.Event
 
             var sb = new System.Text.StringBuilder();
             sb.AppendLine("=== Event Buffer Statistics ===");
-            
+
             foreach (var kvp in _stats)
             {
                 var stats = kvp.Value;
@@ -96,7 +96,7 @@ namespace IntoTheDungeon.Core.Runtime.Event
                 sb.AppendLine($"  Recommended Capacity: {stats.RecommendedCapacity}");
                 sb.AppendLine();
             }
-            
+
             return sb.ToString();
         }
 
@@ -119,7 +119,7 @@ namespace IntoTheDungeon.Core.Runtime.Event
             public int Peak;
             public long TotalSamples;
             public long SumCounts;
-            
+
             public float Average => TotalSamples > 0 ? (float)SumCounts / TotalSamples : 0;
             public int RecommendedCapacity => NextPowerOfTwo((int)(Peak * 1.5f));
 
@@ -142,7 +142,7 @@ namespace IntoTheDungeon.Core.Runtime.Event
                 return n + 1;
             }
         }
-        #endif
+#endif
 
         #endregion
 
@@ -175,21 +175,21 @@ namespace IntoTheDungeon.Core.Runtime.Event
                     int newCapacity = oldCapacity * 2;
                     Array.Resize(ref _items, newCapacity);
                     _resizeCount++;
-                    
-                    #if DEBUG
+
+#if DEBUG
                     EventHubDiagnostics.NotifyBufferResized(new BufferResizeInfo(
                         typeof(T).Name,
                         oldCapacity,
                         newCapacity,
                         _resizeCount
                     ));
-                    #endif
+#endif
                 }
-                
+
                 _items[_count++] = item;
             }
 
-            public ReadOnlySpan<T> AsSpan() 
+            public ReadOnlySpan<T> AsSpan()
                 => new ReadOnlySpan<T>(_items, 0, _count);
 
             public void Clear() => _count = 0;
@@ -200,27 +200,16 @@ namespace IntoTheDungeon.Core.Runtime.Event
 
     #region Public API
 
-    
+
 
     #endregion
 
     #region Debug Types
 
-    #if DEBUG
-    /// <summary>
-    /// 이벤트 통계 정보 (읽기 전용 구조체)
-    /// </summary>
+#if DEBUG
 
-    /// <summary>
-    /// 버퍼 리사이즈 정보
-    /// </summary>
-    
 
-    /// <summary>
-    /// 버퍼 리사이즈 진단 (외부 로깅 시스템 연결용)
-    /// </summary>
-
-    #endif
+#endif
 
     #endregion
 }

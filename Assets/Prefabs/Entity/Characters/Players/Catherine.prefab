@@ -54,11 +54,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1243417702614643560, guid: 7451138185871834cb08ae8901153bfc, type: 3}
       propertyPath: m_labelHash
-      value: 4.1652613e-36
+      value: 1.2985474e-36
       objectReference: {fileID: 0}
     - target: {fileID: 1243417702614643560, guid: 7451138185871834cb08ae8901153bfc, type: 3}
       propertyPath: m_SpriteHash
-      value: 559673154
+      value: 641084251
       objectReference: {fileID: 0}
     - target: {fileID: 1243417702614643560, guid: 7451138185871834cb08ae8901153bfc, type: 3}
       propertyPath: m_CategoryHash
@@ -111,12 +111,13 @@ PrefabInstance:
     - target: {fileID: 9022419589956767643, guid: 7451138185871834cb08ae8901153bfc, type: 3}
       propertyPath: m_Sprite
       value: 
-      objectReference: {fileID: -5887169476646637829, guid: b75341cb8d13a8249953924d134b5582, type: 3}
+      objectReference: {fileID: 112482031100428842, guid: b75341cb8d13a8249953924d134b5582, type: 3}
     - target: {fileID: 9022419589956767643, guid: 7451138185871834cb08ae8901153bfc, type: 3}
       propertyPath: m_WasSpriteAssigned
       value: 1
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 6211101927366395524, guid: 7451138185871834cb08ae8901153bfc, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []

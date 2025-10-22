@@ -2,8 +2,8 @@ using IntoTheDungeon.Core.Abstractions.Gameplay;
 using IntoTheDungeon.Core.Abstractions.Messages;
 using IntoTheDungeon.Core.Abstractions.Messages.Spawn;
 using IntoTheDungeon.Core.Abstractions.Services;
+using IntoTheDungeon.Core.Abstractions.Types;
 using IntoTheDungeon.Core.Abstractions.World;
-using IntoTheDungeon.Core.ECS.Abstractions;
 using IntoTheDungeon.Core.ECS.Abstractions.Scheduling;
 using IntoTheDungeon.Core.ECS.Components;
 using IntoTheDungeon.Core.ECS.Spawning;
@@ -15,7 +15,7 @@ namespace IntoTheDungeon.Features.Input
 {
     public sealed class PlayerInputSystem : GameSystem, ITick
     {
-        float _atkNextTime = 0f;
+        // float _atkNextTime = 0f;
         const float _atkInitialDelay = 0.15f; // 홀드 후 첫 지연
         const float _atkRepeatHz = 5f;        // 초당 5발
         float Now; // 누적 시간, Tick에서 증가
@@ -42,15 +42,17 @@ namespace IntoTheDungeon.Features.Input
             Now += dt;
             if (_input == null) return;
 
-            if (_input.Seq == _lastSeq && !_input.AttackDown && !_input.AttackUp
-                                       && !_input.AxisChanged && !_input.AttackHeld)
+            bool noChange = !_input.AttackDown && !_input.AttackUp &&
+                            !_input.AxisChanged && !_input.AttackHeld;
+
+            if (_input.Seq == _lastSeq && noChange)
             {
-                _input.ConsumeFrame();
+                _input.ConsumeFrame(); // 프레임 소비는 여기서 한 번
                 return;
             }
 
 
-            // 입력은 한 번만 읽기
+            var processed = false;
             var axis = _input.Move;
 
 
@@ -58,26 +60,25 @@ namespace IntoTheDungeon.Features.Input
                 typeof(PlayerTag),
                 typeof(CharacterIntentBuffer),
                 typeof(TransformComponent),
-                typeof(SpawnBuffer)))
+                typeof(SpawnOutbox)))
             {
                 // var ents = chunk.GetEntities();
                 var buffers = chunk.GetComponentArray<CharacterIntentBuffer>();
-
-
-
-                var spwanBuffers = chunk.GetComponentArray<SpawnBuffer>();
+                var outBoxes = chunk.GetComponentArray<SpawnOutbox>();
                 var transforms = chunk.GetComponentArray<TransformComponent>();
-                var e = chunk.GetEntities();
+                var entities = chunk.GetEntities();
                 for (int i = 0; i < chunk.Count; i++)
                 {
+                    processed = true;
+
+
                     ref var buf = ref buffers[i]; // ref로 직접 수정 → 복사 안 생김
+                    var e = entities[i];
 
                     if (_input.AxisChanged && axis != Vec2.Zero)
                     {
-
                         buf.Add(CharacterIntent.Move(Facing2DExt.FromX(axis.X)));
                         // _logger.Log("Vertical");
-
                     }
                     else if (_input.AxisChanged && axis == Vec2.Zero) // ← 0으로 "변한" 프레임에만
                     {
@@ -92,29 +93,31 @@ namespace IntoTheDungeon.Features.Input
                     if (_input.E_Down)
                     {
                         ref var trans = ref transforms[i];
-                        var request = new SpawnRequest
-                        {
-                            RecipeId = new RecipeId(1),
-                            Params = new SpawnParams
+                        var order = new SpawnOrder(
+                            RecipeIds.Character,
+                            new SpawnSpec
                             {
-
-                                Name = "donssno",
+                                // handle
+                                // name
                                 Pos = trans.Position,
                                 Dir = trans.Direction
-
                             }
-                        };
-                        spwanBuffers[i].Set(in request);
-
-
-
+                            , SpawnSource.Entity,
+                            e
+                        );
+                        outBoxes[i].Set(in order);
                     }
 
                 }
             }
+
             _lastSeq = _input.Seq;
             _input.ConsumeFrame();
-        }
-    }
 
+
+            if (!processed && noChange) _logger?.Warn("Input frame passed without consumers.");
+        }
+
+    }
 }
+

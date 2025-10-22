@@ -1,3 +1,4 @@
+using IntoTheDungeon.Core.Abstractions.World;
 using IntoTheDungeon.Core.ECS.Abstractions;
 using IntoTheDungeon.Core.ECS.Abstractions.Scheduling;
 using IntoTheDungeon.Core.ECS.Components;
@@ -8,6 +9,12 @@ namespace IntoTheDungeon.Core.Runtime.ECS
 {
     public class TransformProjectionSystem : GameSystem, ITick
     {
+        IViewOpQueue _viewOpQueue;
+        public override void Initialize(IWorld world)
+        {
+            base.Initialize(world);
+            Enabled = world.TryGet(out _viewOpQueue);
+        }
         public void Tick(float dt)
         {
             foreach (var chunk in _world.EntityManager.GetChunks(typeof(TransformComponent)))
@@ -27,7 +34,7 @@ namespace IntoTheDungeon.Core.Runtime.ECS
                             Y = transform.Position.Y,
                             RotDeg = transform.Rotation * Mathx.Rad2Deg
                         };
-                        _world.EntityManager.ViewOps.Enqueue(entity, transData);
+                        _viewOpQueue.Enqueue(entity, transData);
                     }
                 }
             }

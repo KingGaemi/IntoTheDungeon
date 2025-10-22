@@ -16,34 +16,85 @@ using IntoTheDungeon.Features.Input;
 using IntoTheDungeon.Core.ECS.Systems;
 using IntoTheDungeon.Unity.World;
 using IntoTheDungeon.Core.Runtime.ECS;
-using IntoTheDungeon.Unity.View;
 using IntoTheDungeon.Core.ECS.Abstractions;
+using IntoTheDungeon.Core.ECS.Entities;
+using IntoTheDungeon.Features.Unity.Abstractions;
+using IntoTheDungeon.Core.Abstractions.Gameplay;
+using IntoTheDungeon.Core.Abstractions.Types;
+using IntoTheDungeon.Features.Character;
 namespace IntoTheDungeon.Unity
 {
     public class UnityCoreInstaller : MonoGameInstaller
     {
-        [SerializeField] EntityRecipeRegistry coreRecipeRegistry;
-        [SerializeField] ScriptableObject viewRecipeRegistry;
+        [SerializeField] ViewRecipeRegistry viewRecipeRegistry;
+        [SerializeField] EntityViewMappingTable mappingTable;
         public override void Install(GameWorld world)
         {
-            Debug.Log("[Installer] A");
+            Debug.Log("[Installer] EventHub");
             world.SetOnce<IEventHub>(new EventHub());
 
-            Debug.Log("[Installer] B");
-            world.SetOnce<IInputService>(new UnityInputService());
+            Debug.Log("[Installer] INameTable");
+            world.SetOnce<INameTable>(new NameTable());
 
-            Debug.Log("[Installer] C");
+            Debug.Log("[Installer] INameToRecipeRegistry");
+            world.SetOnce<INameToRecipeRegistry>(new NameToRecipeRegistry());
+
+            Debug.Log("[Installer] EntityRecipeRegistry");
+            var entityRecipeRegistry = new EntityRecipeRegistry();
+            world.SetOnce<IEntityRecipeRegistry>(entityRecipeRegistry);
+
+
+            entityRecipeRegistry.Register(RecipeIds.Character, new CharacterCoreFactory());
+
+
+
+            if (!viewRecipeRegistry) { Debug.LogError("viewRecipeRegistry null"); return; }
+            viewRecipeRegistry.Initialize();
+            world.SetOnce<IViewRecipeRegistry>(viewRecipeRegistry);
+
+
+            var evMapRegistry = new EntityViewMapRegistry();
+            Debug.Log("[Installer] EntityViewMapRegistry");
+            world.SetOnce<IEntityViewMapRegistry>(evMapRegistry);
+
+
+            mappingTable.ApplyMappings(evMapRegistry, viewRecipeRegistry);
+
+
+
+
+            int viewOpQueueCapacity = 512;
+            Debug.Log($"[Installer] ViewOpQueue({viewOpQueueCapacity})");
+            world.SetOnce<IViewOpQueue>(new ViewOpQueue(viewOpQueueCapacity));
+
+            Debug.Log("[Installer] SpawnQueue");
+            world.SetOnce<ISystemSpawnQueue>(new SpawnQueue());
+
+            Debug.Log("[Installer] UnityInputService");
+            world.SetOnce<IInputService>(new UnityInputService());
+            Debug.Log("[Installer] CollisionEvents");
             world.SetOnce<ICollisionEvents>(new CollisionEvents());
 
-            Debug.Log("[Installer] D");
+            Debug.Log("[Installer] PhysicsBodyStore");
             world.SetOnce<IPhysicsBodyStore>(new PhysicsBodyStore());
 
-            coreRecipeRegistry.ForceRebuild();
-            if (!coreRecipeRegistry) { Debug.LogError("coreRecipeRegistry null"); return; }
-            world.SetOnce<IRecipeRegistry>(coreRecipeRegistry);
-            // world.SetOnce((ViewRecipeRegistry)viewRecipeRegistry);
+
+
+
+
+
+
+            world.SetOnce<IEntityFactory>(new EntityFactory(world, entityRecipeRegistry));
+
+
+
 
             Debug.Log("[Installer] E");
+            world.SystemManager.AddUnique(new PlayerInputSystem());
+            world.SystemManager.AddUnique(new SpawnSystem());
+            world.SystemManager.AddUnique(new CharacterIntentApplySystem());
+            world.SystemManager.AddUnique(new PhaseControlSystem());
+
             world.SystemManager.AddUnique(new KinematicPlannerSystem());
 
             Debug.Log("[Installer] F");
@@ -53,22 +104,19 @@ namespace IntoTheDungeon.Unity
             world.SystemManager.AddUnique(new PhysicsApplySystem());
 
             Debug.Log("[Installer] H");
-            world.SystemManager.AddUnique(new PhaseControlSystem());
 
             Debug.Log("[Installer] I");
             world.SystemManager.AddUnique(new StatusProcessingSystem());
 
             Debug.Log("[Installer] J");
-            world.SystemManager.AddUnique(new PlayerInputSystem());
 
             Debug.Log("[Installer] K");
-            world.SystemManager.AddUnique(new CharacterIntentApplySystem());
 
             Debug.Log("[Installer] L");
-            world.SystemManager.AddUnique(new SpawnSystem());
 
             Debug.Log("[Installer] M");
-            world.SystemManager.AddUnique(new CharacterViewSpawnSystem());
+            world.SystemManager.AddUnique(new ViewSpawnSystem());
+            // world.SystemManager.AddUnique(new TransformProjectionSystem());
 
 
             Debug.Log("[Installer] OK");

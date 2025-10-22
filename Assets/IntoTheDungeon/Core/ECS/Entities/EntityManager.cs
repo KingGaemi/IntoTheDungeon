@@ -4,7 +4,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using IntoTheDungeon.Core.ECS.Abstractions;
 using IntoTheDungeon.Core.Abstractions.Debug;
-using IntoTheDungeon.Core.Abstractions.World;
+
 
 namespace IntoTheDungeon.Core.ECS.Entities
 {
@@ -22,7 +22,6 @@ namespace IntoTheDungeon.Core.ECS.Entities
 
         private Archetype _emptyArchetype;
         private int _entityCount;
-        private IViewOpQueue _viewOps;
 
         #endregion
 
@@ -30,7 +29,7 @@ namespace IntoTheDungeon.Core.ECS.Entities
 
         public int EntityCount => _entityCount;
         public int ArchetypeCount => _archetypes.Count;
-        public IViewOpQueue ViewOps => _viewOps;
+
 
         #endregion
 
@@ -39,7 +38,6 @@ namespace IntoTheDungeon.Core.ECS.Entities
         public EntityManager()
         {
             _emptyArchetype = GetOrCreateArchetype(Type.EmptyTypes);
-            _viewOps = new ViewOpQueue(512);
         }
 
         #endregion
@@ -51,18 +49,6 @@ namespace IntoTheDungeon.Core.ECS.Entities
             return CreateEntity(_emptyArchetype);
         }
 
-        public Entity CreateEntity(IEntityRecipe recipe)
-        {
-            if (recipe == null)
-                throw new ArgumentNullException(nameof(recipe));
-            var e = CreateEntity();
-            if (!Exists(e))
-                throw new InvalidOperationException("Failed to create entity");
-
-            recipe.Apply(this, e);
-
-            return e;
-        }
         public Entity CreateEntity(params Type[] componentTypes)
         {
             var archetype = GetOrCreateArchetype(componentTypes);

@@ -1,25 +1,24 @@
 using UnityEngine;
 using IntoTheDungeon.Core.ECS.Abstractions;
 using IntoTheDungeon.Core.Abstractions.Messages.Spawn;
+using IntoTheDungeon.Core.Abstractions.Types;
 
 namespace IntoTheDungeon.Features.Character
 {
-    [CreateAssetMenu(fileName = "CharacterCoreFactory", menuName = "IntoTheDungeon/Recipes/CharacterCore")]
-    public sealed class CharacterCoreFactory : ScriptableObject, IEntityRecipeFactory
+
+    public sealed class CharacterCoreFactory : IEntityRecipeFactory
     {
-        public RecipeId RecipeId { get; }
+        [SerializeField] RecipeId id = RecipeIds.Character; // 기본값
+        public RecipeId RecipeId => id;
+        public bool HasView => true;
+
         [SerializeField] int defaultMaxHp = 100;
         [SerializeField] float defaultMoveSpd = 5f;
         [SerializeField] float defaultAtkSpd = 1.0f;
-
-        public IEntityRecipe Create(in SpawnParams param)
+        public IEntityRecipe Create(in SpawnSpec spec)
         {
             return new CharacterCoreRecipe(
                 id: RecipeId,
-                physHandle: 0,
-                name: param.Name,
-                pos: param.Pos,
-                dir: param.Dir,
                 maxHp: defaultMaxHp,
                 movSpd: defaultMoveSpd,
                 atkSpd: defaultAtkSpd

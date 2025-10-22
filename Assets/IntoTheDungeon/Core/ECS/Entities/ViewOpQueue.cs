@@ -14,7 +14,7 @@ namespace IntoTheDungeon.Core.ECS.Entities
             _count = 0;
         }
 
-        public void EnqueueSpawn(Entity e, in SpawnData data)
+        public void EnqueueSpawn(Entity e, in ViewSpawnData data)
         {
             if (_count >= _buffer.Length) return;
             int idx = ViewDataStores.Spawn.Count;
@@ -25,8 +25,7 @@ namespace IntoTheDungeon.Core.ECS.Entities
         public void EnqueueSetTransform(Entity e, in TransformData transformData)
         {
             if (_count >= _buffer.Length) return;
-            int idx = ViewDataStores.Xform.Count;
-            ViewDataStores.Xform.Add(transformData);
+            int idx = ViewDataStores.AddTransform(transformData);
             _buffer[_count++] = new ViewOp { Kind = ViewOpKind.SetTransform, Entity = e, DataIndex = idx };
         }
 
@@ -60,7 +59,7 @@ namespace IntoTheDungeon.Core.ECS.Entities
 
 
         }
-        public void Enqueue(Entity e, in SpawnData spawnData)
+        public void Enqueue(Entity e, in ViewSpawnData spawnData)
         {
             EnqueueSpawn(e, spawnData);
         }

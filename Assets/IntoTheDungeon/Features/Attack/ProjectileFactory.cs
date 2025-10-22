@@ -57,13 +57,6 @@ namespace IntoTheDungeon.Features.Attack
                 Type = ProjectileType.Normal
             });
 
-            entityManager.ViewOps.Enqueue(projectile, new SpawnData
-            {
-                PrefabId = 2,
-                SortingLayerId = 0,
-                OrderInLayer = 0,
-            });
-
             // entityManager.AddComponent(projectile, new VisualTag { PrefabId = Prefabs.Projectile01 });
 
             entityManager.AddComponent(projectile, new CircleColliderComponent

@@ -14,7 +14,6 @@ namespace IntoTheDungeon.Unity.World
         protected Entity Entity { get; private set; }
         protected IWorld World { get; private set; }
 
-        // ⭐ EntityManager 직접 접근 (빈번한 호출 최적화)
         protected IEntityManager EM => World.EntityManager;
 
         public void Execute(IAuthoring authoring, IWorld world, Entity entity)
@@ -27,7 +26,6 @@ namespace IntoTheDungeon.Unity.World
             World = world;
             Entity = entity;
 
-            // ⭐ 예외 처리 (에디터에서만)
 #if UNITY_EDITOR
             try
             {
