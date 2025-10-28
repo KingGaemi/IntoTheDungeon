@@ -14,31 +14,35 @@ namespace IntoTheDungeon.Features.Physics.Systems
 {
     public sealed class KinematicSystem : GameSystem, IFixedTick
     {
+        IPhysicsOpQueue _physQueue;
         public KinematicSystem(int priority = 0) : base(priority) { }
-        override public void Initialize(IWorld world)
+
+
+        public override void Initialize(IWorld world)
         {
-            _world = world;
+            base.Initialize(world);
+            if (!world.TryGet(out _physQueue))
+            {
+                Enabled = false;
+                return;
+            }
         }
         public void FixedTick(float dt)
         {
             var chunks = _world.EntityManager.GetChunks(typeof(KinematicComponent),
-                                                        typeof(PhysicsCommand));
+                                                        typeof(PhysicsBodyRef));
 
             foreach (var chunk in chunks)
             {
                 var kinematics = chunk.GetComponentArray<KinematicComponent>();
-                var physicsCommands = chunk.GetComponentArray<PhysicsCommand>();
+                var handles = chunk.GetComponentArray<PhysicsBodyRef>();
 
                 for (int i = 0; i < chunk.Count; i++)
                 {
                     ref readonly var k = ref kinematics[i];
-                    ref var c = ref physicsCommands[i];
-                    var v = k.Direction * k.Magnitude; 
-
-                    c.V = v;
-                    c.Axes = VelAxes.X;      // 중력 사용이면 X만: VelAxes.X
-                    c.Mode = VelMode.Set;
-                    c.HasVel = true;
+                    ref var h = ref handles[i];
+                    var v = k.Direction * k.Magnitude;
+                    _physQueue.EnqueueSetLinearVelocity(h.Handle, v);
                 }
             }
         }

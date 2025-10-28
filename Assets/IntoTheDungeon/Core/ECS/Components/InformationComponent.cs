@@ -7,6 +7,8 @@ namespace IntoTheDungeon.Core.ECS.Components
     {
         public NameId NameId; // 문자열은 테이블에서 조회
         public RecipeId RecipeId;
+
+        public int SceneLinkId;
     }
 
 }

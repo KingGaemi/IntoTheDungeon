@@ -36,7 +36,6 @@ namespace IntoTheDungeon.Features.Character
                 Damage = 1
             });
             em.AddComponent(e, new KinematicComponent());
-            em.AddComponent(e, new PhysicsCommand());               // 누락 방지
             em.AddComponent(e, new CharacterIntentBuffer());
             em.AddComponent(e, new AnimationSyncComponent());
             em.AddComponent(e, new ActionPhaseComponent { WindupDuration = 0.5f, RecoveryDuration = 0.7f });

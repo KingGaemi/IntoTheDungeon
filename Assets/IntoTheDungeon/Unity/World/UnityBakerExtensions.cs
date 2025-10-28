@@ -1,7 +1,6 @@
 using System.Linq;
 using UnityEngine;
 using IntoTheDungeon.Core.Abstractions.World;
-using IntoTheDungeon.Core.ECS.Abstractions;
 using IntoTheDungeon.Features.Unity;
 using IntoTheDungeon.Core.Runtime.Physics;
 using IntoTheDungeon.Core.Physics.Abstractions;
@@ -12,7 +11,8 @@ using IntoTheDungeon.Core.Abstractions.Gameplay;
 using IntoTheDungeon.Core.ECS.Components;
 using IntoTheDungeon.Core.Abstractions.View;
 using IntoTheDungeon.Core.ECS.Abstractions.Spawn;
-using IntoTheDungeon.Features.View;
+using IntoTheDungeon.Unity.Bridge.Core.Abstractions;
+using IntoTheDungeon.Unity.Bridge.View.Abstractions;
 
 
 
@@ -26,7 +26,8 @@ namespace IntoTheDungeon.Unity.World
             if (!world.TryGet(out IPhysicsBodyStore physicsStore) ||
                 !world.TryGet(out ISystemSpawnQueue queue) ||
                 !world.TryGet(out INameToRecipeRegistry name2recipe) ||
-                !world.TryGet(out IViewRecipeRegistry viewRecipeRegistry))
+                !world.TryGet(out IViewRecipeRegistry viewRecipeRegistry) ||
+                !world.TryGet(out ISceneViewRegistry sceneViewRegistry))
             {
                 Debug.LogError("[BakeScene] 필수 서비스 누락");
                 return;
@@ -49,6 +50,8 @@ namespace IntoTheDungeon.Unity.World
                 var t = root.Transform;
                 var rb = root.Rigidbody;
 
+                var sceneLinkId = t.gameObject.GetInstanceID();
+                sceneViewRegistry.Register(sceneLinkId, t.gameObject);
 
                 var scriptContainer = t.GetComponentInChildren<ScriptContainer>(includeInactive: true);
                 var scGO = scriptContainer.gameObject;
@@ -97,6 +100,7 @@ namespace IntoTheDungeon.Unity.World
                 var spec = new SpawnSpec
                 {
                     PhysHandle = root.PhysicsHandle,
+                    SceneLinkId = sceneLinkId,
                     Name = t.name,
                     Pos = new Vec2(t.position.x, t.position.y),
                     Dir = new Vec2(Mathf.Cos(rad), Mathf.Sin(rad)),

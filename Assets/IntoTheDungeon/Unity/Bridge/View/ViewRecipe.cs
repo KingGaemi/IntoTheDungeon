@@ -2,8 +2,9 @@ using UnityEngine;
 using System;
 using System.Linq;
 using IntoTheDungeon.Core.ECS.Abstractions;
+using IntoTheDungeon.Unity.Bridge.View.Abstractions;
 
-namespace IntoTheDungeon.Features.View
+namespace IntoTheDungeon.Unity.Bridge.View
 {
     [CreateAssetMenu(fileName = "ViewRecipe", menuName = "IntoTheDungeon/View/Recipe")]
     public sealed class ViewRecipe : ScriptableObject, IViewRecipe

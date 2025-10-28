@@ -6,6 +6,9 @@ using IntoTheDungeon.Runtime;
 using IntoTheDungeon.Core.Runtime.Event;
 using IntoTheDungeon.Unity.World;
 using IntoTheDungeon.Unity.View;
+using IntoTheDungeon.Unity.Bridge.Physics;
+using IntoTheDungeon.Unity.Bridge.Physics.Abstractions;
+using IntoTheDungeon.Unity.Bridge.View.Abstractions;
 
 namespace IntoTheDungeon.Unity
 {
@@ -27,6 +30,7 @@ namespace IntoTheDungeon.Unity
 
         GameBootstrapper _bootstrap;
         ViewBridge _viewBridge;
+        PhysicsBridge _physicsBridge;
         public IWorld World => _bootstrap?.World;
 
         UnitySceneGraph _sceneGraph;
@@ -89,6 +93,11 @@ namespace IntoTheDungeon.Unity
 #endif
 
             SceneManager.activeSceneChanged += OnActiveSceneChanged;
+            CreateViewBridge();
+            CreatePhysicsBridge();
+
+            World.SetOnce<IPhysicsPort>(_physicsBridge);
+            World.SetOnce<IViewPort>(_viewBridge);
 
             Debug.Log("[Bootstrapper] Awake completed");
         }
@@ -110,7 +119,7 @@ namespace IntoTheDungeon.Unity
 #endif
         void Start()
         {
-            CreateViewBridge();
+
         }
 
         void CreateViewBridge()
@@ -120,6 +129,8 @@ namespace IntoTheDungeon.Unity
 
 
             bridgeGO = new GameObject("[ViewBridge]");
+            bridgeGO.transform.SetParent(transform, false);
+            DontDestroyOnLoad(bridgeGO);
             _viewBridge = bridgeGO.AddComponent<ViewBridge>();
 
 
@@ -134,7 +145,29 @@ namespace IntoTheDungeon.Unity
 
             Debug.Log("[Bootstrapper] ViewBridge created");
         }
+        void CreatePhysicsBridge()
+        {
+            GameObject bridgeGO;
 
+
+
+            bridgeGO = new GameObject("[PhysicsBridge]");
+            bridgeGO.transform.SetParent(transform, false);
+            DontDestroyOnLoad(bridgeGO);
+            _physicsBridge = bridgeGO.AddComponent<PhysicsBridge>();
+
+
+            if (_physicsBridge == null)
+            {
+                Debug.LogError("[Bootstrapper] PhysicsBridge component not found!");
+                return;
+            }
+
+            // World 주입
+            _physicsBridge.Init(World);
+
+            Debug.Log("[Bootstrapper] PhysicsBridge created");
+        }
         void OnDestroy()
         {
             SceneManager.activeSceneChanged -= OnActiveSceneChanged;

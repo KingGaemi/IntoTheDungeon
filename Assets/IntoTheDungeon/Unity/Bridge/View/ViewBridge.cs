@@ -5,13 +5,16 @@ using IntoTheDungeon.Core.Abstractions.Services;
 using IntoTheDungeon.Core.Abstractions.Messages.Combat;
 using IntoTheDungeon.Core.Abstractions.Messages.Animation;
 using IntoTheDungeon.Core.ECS.Abstractions;
-using IntoTheDungeon.Features.View;
+using IntoTheDungeon.Core.Physics.Abstractions;
+using IntoTheDungeon.Unity.Bridge.Physics.Abstractions;
+using IntoTheDungeon.Unity.Bridge.View.Abstractions;
+using IntoTheDungeon.Unity.Bridge.Core.Abstractions;
 
 
-namespace IntoTheDungeon.Unity.View
+namespace IntoTheDungeon.Unity.Bridge.View
 {
-    [DefaultExecutionOrder(9000)]
-    public sealed class ViewBridge : MonoBehaviour, IWorldInjectable
+    [DefaultExecutionOrder(-8000)]
+    public sealed class ViewBridge : MonoBehaviour, IWorldInjectable, IViewPort
     {
         #region Config
         [SerializeField] int _maxOpsPerFrame = 256;
@@ -23,6 +26,12 @@ namespace IntoTheDungeon.Unity.View
         IViewRecipeRegistry _viewRecipeRegistry;
         IViewOpQueue _viewOpQueue;
         IEntityViewMapRegistry _entityViewMapRegistry;
+        ISceneViewRegistry _sceneViewRegistry;
+        IPhysicsPort _physPort;
+
+        IPhysicsBodyStore _physBodyStore;
+
+
 
         #endregion
 
@@ -63,6 +72,19 @@ namespace IntoTheDungeon.Unity.View
                 Debug.Log("[ViewBridge] no _entityViewRegistry");
                 enabled = false;
                 return;
+            }
+            if (!world.TryGet(out _sceneViewRegistry))
+            {
+                Debug.Log("[ViewBridge] no _sceneViewRegistry");
+                enabled = false;
+                return;
+            }
+            if (world.TryGet(out _physPort))
+            {
+                Debug.Log("[ViewBridge] no _physPort");
+                enabled = false;
+                return;
+
             }
         }
 
@@ -184,7 +206,17 @@ namespace IntoTheDungeon.Unity.View
                 return;
             }
 
-            var go = viewRecipe.Prefab ? Instantiate(viewRecipe.Prefab) : new GameObject($"Entity_{entity.Index}");
+            GameObject go;
+
+            if (data.SceneLinkId != 0 && _sceneViewRegistry.TryTake(data.SceneLinkId, out var existing))
+            {
+                go = existing; // 기존 씬 GO 재사용
+            }
+            else
+            {
+                go = viewRecipe.Prefab ? Instantiate(viewRecipe.Prefab) : new GameObject($"Entity_{entity.Index}");
+            }
+
             go.name = $"Entity_{entity.Index}";
             go.SetActive(true);
 
@@ -197,7 +229,13 @@ namespace IntoTheDungeon.Unity.View
 
             _entityToGO[entity] = go;
             _goToEntity[go] = entity;
+
+
+
+
         }
+
+
 
         void Despawn(Entity entity)
         {
@@ -345,9 +383,18 @@ namespace IntoTheDungeon.Unity.View
             _entityToGO.Clear();
             _goToEntity.Clear();
         }
+        public bool TryGetViewRoot(Entity e, out Transform root)
+        {
+            _entityToGO.TryGetValue(e, out GameObject value);
 
+            root = value.transform;
+
+            return root;
+        }
 
         #endregion
+
+
     }
 
 

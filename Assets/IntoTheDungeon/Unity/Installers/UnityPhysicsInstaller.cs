@@ -8,9 +8,9 @@ namespace IntoTheDungeon.Unity.Physics
 {
     public sealed class UnityPhysicsInstaller : MonoGameInstaller
     {
-        const int ORDER_Planner  = 10;
-        const int ORDER_Kinematic= 20;
-        const int ORDER_Apply    = 30;
+        const int ORDER_Planner = 10;
+        const int ORDER_Kinematic = 20;
+        const int ORDER_Apply = 30;
 
         public override void Install(GameWorld world)
         {
@@ -24,7 +24,7 @@ namespace IntoTheDungeon.Unity.Physics
             // 고정틱 파이프라인에 순서대로 추가
             world.SystemManager.Add(new KinematicPlannerSystem(ORDER_Planner));
             world.SystemManager.Add(new KinematicSystem(ORDER_Kinematic));
-            world.SystemManager.Add(new PhysicsApplySystem(ORDER_Apply));
+
         }
     }
 }

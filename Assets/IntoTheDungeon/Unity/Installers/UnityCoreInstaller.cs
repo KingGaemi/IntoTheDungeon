@@ -11,7 +11,6 @@ using IntoTheDungeon.Features.Status;
 using IntoTheDungeon.Features.Command;
 using IntoTheDungeon.Features.State;
 using IntoTheDungeon.Features.Physics.Systems;
-using IntoTheDungeon.Features.View;
 using IntoTheDungeon.Features.Input;
 using IntoTheDungeon.Core.ECS.Systems;
 using IntoTheDungeon.Unity.World;
@@ -22,6 +21,11 @@ using IntoTheDungeon.Features.Unity.Abstractions;
 using IntoTheDungeon.Core.Abstractions.Gameplay;
 using IntoTheDungeon.Core.Abstractions.Types;
 using IntoTheDungeon.Features.Character;
+using IntoTheDungeon.Unity.Bridge.Physics.Abstractions;
+using IntoTheDungeon.Unity.Bridge.View.Abstractions;
+using IntoTheDungeon.Unity.Bridge.Core.Abstractions;
+using IntoTheDungeon.Unity.Bridge.Core;
+using IntoTheDungeon.Unity.Bridge.View;
 namespace IntoTheDungeon.Unity
 {
     public class UnityCoreInstaller : MonoGameInstaller
@@ -42,9 +46,9 @@ namespace IntoTheDungeon.Unity
             Debug.Log("[Installer] EntityRecipeRegistry");
             var entityRecipeRegistry = new EntityRecipeRegistry();
             world.SetOnce<IEntityRecipeRegistry>(entityRecipeRegistry);
-
-
             entityRecipeRegistry.Register(RecipeIds.Character, new CharacterCoreFactory());
+
+
 
 
 
@@ -56,16 +60,21 @@ namespace IntoTheDungeon.Unity
             var evMapRegistry = new EntityViewMapRegistry();
             Debug.Log("[Installer] EntityViewMapRegistry");
             world.SetOnce<IEntityViewMapRegistry>(evMapRegistry);
-
-
             mappingTable.ApplyMappings(evMapRegistry, viewRecipeRegistry);
-
-
-
 
             int viewOpQueueCapacity = 512;
             Debug.Log($"[Installer] ViewOpQueue({viewOpQueueCapacity})");
             world.SetOnce<IViewOpQueue>(new ViewOpQueue(viewOpQueueCapacity));
+
+            world.SetOnce<ISceneViewRegistry>(new SceneViewRegistry());
+
+
+
+
+
+
+
+
 
             Debug.Log("[Installer] SpawnQueue");
             world.SetOnce<ISystemSpawnQueue>(new SpawnQueue());
@@ -74,18 +83,20 @@ namespace IntoTheDungeon.Unity
             world.SetOnce<IInputService>(new UnityInputService());
             Debug.Log("[Installer] CollisionEvents");
             world.SetOnce<ICollisionEvents>(new CollisionEvents());
-
-            Debug.Log("[Installer] PhysicsBodyStore");
-            world.SetOnce<IPhysicsBodyStore>(new PhysicsBodyStore());
-
-
-
-
-
-
-
             world.SetOnce<IEntityFactory>(new EntityFactory(world, entityRecipeRegistry));
 
+
+
+
+
+            var physQueue = new PhysicsOpQueue();
+            var physStore = new PhysicsOpStore();
+            var physBodyStore = new PhysicsBodyStore();
+            var resolveSystem = new PhysicsOpResolveSystem(physQueue, physStore);
+            world.SetOnce<IPhysicsOpQueue>(physQueue);
+            world.SetOnce<IPhysicsOpStore>(physStore);
+            world.SetOnce<IPhysicsBodyStore>(physBodyStore);
+            world.SetOnce<IPhysicsOpResolveSystem>(resolveSystem);
 
 
 
@@ -100,8 +111,7 @@ namespace IntoTheDungeon.Unity
             Debug.Log("[Installer] F");
             world.SystemManager.AddUnique(new KinematicSystem());
 
-            Debug.Log("[Installer] G");
-            world.SystemManager.AddUnique(new PhysicsApplySystem());
+
 
             Debug.Log("[Installer] H");
 

@@ -12,9 +12,11 @@ namespace IntoTheDungeon.Core.Abstractions.Messages.Spawn
     public struct SpawnSpec
     {
         public int PhysHandle;
+        public int SceneLinkId;
         public string Name;
         public Vec2 Pos, Dir;
         public List<ISpawnInit> Inits;
+
         public ViewOverride? ViewOverride;
     }
 }

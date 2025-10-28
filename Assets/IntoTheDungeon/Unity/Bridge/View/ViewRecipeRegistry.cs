@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using IntoTheDungeon.Core.ECS.Abstractions;
-using IntoTheDungeon.Unity.View;
+using IntoTheDungeon.Unity.Bridge.View.Abstractions;
 using UnityEngine;
 
-namespace IntoTheDungeon.Features.View
+namespace IntoTheDungeon.Unity.Bridge.View
 {
     [CreateAssetMenu(fileName = "ViewRecipeRegistry", menuName = "IntoTheDungeon/View/RecipeDatabase")]
     public sealed class ViewRecipeRegistry : ScriptableObject, IViewRecipeRegistry

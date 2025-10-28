@@ -2,10 +2,11 @@
 using UnityEngine;
 using System;
 using IntoTheDungeon.Core.ECS.Abstractions;
+using IntoTheDungeon.Unity.Bridge.View.Abstractions;
 using IntoTheDungeon.Core.Abstractions.Messages.Spawn;
 using IntoTheDungeon.Core.Abstractions.Types;
 
-namespace IntoTheDungeon.Features.View
+namespace IntoTheDungeon.Unity.Bridge.View
 {
     [CreateAssetMenu(fileName = "EntityViewMappingTable", menuName = "IntoTheDungeon/EntityViewMappingTable")]
     public sealed class EntityViewMappingTable : ScriptableObject

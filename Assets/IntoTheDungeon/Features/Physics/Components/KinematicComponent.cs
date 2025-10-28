@@ -9,7 +9,5 @@ namespace IntoTheDungeon.Features.Physics.Components
         public float Magnitude;   // 속력(스칼라)
         public readonly Vec2 Velocity => Direction * Magnitude;
 
-
-
     }
 }

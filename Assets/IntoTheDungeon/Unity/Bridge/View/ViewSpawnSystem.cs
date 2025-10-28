@@ -6,7 +6,7 @@ using IntoTheDungeon.Core.Abstractions.World;
 using IntoTheDungeon.Core.Abstractions.Messages;
 using IntoTheDungeon.Core.ECS.Components;
 
-namespace IntoTheDungeon.Features.View
+namespace IntoTheDungeon.Unity.Bridge.View
 {
     public class ViewSpawnSystem : GameSystem, ITick
     {
@@ -58,6 +58,7 @@ namespace IntoTheDungeon.Features.View
                     var data = new ViewSpawnData
                     {
                         RecipeId = recipeId,
+                        SceneLinkId = info.SceneLinkId,
                         SortingLayerId = marker.SortingLayerId,
                         OrderInLayer = marker.OrderInLayer,
                     };

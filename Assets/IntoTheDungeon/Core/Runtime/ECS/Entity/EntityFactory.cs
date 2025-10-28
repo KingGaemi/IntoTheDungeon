@@ -7,7 +7,7 @@ using IntoTheDungeon.Core.ECS.Abstractions;
 using IntoTheDungeon.Core.ECS.Components;
 using IntoTheDungeon.Core.Physics.Abstractions;
 
-namespace IntoTheDungeon.Core.ECS.Entities
+namespace IntoTheDungeon.Core.Runtime.ECS
 {
     public sealed class EntityFactory : IEntityFactory
     {
@@ -36,7 +36,7 @@ namespace IntoTheDungeon.Core.ECS.Entities
             return e;
         }
 
-        public bool TrySpawn(RecipeId id, in SpawnSpec p, out Entity e)
+        public bool TrySpawn(RecipeId id, in SpawnSpec spec, out Entity e)
         {
             e = Entity.Null;
             if (!_registry.TryGetFactory(id, out var f)) return false;
@@ -45,23 +45,23 @@ namespace IntoTheDungeon.Core.ECS.Entities
             e = em.CreateEntity();
 
             // 공통 기본
-            em.AddComponent(e, new TransformComponent { Position = p.Pos, Direction = p.Dir });
-            if (p.PhysHandle >= 0) em.AddComponent(e, new PhysicsBodyRef { Handle = p.PhysHandle });
-            em.AddComponent(e, new InformationComponent { NameId = _nameTable.GetId(p.Name), RecipeId = id });
+            em.AddComponent(e, new TransformComponent { Position = spec.Pos, Direction = spec.Dir });
+            if (spec.PhysHandle >= 0) em.AddComponent(e, new PhysicsBodyRef { Handle = spec.PhysHandle });
+            em.AddComponent(e, new InformationComponent { NameId = _nameTable.GetId(spec.Name), RecipeId = id, SceneLinkId = spec.SceneLinkId });
 
             // 레시피 기본 컴포넌트
-            var recipe = f.Create(in p);
+            var recipe = f.Create(in spec);
             recipe.Apply(em, e);
 
             // 초기화 페이로드 적용
-            if (p.Inits != null)
-                foreach (var init in p.Inits)
+            if (spec.Inits != null)
+                foreach (var init in spec.Inits)
                     init.Apply(_world, e);
 
             // 뷰 마커(필요시)
             if (f.HasView)
             {
-                var ov = p.ViewOverride;
+                var ov = spec.ViewOverride;
                 em.AddComponent(e, new ViewMarker
                 {
                     SortingLayerId = ov?.SortingLayerId ?? -1,

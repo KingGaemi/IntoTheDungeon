@@ -1,6 +1,4 @@
-using IntoTheDungeon.Unity.View;
-
-namespace IntoTheDungeon.Features.View
+namespace IntoTheDungeon.Unity.Bridge.View.Abstractions
 {
     public interface IViewComponent
     {

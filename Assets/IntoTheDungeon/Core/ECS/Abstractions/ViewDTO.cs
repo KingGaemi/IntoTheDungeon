@@ -36,6 +36,8 @@ namespace IntoTheDungeon.Core.ECS.Abstractions
     public struct ViewSpawnData
     {
         public RecipeId RecipeId;
+
+        public int SceneLinkId;
         public short SortingLayerId;
         public short OrderInLayer;
 

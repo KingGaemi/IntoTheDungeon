@@ -2,6 +2,7 @@ using IntoTheDungeon.Core.Abstractions.Messages;
 using IntoTheDungeon.Core.Abstractions.World;
 using IntoTheDungeon.Core.ECS.Abstractions.Scheduling;
 using IntoTheDungeon.Core.ECS.Systems;
+using IntoTheDungeon.Core.Physics.Abstractions;
 using IntoTheDungeon.Core.Util;
 using IntoTheDungeon.Features.Physics.Components;
 using IntoTheDungeon.Features.State;

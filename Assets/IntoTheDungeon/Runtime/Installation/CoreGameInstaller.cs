@@ -27,7 +27,6 @@ namespace IntoTheDungeon.Runtime.Installation.Installers
 
             world.SystemManager.Add(new KinematicPlannerSystem());
             world.SystemManager.Add(new KinematicSystem());
-            world.SystemManager.Add(new PhysicsApplySystem());
             world.SystemManager.Add(new StatusProcessingSystem());
             world.SystemManager.Add(new CharacterIntentApplySystem());
             world.SystemManager.Add(new PhaseControlSystem());

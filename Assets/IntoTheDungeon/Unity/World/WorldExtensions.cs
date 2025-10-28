@@ -18,7 +18,7 @@ namespace IntoTheDungeon.Unity.World
     }
     public static class WorldServicesExt
     {
-        public static void SetOnce<T>(this GameWorld w, T svc) where T : class
+        public static void SetOnce<T>(this IWorld w, T svc) where T : class
         {
             if (w == null) throw new ArgumentNullException(nameof(w));
             if (svc == null) throw new ArgumentNullException(nameof(svc));
