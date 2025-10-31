@@ -3,7 +3,7 @@ using IntoTheDungeon.Core.Physics.Abstractions;
 using IntoTheDungeon.Core.Util;
 namespace IntoTheDungeon.Core.Physics.Implementation
 {
-    public sealed class PhysicsOpStore : IPhysicsOpStore
+    public sealed class PhysicsOpStore : IPhysicsOpStore, IPhysicsCommandStore, IPhysicsFeedbackStore
     {
         public PhysicsHandle[] Handles;
         public Vec2[] Vec;

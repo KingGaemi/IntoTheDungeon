@@ -179,7 +179,7 @@ namespace IntoTheDungeon.Core.Physics.Implementation
 
         int CombineKey(PhysicsHandle handle, PhysicsOpKind kind)
         {
-            return handle.Value * 1000 + (int)kind;
+            return handle.Index * 1000 + (int)kind;
         }
 
         void EnsureStoreCapacity(int required)

@@ -7,7 +7,11 @@ namespace IntoTheDungeon.Core.ECS.Components
     {
         public short SortingLayerId;  // 0이면 기본
         public short OrderInLayer;
+
+
     }
     public struct ViewSpawnedTag : IComponentData { }
+
+    public struct PhysReservedTag : IComponentData { }
     public struct PendingDespawnTag : IComponentData { }
 }

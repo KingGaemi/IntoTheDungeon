@@ -119,11 +119,6 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &184104329 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 6913156306851418881, guid: 3f673dfcf141ce944b2913d67fadb280, type: 3}
-  m_PrefabInstance: {fileID: 5513996284613690234}
-  m_PrefabAsset: {fileID: 0}
 --- !u!114 &290368929
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -158,6 +153,11 @@ MonoBehaviour:
   m_InstancedGameObject: {fileID: 0}
   m_Flags: 3
   m_ColliderType: 1
+--- !u!1 &315832090 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 9105640053621908441, guid: 3f673dfcf141ce944b2913d67fadb280, type: 3}
+  m_PrefabInstance: {fileID: 5513996284613690234}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1052537896
 GameObject:
   m_ObjectHideFlags: 0
@@ -246,7 +246,7 @@ Transform:
   m_GameObject: {fileID: 1052537896}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -7.45, y: -3.61, z: -10}
+  m_LocalPosition: {x: -0.2, y: 0.1, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -265,7 +265,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cameraOffset: {x: 0, y: 0, z: 0}
-  target: {fileID: 184104329}
+  target: {fileID: 315832090}
 --- !u!114 &1052537901
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12126,11 +12126,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6226707474981014172, guid: e5cd95d558beac9469ebea83b0d3db78, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 5.4840117
+      value: 9.2
       objectReference: {fileID: 0}
     - target: {fileID: 6226707474981014172, guid: e5cd95d558beac9469ebea83b0d3db78, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 11.580773
+      value: 14.95
       objectReference: {fileID: 0}
     - target: {fileID: 6226707474981014172, guid: e5cd95d558beac9469ebea83b0d3db78, type: 3}
       propertyPath: m_LocalPosition.z
@@ -12179,11 +12179,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 940522065748687506, guid: 3f673dfcf141ce944b2913d67fadb280, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -7.754213
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 940522065748687506, guid: 3f673dfcf141ce944b2913d67fadb280, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -3.9845996
+      value: -1
       objectReference: {fileID: 0}
     - target: {fileID: 940522065748687506, guid: 3f673dfcf141ce944b2913d67fadb280, type: 3}
       propertyPath: m_LocalPosition.z
@@ -12217,9 +12217,21 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1332177499680453071, guid: 3f673dfcf141ce944b2913d67fadb280, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.16
+      objectReference: {fileID: 0}
+    - target: {fileID: 2626211087063969613, guid: 3f673dfcf141ce944b2913d67fadb280, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6913156306851418881, guid: 3f673dfcf141ce944b2913d67fadb280, type: 3}
       propertyPath: m_Name
       value: Catherine
+      objectReference: {fileID: 0}
+    - target: {fileID: 8631896775856787600, guid: 3f673dfcf141ce944b2913d67fadb280, type: 3}
+      propertyPath: m_SpriteSortPoint
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

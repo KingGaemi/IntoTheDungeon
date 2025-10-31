@@ -3,8 +3,9 @@ using IntoTheDungeon.Core.Abstractions.Types;
 using IntoTheDungeon.Core.Abstractions.Messages.Combat;
 using IntoTheDungeon.Core.Abstractions.Messages.Animation;
 using IntoTheDungeon.Core.Abstractions.Messages.Spawn;
-using IntoTheDungeon.Unity.View;
-using IntoTheDungeon.Features.View;
+using IntoTheDungeon.Unity.Bridge.View.Abstractions;
+
+
 
 namespace IntoTheDungeon.Features.Character
 {
@@ -48,7 +49,7 @@ namespace IntoTheDungeon.Features.Character
         MovementState _lastMovement;
         Facing2D _lastFacing;
 
-        public ViewBridge ViewBridge { get; }
+        public IViewBridge ViewBridge { get; }
 
         void Reset()
         {

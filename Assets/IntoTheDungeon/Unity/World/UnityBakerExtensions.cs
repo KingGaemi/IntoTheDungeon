@@ -49,6 +49,7 @@ namespace IntoTheDungeon.Unity.World
 
                 var t = root.Transform;
                 var rb = root.Rigidbody;
+                var collider = root.Collider;
 
                 var sceneLinkId = t.gameObject.GetInstanceID();
                 sceneViewRegistry.Register(sceneLinkId, t.gameObject);
@@ -62,12 +63,12 @@ namespace IntoTheDungeon.Unity.World
                 // 물리 핸들
                 if (rb != null)
                 {
-                    var body = new UnityPhysicsBody(rb);
+                    var body = new UnityPhysicsBody(rb, collider);
                     root.PhysicsHandle = physicsStore.Add(body);
                 }
                 else
                 {
-                    root.PhysicsHandle = -1;
+                    root.PhysicsHandle = PhysicsHandle.Invalid;
                 }
 
                 RecipeId recipe = default;

@@ -97,7 +97,7 @@ namespace IntoTheDungeon.Features.Input
                             RecipeIds.Character,
                             new SpawnSpec
                             {
-                                // handle
+                                PhysHandle = new(-1, 0),// handle
                                 // name
                                 Pos = trans.Position,
                                 Dir = trans.Direction
@@ -105,6 +105,7 @@ namespace IntoTheDungeon.Features.Input
                             , SpawnSource.Entity,
                             e
                         );
+                        _logger.Log($"position {trans.Position}, direction{trans.Direction}");
                         outBoxes[i].Set(in order);
                     }
 

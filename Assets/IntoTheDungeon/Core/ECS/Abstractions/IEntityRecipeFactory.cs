@@ -7,5 +7,6 @@ namespace IntoTheDungeon.Core.ECS.Abstractions
         RecipeId RecipeId { get; }
         IEntityRecipe Create(in SpawnSpec p);
         bool HasView { get; }
+        bool HasPhys { get; }
     }
 }

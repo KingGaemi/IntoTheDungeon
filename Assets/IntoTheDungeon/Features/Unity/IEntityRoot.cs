@@ -1,4 +1,5 @@
 using IntoTheDungeon.Core.ECS.Abstractions;
+using IntoTheDungeon.Core.Physics.Abstractions;
 
 namespace IntoTheDungeon.Features.Unity
 {
@@ -8,6 +9,6 @@ namespace IntoTheDungeon.Features.Unity
         UnityEngine.Transform Transform { get; }
         UnityEngine.Rigidbody2D Rigidbody { get; }
         UnityEngine.Collider2D Collider { get; }
-        int PhysicsHandle { get; set; }
+        PhysicsHandle PhysicsHandle { get; set; }
     }
 }

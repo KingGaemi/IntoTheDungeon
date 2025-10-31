@@ -12,6 +12,18 @@ PrefabInstance:
       propertyPath: m_Sprite
       value: 
       objectReference: {fileID: 2022856760124508034, guid: b75341cb8d13a8249953924d134b5582, type: 3}
+    - target: {fileID: 1750958887245746297, guid: d90d0adf33d597a4e9d70704c658c505, type: 3}
+      propertyPath: m_SpriteSortPoint
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2328642255016085125, guid: d90d0adf33d597a4e9d70704c658c505, type: 3}
+      propertyPath: rb
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 2328642255016085125, guid: d90d0adf33d597a4e9d70704c658c505, type: 3}
+      propertyPath: col
+      value: 
+      objectReference: {fileID: 0}
     - target: {fileID: 3492111320238609384, guid: d90d0adf33d597a4e9d70704c658c505, type: 3}
       propertyPath: m_Name
       value: Catherine Variant
@@ -19,6 +31,10 @@ PrefabInstance:
     - target: {fileID: 5315759078944248049, guid: d90d0adf33d597a4e9d70704c658c505, type: 3}
       propertyPath: recipeId.Value
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5473037548789165988, guid: d90d0adf33d597a4e9d70704c658c505, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7100884012093012603, guid: d90d0adf33d597a4e9d70704c658c505, type: 3}
       propertyPath: m_LocalPosition.x
@@ -76,7 +92,13 @@ PrefabInstance:
       propertyPath: m_CategoryHash
       value: 1.6083344e-32
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    - target: {fileID: 9077805314290004262, guid: d90d0adf33d597a4e9d70704c658c505, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.16
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 1209008290715939235, guid: d90d0adf33d597a4e9d70704c658c505, type: 3}
+    - {fileID: 7982888510345184668, guid: d90d0adf33d597a4e9d70704c658c505, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:

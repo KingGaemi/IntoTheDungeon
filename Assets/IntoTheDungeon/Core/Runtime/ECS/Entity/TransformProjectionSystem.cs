@@ -1,3 +1,4 @@
+using IntoTheDungeon.Core.Abstractions.Messages;
 using IntoTheDungeon.Core.Abstractions.World;
 using IntoTheDungeon.Core.ECS.Abstractions;
 using IntoTheDungeon.Core.ECS.Abstractions.Scheduling;
@@ -10,10 +11,11 @@ namespace IntoTheDungeon.Core.Runtime.ECS
     public class TransformProjectionSystem : GameSystem, ITick
     {
         IViewOpQueue _viewOpQueue;
+        ILogger _log;
         public override void Initialize(IWorld world)
         {
             base.Initialize(world);
-            Enabled = world.TryGet(out _viewOpQueue);
+            Enabled = world.TryGet(out _viewOpQueue) && world.TryGet(out _log);
         }
         public void Tick(float dt)
         {
@@ -35,6 +37,8 @@ namespace IntoTheDungeon.Core.Runtime.ECS
                             RotDeg = transform.Rotation * Mathx.Rad2Deg
                         };
                         _viewOpQueue.Enqueue(entity, transData);
+                        // _log.Log($"[Projection] Entity{entity.Index}, x = {transform.Position.X}, y = {transform.Position.Y}");
+
                     }
                 }
             }

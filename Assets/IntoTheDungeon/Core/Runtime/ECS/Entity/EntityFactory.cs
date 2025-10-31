@@ -45,9 +45,26 @@ namespace IntoTheDungeon.Core.Runtime.ECS
             e = em.CreateEntity();
 
             // 공통 기본
-            em.AddComponent(e, new TransformComponent { Position = spec.Pos, Direction = spec.Dir });
-            if (spec.PhysHandle >= 0) em.AddComponent(e, new PhysicsBodyRef { Handle = spec.PhysHandle });
             em.AddComponent(e, new InformationComponent { NameId = _nameTable.GetId(spec.Name), RecipeId = id, SceneLinkId = spec.SceneLinkId });
+            em.AddComponent(e, new TransformComponent { Position = spec.Pos, Direction = spec.Dir });
+#if UNITY_EDITOR
+            UnityEngine.Debug.Log($"{spec.Pos}, {spec.Dir}");
+#endif
+            if (spec.PhysHandle.Index >= 0)
+            {
+                em.AddComponent(e, new PhysicsBodyRef { Handle = spec.PhysHandle, Initialized = true });
+
+            }
+            else if (f.HasPhys)
+            {
+                // 스폰을 통해서 PhysHandle이 들어올 경우 재활용을 통해 할당하면됨, 만약 -1이거나 펙토리에서 Phys를 요구할 경우 -1로 초기화 된 핸들을 부여
+                em.AddComponent(e, new PhysicsBodyRef { Handle = spec.PhysHandle });
+
+
+#if UNITY_EDITOR
+                // UnityEngine.Debug.Log($"{e.Index}, spec.PhysHandle = {spec.PhysHandle}");
+#endif
+            }
 
             // 레시피 기본 컴포넌트
             var recipe = f.Create(in spec);
@@ -68,6 +85,7 @@ namespace IntoTheDungeon.Core.Runtime.ECS
                     OrderInLayer = ov?.OrderInLayer ?? -1
                 });
             }
+
 
             return true;
         }

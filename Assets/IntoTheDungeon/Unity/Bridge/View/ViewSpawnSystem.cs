@@ -5,24 +5,19 @@ using System.Collections.Generic;
 using IntoTheDungeon.Core.Abstractions.World;
 using IntoTheDungeon.Core.Abstractions.Messages;
 using IntoTheDungeon.Core.ECS.Components;
+using IntoTheDungeon.Core.Physics.Abstractions;
 
 namespace IntoTheDungeon.Unity.Bridge.View
 {
     public class ViewSpawnSystem : GameSystem, ITick
     {
-        IEntityViewMapRegistry _entityViewRegistry;
+
         IViewOpQueue _viewOpQueue;
         ILogger _log;
         public override void Initialize(IWorld world)
         {
             base.Initialize(world);
 
-
-            if (!world.TryGet(out _entityViewRegistry))
-            {
-                Enabled = false;
-                return;
-            }
             if (!world.TryGet(out _log))
             {
                 Enabled = false;
@@ -36,21 +31,24 @@ namespace IntoTheDungeon.Unity.Bridge.View
         {
             var spawned = new List<Entity>(256);
             var removeMarker = new List<Entity>(256);
-            foreach (var chunk in _world.EntityManager.GetChunks(typeof(InformationComponent), typeof(ViewMarker)))
+            foreach (var chunk in _world.EntityManager.GetChunks(typeof(InformationComponent), typeof(ViewMarker), typeof(PhysicsBodyRef), typeof(TransformComponent)))
             {
                 var entities = chunk.GetEntities();
                 var informs = chunk.GetComponentArray<InformationComponent>();
                 var markers = chunk.GetComponentArray<ViewMarker>();
+                var bodyRefs = chunk.GetComponentArray<PhysicsBodyRef>();
+                var transforms = chunk.GetComponentArray<TransformComponent>();
+
                 for (int i = 0; i < chunk.Count; i++)
                 {
                     var entity = entities[i];
                     if (_world.EntityManager.HasComponent<ViewSpawnedTag>(entity))
                         continue; // 이미 뷰가 생성된 엔티티
 
-
-
                     ref var info = ref informs[i];
                     ref var marker = ref markers[i];
+                    ref var bodyRef = ref bodyRefs[i];
+                    ref var trans = ref transforms[i];
 
                     var recipeId = info.RecipeId;
 
@@ -58,6 +56,7 @@ namespace IntoTheDungeon.Unity.Bridge.View
                     var data = new ViewSpawnData
                     {
                         RecipeId = recipeId,
+                        PhysicsHandle = bodyRef.Handle,
                         SceneLinkId = info.SceneLinkId,
                         SortingLayerId = marker.SortingLayerId,
                         OrderInLayer = marker.OrderInLayer,
@@ -65,9 +64,14 @@ namespace IntoTheDungeon.Unity.Bridge.View
 
 
                     _viewOpQueue.Enqueue(entity, data);
-                    _log.Log("ViewOpsEnqueued");
+
+                    var transData = new TransformData { X = trans.Position.X, Y = trans.Position.Y, RotDeg = trans.Rotation };
+
+                    _viewOpQueue.Enqueue(entity, transData);
+                    // _log.Log("ViewOpsEnqueued");
                     spawned.Add(entity);
                     removeMarker.Add(entity);
+
 
 
                 }

@@ -9,12 +9,21 @@ using IntoTheDungeon.Core.Physics.Abstractions;
 using IntoTheDungeon.Unity.Bridge.Physics.Abstractions;
 using IntoTheDungeon.Unity.Bridge.View.Abstractions;
 using IntoTheDungeon.Unity.Bridge.Core.Abstractions;
+using System.Linq;
+using System.Linq.Expressions;
 
 
 namespace IntoTheDungeon.Unity.Bridge.View
 {
-    [DefaultExecutionOrder(-8000)]
-    public sealed class ViewBridge : MonoBehaviour, IWorldInjectable, IViewPort
+    struct State
+    {
+        public Vector2 prev, curr;
+        public float rotPrev, rotCurr;
+        public int seq;          // 뷰데이터 시퀀스나 worldTick
+        public float tStart;     // 이 변화가 시작된 시간
+    }
+    [DefaultExecutionOrder(8000)]
+    public sealed class ViewBridge : MonoBehaviour, IWorldInjectable, IViewPort, IViewBridge
     {
         #region Config
         [SerializeField] int _maxOpsPerFrame = 256;
@@ -29,7 +38,6 @@ namespace IntoTheDungeon.Unity.Bridge.View
         ISceneViewRegistry _sceneViewRegistry;
         IPhysicsPort _physPort;
 
-        IPhysicsBodyStore _physBodyStore;
 
 
 
@@ -41,10 +49,16 @@ namespace IntoTheDungeon.Unity.Bridge.View
 
         readonly Dictionary<Entity, GameObject> _entityToGO = new(256);
         readonly Dictionary<GameObject, Entity> _goToEntity = new(256);
+        readonly Dictionary<Entity, PhysicsHandle> _pending = new();
         readonly Dictionary<Entity, IStateEventListener[]> _stateListeners = new();
         readonly Dictionary<Entity, IStatusEventListener[]> _statusListeners = new();
         readonly Dictionary<Entity, IAnimationEventListener[]> _animListeners = new();
+        readonly Dictionary<Entity, Transform> _trCache = new();
+        readonly Dictionary<Entity, State> _state = new();
+
         #endregion
+
+        float _alpha;
 
         #region Init
         public void Init(IWorld world)
@@ -79,12 +93,11 @@ namespace IntoTheDungeon.Unity.Bridge.View
                 enabled = false;
                 return;
             }
-            if (world.TryGet(out _physPort))
+            if (!world.TryGet(out _physPort))
             {
                 Debug.Log("[ViewBridge] no _physPort");
                 enabled = false;
                 return;
-
             }
         }
 
@@ -97,9 +110,54 @@ namespace IntoTheDungeon.Unity.Bridge.View
         #region Update
         void Update()
         {
+            _alpha = (Time.time - Time.fixedTime) / Time.fixedDeltaTime;
             ProcessOps();
             BroadcastEvents();
+            if (_pending.Count == 0) return;
+            foreach (var (e, h) in _pending.ToArray())
+                if (_physPort.TryGetRigidbody(h, out _)) { _physPort.AdoptBody(h, _entityToGO[e].transform); _pending.Remove(e); }
         }
+
+
+        void LateUpdate()
+        {
+
+        }
+        // {
+        // float now = Time.time;
+
+        // 임계값
+        // const float posEps = 0.0005f;
+        // const float rotEps = 0.05f;
+
+        // foreach (var kv in _state)
+        // {
+        //     var e = kv.Key;
+        //     var s = kv.Value;
+        //     if (!_trCache.TryGetValue(e, out var t)) continue;
+
+        //     // 물리틱 기반 알파. 알파 힌트를 이미 계산해 둔 경우 그 값을 사용.
+        //     float elapsed = now - s.tStart;
+        //     float alpha = physicsDt > 0f ? Mathf.Clamp01(elapsed / physicsDt) : 1f;
+
+        //     // 위치 보간
+        //     Vector2 pos = Vector2.Lerp(s.prev, s.curr, alpha);
+        //     // 회전 보간(Shortest path)
+        //     float rot = Mathf.LerpAngle(s.rotPrev, s.rotCurr, alpha);
+
+        //     // 변동이 충분할 때만 적용해 트랜스폼 더티 최소화
+        //     Vector3 curPos3 = t.position;
+        //     float curRot = t.eulerAngles.z;
+
+        //     bool posChanged = (new Vector2(curPos3.x, curPos3.y) - pos).sqrMagnitude > posEps * posEps;
+        //     bool rotChanged = Mathf.Abs(Mathf.DeltaAngle(curRot, rot)) > rotEps;
+
+        //     if (posChanged || rotChanged)
+        //     {
+        //         t.SetPositionAndRotation(new Vector3(pos.x, pos.y, curPos3.z), Quaternion.Euler(0, 0, rot));
+        //     }
+        // }
+        // }
 
         void ProcessOps()
         {
@@ -193,7 +251,7 @@ namespace IntoTheDungeon.Unity.Bridge.View
         #region Spawn/Despawn
         void Spawn(Entity entity, int idx)
         {
-            Debug.Log("[ViewBridge] ViewSpawn");
+            // Debug.Log("[ViewBridge] View Spawn");
             if (_entityToGO.ContainsKey(entity)) return;
 
             var data = ViewDataStores.Spawn[idx];
@@ -208,20 +266,35 @@ namespace IntoTheDungeon.Unity.Bridge.View
 
             GameObject go;
 
+
             if (data.SceneLinkId != 0 && _sceneViewRegistry.TryTake(data.SceneLinkId, out var existing))
             {
                 go = existing; // 기존 씬 GO 재사용
+                Debug.Log($"[ViewBridge] Reused existing {data.SceneLinkId}");
             }
             else
             {
                 go = viewRecipe.Prefab ? Instantiate(viewRecipe.Prefab) : new GameObject($"Entity_{entity.Index}");
+
             }
 
             go.name = $"Entity_{entity.Index}";
             go.SetActive(true);
+            go.transform.SetParent(gameObject.transform);
+            go.transform.position = gameObject.transform.position;
 
             var root = Ensure<EntityRootBehaviour>(go);
             root.Entity = entity;
+
+            // Debug.Log($"PhysicsHandle = {data.PhysicsHandle}");
+            if (data.PhysicsHandle.IsValid)
+            {
+                TryAdopt(entity, data.PhysicsHandle, go.transform);
+            }
+            else
+            {
+
+            }
 
             AttachBehaviours(root, viewRecipe);
             ApplyRender(go, data);
@@ -229,7 +302,6 @@ namespace IntoTheDungeon.Unity.Bridge.View
 
             _entityToGO[entity] = go;
             _goToEntity[go] = entity;
-
 
 
 
@@ -249,16 +321,38 @@ namespace IntoTheDungeon.Unity.Bridge.View
 
             Destroy(go);
         }
+        void RegisterView(Entity e, Transform visualTransform)
+        {
+            _trCache[e] = visualTransform;
+            _state[e] = new State
+            {
+                prev = (Vector2)visualTransform.position,
+                curr = (Vector2)visualTransform.position,
+                rotPrev = visualTransform.eulerAngles.z,
+                rotCurr = visualTransform.eulerAngles.z,
+                seq = -1,
+                tStart = Time.time
+            };
+        }
 
+        // 매 프레임 또는 ViewOp 처리 시 호출
         void SetTransform(Entity entity, int idx)
         {
+
+            ref var d = ref ViewDataStores.transformData[idx];
+            // d에는 X,Y,RotDeg 외에 가능하면 d.Seq(증분 카운터)를 넣어라. 없으면 월드 tick으로 대체.
+
             if (!_entityToGO.TryGetValue(entity, out var go)) return;
 
-            ref var data = ref ViewDataStores.transformData[idx];
-            var t = go.transform;
-            t.SetPositionAndRotation(
-                new Vector3(data.X, data.Y, t.position.z),
-                Quaternion.Euler(0f, 0f, data.RotDeg));
+            var visual = go.GetComponentInChildren<VisualContainer>();
+
+
+            var t = visual.gameObject.transform;
+
+
+            t.SetPositionAndRotation(new Vector3(d.X, d.Y, t.position.z), Quaternion.Euler(0, 0, d.RotDeg));
+
+
         }
         #endregion
 
@@ -298,6 +392,11 @@ namespace IntoTheDungeon.Unity.Bridge.View
             _animListeners[entity] = go.GetComponentsInChildren<IAnimationEventListener>();
 
 
+        }
+        void TryAdopt(Entity e, PhysicsHandle h, Transform t)
+        {
+            if (_physPort.TryGetRigidbody(h, out var _)) { _physPort.AdoptBody(h, t); _pending.Remove(e); }
+            else _pending[e] = h; // 아직 미생성 → 대기열
         }
         #endregion
 

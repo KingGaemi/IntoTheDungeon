@@ -5,10 +5,10 @@ using System.Collections.Generic;
 using IntoTheDungeon.Runtime;
 using IntoTheDungeon.Core.Runtime.Event;
 using IntoTheDungeon.Unity.World;
-using IntoTheDungeon.Unity.View;
 using IntoTheDungeon.Unity.Bridge.Physics;
 using IntoTheDungeon.Unity.Bridge.Physics.Abstractions;
 using IntoTheDungeon.Unity.Bridge.View.Abstractions;
+using IntoTheDungeon.Unity.Bridge.View;
 
 namespace IntoTheDungeon.Unity
 {
@@ -93,11 +93,15 @@ namespace IntoTheDungeon.Unity
 #endif
 
             SceneManager.activeSceneChanged += OnActiveSceneChanged;
-            CreateViewBridge();
-            CreatePhysicsBridge();
 
-            World.SetOnce<IPhysicsPort>(_physicsBridge);
-            World.SetOnce<IViewPort>(_viewBridge);
+            CreatePhysicsBridge();
+            World.Set<IPhysicsPort>(_physicsBridge);
+            _physicsBridge.Init(World);
+
+
+            CreateViewBridge();
+            World.Set<IViewPort>(_viewBridge);
+            _viewBridge.Init(World);
 
             Debug.Log("[Bootstrapper] Awake completed");
         }
@@ -129,9 +133,9 @@ namespace IntoTheDungeon.Unity
 
 
             bridgeGO = new GameObject("[ViewBridge]");
-            bridgeGO.transform.SetParent(transform, false);
-            DontDestroyOnLoad(bridgeGO);
+            bridgeGO.transform.position = new Vector3(0, 0, 0);
             _viewBridge = bridgeGO.AddComponent<ViewBridge>();
+            DontDestroyOnLoad(bridgeGO);
 
 
             if (_viewBridge == null)
@@ -139,9 +143,6 @@ namespace IntoTheDungeon.Unity
                 Debug.LogError("[Bootstrapper] ViewBridge component not found!");
                 return;
             }
-
-            // World 주입
-            _viewBridge.Init(World);
 
             Debug.Log("[Bootstrapper] ViewBridge created");
         }
@@ -152,7 +153,7 @@ namespace IntoTheDungeon.Unity
 
 
             bridgeGO = new GameObject("[PhysicsBridge]");
-            bridgeGO.transform.SetParent(transform, false);
+            bridgeGO.transform.position = new Vector3(0, 0, 0);
             DontDestroyOnLoad(bridgeGO);
             _physicsBridge = bridgeGO.AddComponent<PhysicsBridge>();
 
@@ -162,9 +163,6 @@ namespace IntoTheDungeon.Unity
                 Debug.LogError("[Bootstrapper] PhysicsBridge component not found!");
                 return;
             }
-
-            // World 주입
-            _physicsBridge.Init(World);
 
             Debug.Log("[Bootstrapper] PhysicsBridge created");
         }

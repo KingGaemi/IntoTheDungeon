@@ -1,6 +1,7 @@
 using UnityEngine;
 using IntoTheDungeon.Core.ECS.Abstractions;
 using IntoTheDungeon.Features.Unity;
+using IntoTheDungeon.Core.Physics.Abstractions;
 
 [DisallowMultipleComponent]
 [DefaultExecutionOrder(-8000)]
@@ -18,10 +19,14 @@ public class EntityRootBehaviour : MonoBehaviour, IEntityRoot
     public Transform Transform => transform;
     public Rigidbody2D Rigidbody => rb;
     public Collider2D Collider => col;
+    public PhysicsHandle PhysicsHandle { get; set; }
+    void Awake()
+    {
+        PhysicsHandle = new(-1, 0);
+        EnsureReferences();
+    }
 
-    public int PhysicsHandle { get; set; } = -1;
-
-    void OnValidate()
+    void EnsureReferences()
     {
         if (visualContainer == null)
             visualContainer = GetComponentInChildren<VisualContainer>();
@@ -34,5 +39,10 @@ public class EntityRootBehaviour : MonoBehaviour, IEntityRoot
 
         if (col == null)
             col = GetComponent<Collider2D>();
+    }
+
+    void OnValidate()
+    {
+        EnsureReferences();
     }
 }

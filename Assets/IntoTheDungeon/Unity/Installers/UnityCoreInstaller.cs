@@ -73,6 +73,7 @@ namespace IntoTheDungeon.Unity
 
 
 
+            world.SetOnce<IHandleOwnerIndex>(new HandleOwnerIndex());
 
 
 
@@ -90,13 +91,19 @@ namespace IntoTheDungeon.Unity
 
 
             var physQueue = new PhysicsOpQueue();
-            var physStore = new PhysicsOpStore();
+            var physStore_in = new PhysicsOpStore();
+            var physStore_out = new PhysicsOpStore();
             var physBodyStore = new PhysicsBodyStore();
-            var resolveSystem = new PhysicsOpResolveSystem(physQueue, physStore);
+            var resolveSystem = new PhysicsOpResolveSystem(physQueue, physStore_out);
             world.SetOnce<IPhysicsOpQueue>(physQueue);
-            world.SetOnce<IPhysicsOpStore>(physStore);
+            world.SetOnce<IPhysicsCommandStore>(physStore_out);
+            world.SetOnce<IPhysicsFeedbackStore>(physStore_in);
             world.SetOnce<IPhysicsBodyStore>(physBodyStore);
             world.SetOnce<IPhysicsOpResolveSystem>(resolveSystem);
+
+            Debug.Log($"[Installer] BodyCreateQueue({viewOpQueueCapacity})");
+            world.SetOnce<IBodyCreateQueue>(new BodyCreateQueue());
+
 
 
 
@@ -125,8 +132,12 @@ namespace IntoTheDungeon.Unity
             Debug.Log("[Installer] L");
 
             Debug.Log("[Installer] M");
+            world.SystemManager.AddUnique(new PhysicsSpawnSystem());
             world.SystemManager.AddUnique(new ViewSpawnSystem());
-            // world.SystemManager.AddUnique(new TransformProjectionSystem());
+            world.SystemManager.AddUnique(new PhysFeedbackApplySystem());
+
+            world.SystemManager.AddUnique(new TransformProjectionSystem());
+
 
 
             Debug.Log("[Installer] OK");

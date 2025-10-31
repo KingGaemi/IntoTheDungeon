@@ -1,5 +1,6 @@
 using System;
 using IntoTheDungeon.Core.Abstractions.Messages.Spawn;
+using IntoTheDungeon.Core.Physics.Abstractions;
 
 namespace IntoTheDungeon.Core.ECS.Abstractions
 {
@@ -36,7 +37,7 @@ namespace IntoTheDungeon.Core.ECS.Abstractions
     public struct ViewSpawnData
     {
         public RecipeId RecipeId;
-
+        public PhysicsHandle PhysicsHandle;
         public int SceneLinkId;
         public short SortingLayerId;
         public short OrderInLayer;

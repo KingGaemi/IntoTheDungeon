@@ -83,8 +83,8 @@ namespace IntoTheDungeon.Features.Command
 
                 }
             }
-            if (processedCount > 0)
-                _logger.Log($"[IntentApply] Processed {processedCount} intents this frame");
+            // if (processedCount > 0)
+            // _logger.Log($"[IntentApply] Processed {processedCount} intents this frame");
 
         }
         // ============================================
@@ -242,8 +242,8 @@ namespace IntoTheDungeon.Features.Command
         void PublishStateChanged(Entity e, in StateSnapshot prev, in StateSnapshot cur, ChangeMask mask)
         {
             _hub.Publish(StateChangedEvent.FromSnapshot(e, cur, mask));
-            _logger.Log($"StateChanged PUB e={e.Index} mask={mask}");
-            _logger.Log($"PUB count={_hub.Count<StateChangedEvent>()}");
+            // _logger.Log($"StateChanged PUB e={e.Index} mask={mask}");
+            // _logger.Log($"PUB count={_hub.Count<StateChangedEvent>()}");
 
         }
 
