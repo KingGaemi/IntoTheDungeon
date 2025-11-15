@@ -31,7 +31,7 @@ namespace IntoTheDungeon.Core.Physics.Implementation
             _bodies[i] = body;
 
 #if UNITY_EDITOR
-            UnityEngine.Debug.Log($"Body {i}");
+            // UnityEngine.Debug.Log($"Body {i}");
 #endif
         }
         public PhysicsHandle Add(IPhysicsBody body)

@@ -42,12 +42,19 @@ namespace IntoTheDungeon.Features.Status
                         ApplyModification(ref s, m, ref dirty);
                         applied++;
                     }
+                    if (!s.Initialized)
+                    {
+                        dirty = StatusDirty.All;
+                        applied++;
+                        s.Initialized = true;
+                    }
 
                     // 이벤트 발행
                     if (applied > 0 && dirty != StatusDirty.None)
                         _hub.Publish(new StatusChangedEvent(entities[i], dirty, s.Damage, s.Armor, s.AttackSpeed, s.MovementSpeed));
                     // 큐 비우기
                     queue.Clear();
+
                 }
             }
         }

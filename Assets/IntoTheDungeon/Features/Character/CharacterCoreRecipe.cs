@@ -8,6 +8,7 @@ using IntoTheDungeon.Features.Command;
 using IntoTheDungeon.Features.Physics.Components;
 using IntoTheDungeon.Features.State;
 using IntoTheDungeon.Features.Status;
+using IntoTheDungeon.Core.Collections;
 
 namespace IntoTheDungeon.Features.Character
 {
@@ -37,7 +38,6 @@ namespace IntoTheDungeon.Features.Character
             });
             em.AddComponent(e, new KinematicComponent());
             em.AddComponent(e, new CharacterIntentBuffer());
-            em.AddComponent(e, new AnimationSyncComponent());
             em.AddComponent(e, new ActionPhaseComponent { WindupDuration = 0.5f, RecoveryDuration = 0.7f });
             em.AddComponent(e, new StatusModificationQueue());
             em.AddComponent(e, new HpModificationQueue());

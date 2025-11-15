@@ -48,7 +48,7 @@ namespace IntoTheDungeon.Core.Runtime.ECS
             em.AddComponent(e, new InformationComponent { NameId = _nameTable.GetId(spec.Name), RecipeId = id, SceneLinkId = spec.SceneLinkId });
             em.AddComponent(e, new TransformComponent { Position = spec.Pos, Direction = spec.Dir });
 #if UNITY_EDITOR
-            UnityEngine.Debug.Log($"{spec.Pos}, {spec.Dir}");
+            // UnityEngine.Debug.Log($"{spec.Pos}, {spec.Dir}");
 #endif
             if (spec.PhysHandle.Index >= 0)
             {

@@ -14,6 +14,7 @@ namespace IntoTheDungeon.Features.Status
 
         public float ProjectileAcceleration;
         public float ProjectileLifeTime;
+        public bool Initialized;
 
         public readonly float HpRatio => MaxHp > 0 ? (float)CurrentHp / MaxHp : 0f;
 

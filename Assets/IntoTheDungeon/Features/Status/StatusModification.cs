@@ -10,6 +10,8 @@ namespace IntoTheDungeon.Features.Status
             AddDamage,
             SetDamage,
             SetArmor,
+            SetMaxHp,
+            SetCurrentHp,
             SetAttackSpeed,
             SetMovementSpeed,
             Init

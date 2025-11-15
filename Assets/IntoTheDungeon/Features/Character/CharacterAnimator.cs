@@ -79,7 +79,7 @@ namespace IntoTheDungeon.Features.Character
             }
 
             // Facing 변경
-            if (evt.HasFacing && _lastFacing != evt.Snapshot.Facing)
+            if (evt.HasFacing)
             {
                 _lastFacing = evt.Snapshot.Facing;
                 HandleFacing(evt.Snapshot.Facing);
@@ -100,6 +100,12 @@ namespace IntoTheDungeon.Features.Character
 
         public void OnStatusChanged(in StatusChangedEvent evt)
         {
+            if (evt.Dirty == StatusDirty.All)
+            {
+                _animator.SetFloat(HashAttackSpeed, evt.AttackSpeed * _multiplier);
+                _animator.SetFloat(HashMovementSpeed, evt.MovementSpeed * _multiplier);
+                return;
+            }
             if ((evt.Dirty & StatusDirty.AtkSpd) != 0)
             {
                 _animator.SetFloat(HashAttackSpeed, evt.AttackSpeed * _multiplier);
