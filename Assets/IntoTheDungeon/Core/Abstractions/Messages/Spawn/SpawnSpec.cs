@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using IntoTheDungeon.Core.Abstractions.Gameplay;
 using IntoTheDungeon.Core.ECS.Abstractions.Spawn;
 using IntoTheDungeon.Core.Physics.Abstractions;
 using IntoTheDungeon.Core.Util;
@@ -18,5 +19,6 @@ namespace IntoTheDungeon.Core.Abstractions.Messages.Spawn
         public Vec2 Pos, Dir;
         public List<ISpawnInit> Inits;
         public ViewOverride? ViewOverride;
+        public TeamFlag TeamFlag;
     }
 }

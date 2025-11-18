@@ -12,7 +12,6 @@ namespace IntoTheDungeon.Features.Character
         public void Apply(IWorld world, Entity e)
         {
             var em = world.EntityManager;
-
             // StatusComponent add/replace
             if (em.HasComponent<StatusComponent>(e))
             {

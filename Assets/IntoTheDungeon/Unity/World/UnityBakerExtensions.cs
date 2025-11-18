@@ -37,7 +37,6 @@ namespace IntoTheDungeon.Unity.World
             var allMono = Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
             var roots = allMono.OfType<IEntityRoot>().ToArray();
 
-
             foreach (var root in roots)
             {
 
@@ -93,9 +92,6 @@ namespace IntoTheDungeon.Unity.World
                     continue;
                 }
 
-
-
-
                 // SpawnSpec 생성
                 float rad = t.eulerAngles.z * Mathf.Deg2Rad;
                 var spec = new SpawnSpec
@@ -117,9 +113,7 @@ namespace IntoTheDungeon.Unity.World
 
                 Debug.Log($"[BakeScene] Enqueue {recipe.Value}");
                 queue.Enqueue(new SpawnOrder(recipe, spec, SpawnSource.System));
-
             }
         }
-
     }
 }

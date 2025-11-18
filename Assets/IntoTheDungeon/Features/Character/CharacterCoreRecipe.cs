@@ -15,15 +15,10 @@ namespace IntoTheDungeon.Features.Character
     public sealed class CharacterCoreRecipe : IEntityRecipe
     {
         public RecipeId Id { get; }
-
         readonly int _maxHp; readonly float _movSpd, _atkSpd;
-
         public CharacterCoreRecipe(RecipeId id,
             int maxHp, float movSpd, float atkSpd)
         { Id = id; _maxHp = maxHp; _movSpd = movSpd; _atkSpd = atkSpd; }
-
-
-
         public void Apply(IEntityManager em, Entity e)
         {
             em.AddComponent(e, new PlayerTag());
@@ -42,7 +37,7 @@ namespace IntoTheDungeon.Features.Character
             em.AddComponent(e, new StatusModificationQueue());
             em.AddComponent(e, new HpModificationQueue());
             em.AddComponent(e, new SpawnOutbox());
+            em.AddComponent(e, new IntoTheDungeon.Core.ECS.Components.TeamComponent());
         }
-
     }
 }

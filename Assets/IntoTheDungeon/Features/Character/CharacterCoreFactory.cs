@@ -11,7 +11,6 @@ namespace IntoTheDungeon.Features.Character
         [SerializeField] RecipeId id = RecipeIds.Character; // 기본값
         public RecipeId RecipeId => id;
         public bool HasView => true;
-
         public bool HasPhys => true;
 
         [SerializeField] int defaultMaxHp = 100;

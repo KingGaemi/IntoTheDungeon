@@ -10,14 +10,11 @@ namespace IntoTheDungeon.Features.Status
         public int Damage;
         public float AttackSpeed;
         public float MovementSpeed;
-        public bool IsAlive;
-
         public float ProjectileAcceleration;
         public float ProjectileLifeTime;
+        public bool IsAlive;
         public bool Initialized;
-
         public readonly float HpRatio => MaxHp > 0 ? (float)CurrentHp / MaxHp : 0f;
-
         public static readonly StatusComponent Default = new()
         {
             MaxHp = 100,

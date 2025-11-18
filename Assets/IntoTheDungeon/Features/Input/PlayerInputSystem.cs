@@ -108,6 +108,26 @@ namespace IntoTheDungeon.Features.Input
                         // _logger.Log($"position {trans.Position}, direction{trans.Direction}");
                         outBoxes[i].Set(in order);
                     }
+                    if (_input.R_Down)
+                    {
+                        ref var trans = ref transforms[i];
+                        var order = new SpawnOrder(
+                            RecipeIds.Character,
+                            new SpawnSpec
+                            {
+                                PhysHandle = new(-1, 0),// handle
+                                // name
+                                Pos = new Vec2(trans.Position.X + 5, trans.Position.Y),
+                                Dir = trans.Direction,
+                                Name = "Orc1"
+                            }
+                            , SpawnSource.Entity,
+                            e
+                        );
+                        // _logger.Log($"position {trans.Position}, direction{trans.Direction}");
+                        outBoxes[i].Set(in order);
+                    }
+
 
                 }
             }

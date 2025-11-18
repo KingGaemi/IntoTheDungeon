@@ -7,13 +7,12 @@ using IntoTheDungeon.Unity.Catalogs;
 
 namespace IntoTheDungeon.Features.Core
 {
-    public struct SpriteInit : ISpawnInit
+    public struct TypeInit : ISpawnInit
     {
         public UnityEngine.Sprite Sprite;
         public bool FlipX, FlipY;
         public UnityEngine.Color Color;
         public float Scale;
-        public string SkinToken;
         public void Apply(IWorld world, Entity e)
         {
             var em = world.EntityManager;
