@@ -13,6 +13,7 @@ using IntoTheDungeon.Core.Abstractions.View;
 using IntoTheDungeon.Core.ECS.Abstractions.Spawn;
 using IntoTheDungeon.Unity.Bridge.Core.Abstractions;
 using IntoTheDungeon.Unity.Bridge.View.Abstractions;
+using IntoTheDungeon.Core.Abstractions.Types;
 
 
 
@@ -27,12 +28,12 @@ namespace IntoTheDungeon.Unity.World
                 !world.TryGet(out ISystemSpawnQueue queue) ||
                 !world.TryGet(out INameToRecipeRegistry name2recipe) ||
                 !world.TryGet(out IViewRecipeRegistry viewRecipeRegistry) ||
-                !world.TryGet(out ISceneViewRegistry sceneViewRegistry))
+                !world.TryGet(out ISceneViewRegistry sceneViewRegistry) ||
+                !world.TryGet(out INameTable nameTable))
             {
                 Debug.LogError("[BakeScene] 필수 서비스 누락");
                 return;
             }
-
 
             var allMono = Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
             var roots = allMono.OfType<IEntityRoot>().ToArray();
@@ -70,7 +71,7 @@ namespace IntoTheDungeon.Unity.World
                     root.PhysicsHandle = PhysicsHandle.Invalid;
                 }
 
-                RecipeId recipe = default;
+                RecipeId recipe = RecipeId.Default;
 
                 var vmProvider = vcGo.GetComponent<IViewMarkerProvider>();
 

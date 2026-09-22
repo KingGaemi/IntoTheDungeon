@@ -84,6 +84,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Orc1
       objectReference: {fileID: 0}
+    - target: {fileID: 5631168263129933836, guid: 389c3f98adf364646bbecf7bdbaa6d68, type: 3}
+      propertyPath: m_Name
+      value: Visual_Orc1
+      objectReference: {fileID: 0}
     - target: {fileID: 5886678299475046363, guid: 389c3f98adf364646bbecf7bdbaa6d68, type: 3}
       propertyPath: m_SpriteLibraryAsset
       value: 

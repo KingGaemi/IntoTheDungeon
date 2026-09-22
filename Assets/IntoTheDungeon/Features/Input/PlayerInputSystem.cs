@@ -92,34 +92,36 @@ namespace IntoTheDungeon.Features.Input
                     }
                     if (_input.E_Down)
                     {
-                        ref var trans = ref transforms[i];
-                        var order = new SpawnOrder(
-                            RecipeIds.Character,
-                            new SpawnSpec
-                            {
-                                PhysHandle = new(-1, 0),// handle
-                                // name
-                                Pos = trans.Position,
-                                Dir = trans.Direction
-                            }
-                            , SpawnSource.Entity,
-                            e
-                        );
-                        // _logger.Log($"position {trans.Position}, direction{trans.Direction}");
-                        outBoxes[i].Set(in order);
+                        // ref var trans = ref transforms[i];
+                        // var order = new SpawnOrder(
+                        //     RecipeIds.Character,
+                        //     new SpawnSpec
+                        //     {
+                        //         PhysHandle = new(-1, 0),// handle
+                        //         // name
+                        //         Pos = trans.Position,
+                        //         Dir = trans.Direction
+                        //     }
+                        //     , SpawnSource.Entity,
+                        //     e
+                        // );
+                        // // _logger.Log($"position {trans.Position}, direction{trans.Direction}");
+                        // outBoxes[i].Set(in order);
                     }
                     if (_input.R_Down)
                     {
                         ref var trans = ref transforms[i];
                         var order = new SpawnOrder(
-                            RecipeIds.Character,
+                            RecipeId.FromString("Orc1"),
                             new SpawnSpec
                             {
                                 PhysHandle = new(-1, 0),// handle
                                 // name
                                 Pos = new Vec2(trans.Position.X + 5, trans.Position.Y),
                                 Dir = trans.Direction,
-                                Name = "Orc1"
+                                Name = "Orc1",
+                                TeamFlag = TeamFlag.Enemy
+
                             }
                             , SpawnSource.Entity,
                             e

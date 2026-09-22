@@ -1,6 +1,7 @@
 
 using System.Collections.Generic;
 using IntoTheDungeon.Core.Abstractions.Messages.Spawn;
+using IntoTheDungeon.Core.Abstractions.Types;
 using IntoTheDungeon.Core.Abstractions.Services;
 using IntoTheDungeon.Core.Abstractions.World;
 using IntoTheDungeon.Core.ECS.Abstractions;
@@ -39,8 +40,13 @@ namespace IntoTheDungeon.Core.Runtime.ECS
         public bool TrySpawn(RecipeId id, in SpawnSpec spec, out Entity e)
         {
             e = Entity.Null;
-            if (!_registry.TryGetFactory(id, out var f)) return false;
-
+            if (!_registry.TryGetFactory(id, out var f))
+            {
+#if UNITY_EDITOR
+                UnityEngine.Debug.LogError($"[TrySpawn 실패] 팩토리를 찾을 수 없습니다! RecipeId: {id}, Name: {spec.Name}");
+#endif
+                return false;
+            }
             var em = _world.EntityManager;
             e = em.CreateEntity();
 

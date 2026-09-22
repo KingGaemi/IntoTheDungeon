@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5ed56150cb932cf4ea6d83be3e1cce4b, type: 3}
-  m_Name: CharacterViewRecipe
+  m_Name: Orc1ViewRecipe
   m_EditorClassIdentifier: 
-  prefab: {fileID: 8985043570437363188, guid: d90d0adf33d597a4e9d70704c658c505, type: 3}
+  prefab: {fileID: 7626262773234588638, guid: ec719485a57ed7f4b87c6765a6603848, type: 3}
   visualBehaviourTypeNames:
   - UnityEngine.SpriteRenderer, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral,
     PublicKeyToken=null

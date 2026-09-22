@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using IntoTheDungeon.Core.Abstractions.Messages.Spawn;
+using IntoTheDungeon.Core.Abstractions.Types;
 using IntoTheDungeon.Core.ECS.Abstractions;
 
 namespace IntoTheDungeon.Core.ECS.Entities

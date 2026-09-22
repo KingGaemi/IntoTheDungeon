@@ -1,5 +1,5 @@
 using System;
-using IntoTheDungeon.Core.Abstractions.Messages.Spawn;
+using IntoTheDungeon.Core.Abstractions.Types;
 using IntoTheDungeon.Core.Physics.Abstractions;
 
 namespace IntoTheDungeon.Core.ECS.Abstractions
@@ -16,7 +16,7 @@ namespace IntoTheDungeon.Core.ECS.Abstractions
         public static implicit operator int(ViewId id) => id.Value;
         public static implicit operator ViewId(int value) => new(value);
 
-        public override string ToString() => $"RecipeId({Value})";
+        public override string ToString() => $"ViewId({Value})";
     }
     public enum ViewOpKind { None, Spawn, Despawn, SetTransform }
 

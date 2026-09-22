@@ -1,4 +1,5 @@
 using IntoTheDungeon.Core.ECS.Abstractions;
+using IntoTheDungeon.Core.Abstractions.Types;
 
 namespace IntoTheDungeon.Core.Abstractions.Messages.Spawn
 {

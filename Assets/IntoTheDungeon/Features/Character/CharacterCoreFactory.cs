@@ -5,10 +5,9 @@ using IntoTheDungeon.Core.Abstractions.Types;
 
 namespace IntoTheDungeon.Features.Character
 {
-
     public sealed class CharacterCoreFactory : IEntityRecipeFactory
     {
-        [SerializeField] RecipeId id = RecipeIds.Character; // 기본값
+        [SerializeField] RecipeId id = RecipeId.Default; // 기본값
         public RecipeId RecipeId => id;
         public bool HasView => true;
         public bool HasPhys => true;

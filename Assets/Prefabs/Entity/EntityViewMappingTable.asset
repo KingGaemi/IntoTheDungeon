@@ -15,5 +15,5 @@ MonoBehaviour:
   mappings:
   - recipeIdString: Character
     viewRecipe: {fileID: 11400000, guid: d6d911a4d86d4b947925bdd20ccf966b, type: 2}
-  - recipeIdString: 
-    viewRecipe: {fileID: 0}
+  - recipeIdString: Orc1
+    viewRecipe: {fileID: 11400000, guid: e3086b39512e74e4b837de30386d58a4, type: 2}

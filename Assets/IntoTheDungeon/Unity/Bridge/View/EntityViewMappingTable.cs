@@ -2,8 +2,6 @@
 using UnityEngine;
 using System;
 using IntoTheDungeon.Core.ECS.Abstractions;
-using IntoTheDungeon.Unity.Bridge.View.Abstractions;
-using IntoTheDungeon.Core.Abstractions.Messages.Spawn;
 using IntoTheDungeon.Core.Abstractions.Types;
 
 namespace IntoTheDungeon.Unity.Bridge.View
@@ -43,11 +41,8 @@ namespace IntoTheDungeon.Unity.Bridge.View
 
         RecipeId RecipeStringToId(in string recipeString)
         {
-            return recipeString switch
-            {
-                "Character" => RecipeIds.Character,
-                _ => RecipeIds.Default,
-            };
+            // 스위치문 없이, 문자열 자체를 해시화하여 고유 ID로 사용
+            return RecipeId.FromString(recipeString);
         }
 
 

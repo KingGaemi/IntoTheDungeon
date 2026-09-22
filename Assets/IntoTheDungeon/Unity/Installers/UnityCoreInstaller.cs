@@ -1,7 +1,6 @@
 using UnityEngine;
 using IntoTheDungeon.Core.Runtime.World;
 using IntoTheDungeon.Core.Abstractions.Services;
-
 using IntoTheDungeon.Core.Runtime.Services;
 using IntoTheDungeon.Core.Runtime.Event;
 using IntoTheDungeon.Core.Physics.Abstractions;
@@ -19,19 +18,22 @@ using IntoTheDungeon.Core.ECS.Abstractions;
 using IntoTheDungeon.Core.ECS.Entities;
 using IntoTheDungeon.Features.Unity.Abstractions;
 using IntoTheDungeon.Core.Abstractions.Gameplay;
-using IntoTheDungeon.Core.Abstractions.Types;
 using IntoTheDungeon.Features.Character;
-using IntoTheDungeon.Unity.Bridge.Physics.Abstractions;
 using IntoTheDungeon.Unity.Bridge.View.Abstractions;
 using IntoTheDungeon.Unity.Bridge.Core.Abstractions;
 using IntoTheDungeon.Unity.Bridge.Core;
 using IntoTheDungeon.Unity.Bridge.View;
+using IntoTheDungeon.Core.Abstractions.Types;
 namespace IntoTheDungeon.Unity
 {
     public class UnityCoreInstaller : MonoGameInstaller
     {
         [SerializeField] ViewRecipeRegistry viewRecipeRegistry;
         [SerializeField] EntityViewMappingTable mappingTable;
+
+        [Header("Entity Data")]
+        [Tooltip("팩토리에 등록할 캐릭터/몬스터 이름들 (예: Catherine, Orc1, Slime)")]
+        [SerializeField] string[] characterNames = { "Character", "Catherine", "Orc1" };
         public override void Install(GameWorld world)
         {
             Debug.Log("[Installer] EventHub");
@@ -46,9 +48,22 @@ namespace IntoTheDungeon.Unity
             Debug.Log("[Installer] EntityRecipeRegistry");
             var entityRecipeRegistry = new EntityRecipeRegistry();
             world.SetOnce<IEntityRecipeRegistry>(entityRecipeRegistry);
-            entityRecipeRegistry.Register(RecipeIds.Character, new CharacterCoreFactory());
+            // 1. 단일 공용 팩토리 생성 (인스펙터 할당 불필요, 여기서 한 번만 생성)
+            var characterFactory = new CharacterCoreFactory();
 
+            // 2. 인스펙터(또는 JSON)에 등록된 모든 이름을 하나의 캐릭터 팩토리로 일괄 매핑
+            foreach (var name in characterNames)
+            {
+                var recipeId = RecipeId.FromString(name);
+                entityRecipeRegistry.Register(recipeId, characterFactory);
+                Debug.Log($"[Installer] Registered RecipeId: {name}");
+            }
 
+            // ... (기존 ViewRegistry 등록 및 시스템 추가 코드 유지)
+
+            if (!viewRecipeRegistry) { Debug.LogError("viewRecipeRegistry null"); return; }
+            viewRecipeRegistry.Initialize();
+            world.SetOnce<IViewRecipeRegistry>(viewRecipeRegistry);
 
 
 

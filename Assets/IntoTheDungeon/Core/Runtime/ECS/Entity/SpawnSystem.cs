@@ -53,7 +53,7 @@ namespace IntoTheDungeon.Core.Runtime.ECS
                 var order = _inbox[i];
                 if (!_factory.TrySpawn(order.RecipeId, order.Spec, out _))
                 {
-                    _log.Warn($"Spawn failed: id={order.RecipeId.Value}");
+                    _log.Warn($"Spawn failed: id={order.RecipeId.ToString()}");
                 }
             }
         }

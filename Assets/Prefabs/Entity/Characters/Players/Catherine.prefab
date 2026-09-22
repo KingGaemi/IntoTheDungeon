@@ -8,10 +8,30 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 231124305330233403, guid: a51f6abf002a65347b3ad4e8a81ac7a8, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 7cc5841f1cdcb374da36910e83ffb0f6, type: 2}
+    - target: {fileID: 2323242309870787567, guid: a51f6abf002a65347b3ad4e8a81ac7a8, type: 3}
+      propertyPath: m_labelHash
+      value: 0.00000040954276
+      objectReference: {fileID: 0}
+    - target: {fileID: 2323242309870787567, guid: a51f6abf002a65347b3ad4e8a81ac7a8, type: 3}
+      propertyPath: m_SpriteHash
+      value: 288431053
+      objectReference: {fileID: 0}
+    - target: {fileID: 2323242309870787567, guid: a51f6abf002a65347b3ad4e8a81ac7a8, type: 3}
+      propertyPath: m_CategoryHash
+      value: 0.009161512
+      objectReference: {fileID: 0}
     - target: {fileID: 2597234715232575828, guid: a51f6abf002a65347b3ad4e8a81ac7a8, type: 3}
       propertyPath: m_SpriteLibraryAsset
       value: 
       objectReference: {fileID: 7108339969198208228, guid: 839133ce86788254584c071d0d9134fe, type: 3}
+    - target: {fileID: 4296284769679173251, guid: a51f6abf002a65347b3ad4e8a81ac7a8, type: 3}
+      propertyPath: m_Name
+      value: Visual_Catherine
+      objectReference: {fileID: 0}
     - target: {fileID: 4635166508696505438, guid: a51f6abf002a65347b3ad4e8a81ac7a8, type: 3}
       propertyPath: m_LocalScale.x
       value: 3

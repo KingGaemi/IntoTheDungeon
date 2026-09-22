@@ -10,7 +10,7 @@ namespace IntoTheDungeon.Unity.Behaviour
     {
         public bool TryGetRecipe(out RecipeId id)
         {
-            id = RecipeIds.Character;
+            id = RecipeId.FromString("Character");
             return true;
         }
     }
