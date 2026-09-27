@@ -4,7 +4,6 @@ namespace IntoTheDungeon.Core.Abstractions.World
 {
     public interface IGameplayAuthoring
     {
-        bool TryGetRecipe(out RecipeId id);
-
+        bool TryGetRecipe(IWorld world, out RecipeId id);
     }
 }

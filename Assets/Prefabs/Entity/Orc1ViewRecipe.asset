@@ -13,6 +13,8 @@ MonoBehaviour:
   m_Name: Orc1ViewRecipe
   m_EditorClassIdentifier: 
   prefab: {fileID: 7626262773234588638, guid: ec719485a57ed7f4b87c6765a6603848, type: 3}
+  attackWindupClip: {fileID: 0}
+  attackRecoveryClip: {fileID: 0}
   visualBehaviourTypeNames:
   - UnityEngine.SpriteRenderer, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral,
     PublicKeyToken=null
@@ -29,3 +31,6 @@ MonoBehaviour:
     Culture=neutral, PublicKeyToken=null
   - IntoTheDungeon.Unity.Behaviour.CharacterInitBehaviour, Assembly-CSharp, Version=0.0.0.0,
     Culture=neutral, PublicKeyToken=null
+  - IntoTheDungeon.Unity.DebugTools.EntityStatusViewer, Assembly-CSharp, Version=0.0.0.0,
+    Culture=neutral, PublicKeyToken=null
+  displayName: Orc1

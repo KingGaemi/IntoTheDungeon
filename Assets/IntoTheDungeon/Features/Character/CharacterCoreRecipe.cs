@@ -16,12 +16,14 @@ namespace IntoTheDungeon.Features.Character
     {
         public RecipeId Id { get; }
         readonly int _maxHp; readonly float _movSpd, _atkSpd;
+        readonly bool _isPlayer;
         public CharacterCoreRecipe(RecipeId id,
-            int maxHp, float movSpd, float atkSpd)
-        { Id = id; _maxHp = maxHp; _movSpd = movSpd; _atkSpd = atkSpd; }
+            int maxHp, float movSpd, float atkSpd, bool isPlayer = false)
+        { Id = id; _maxHp = maxHp; _movSpd = movSpd; _atkSpd = atkSpd; _isPlayer = isPlayer; }
         public void Apply(IEntityManager em, Entity e)
         {
-            em.AddComponent(e, new PlayerTag());
+            if (_isPlayer)
+                em.AddComponent(e, new PlayerTag());
             em.AddComponent(e, new StateComponent(ActionState.Idle));
             em.AddComponent(e, new StatusComponent
             {

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using IntoTheDungeon.Core.Abstractions.World;
-using IntoTheDungeon.Core.Abstractions.Types;
+using IntoTheDungeon.Core.Abstractions.Services;
 using IntoTheDungeon.Features.Character;
 using IntoTheDungeon.Runtime.Abstractions;
 using IntoTheDungeon.Core.Runtime.World;
@@ -25,11 +25,15 @@ namespace IntoTheDungeon.Runtime.Installers
             {
                 throw new System.Exception("IEntityRecipeRegistry가 월드에 없습니다.");
             }
+            if (!world.TryGet(out IRecipeTable recipeTable))
+            {
+                throw new System.Exception("IRecipeTable이 월드에 없습니다.");
+            }
 
             // "Orc1", "Catherine" 등의 이름을 모두 하나의 CharacterCoreFactory에 연결
             foreach (var name in _characterNames)
             {
-                var recipeId = RecipeId.FromString(name);
+                var recipeId = recipeTable.GetId(name);
                 registry.Register(recipeId, _characterFactory);
             }
         }

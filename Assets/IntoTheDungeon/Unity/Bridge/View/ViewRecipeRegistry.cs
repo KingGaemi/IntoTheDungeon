@@ -15,10 +15,11 @@ namespace IntoTheDungeon.Unity.Bridge.View
 
         public ViewRecipe[] Recipes => recipes;
 
-        // 런타임 초기화
+        // 런타임 초기화 — ViewId는 여기서 순번으로 발급한다(레시피가 스스로 계산하지 않음).
         public void Initialize()
         {
             _recipeMap = new Dictionary<ViewId, IViewRecipe>(recipes.Length);
+            var seenAssets = new HashSet<IViewRecipe>();
 
             foreach (var recipe in recipes)
             {
@@ -28,15 +29,14 @@ namespace IntoTheDungeon.Unity.Bridge.View
                     continue;
                 }
 
-                var viewId = recipe.ViewId;
-
-                if (_recipeMap.ContainsKey(viewId))
+                if (!seenAssets.Add(recipe))
                 {
-                    Debug.LogWarning($"[ViewRecipeRegistry] Duplicate ViewId: {viewId} " +
-                                   $"(collision between recipes with same behaviour structure)");
+                    Debug.LogError($"[ViewRecipeRegistry] '{((ScriptableObject)recipe).name}' 에셋이 recipes 배열에 중복 등록되어 있습니다.");
                     continue;
                 }
 
+                var viewId = new ViewId(_recipeMap.Count);
+                recipe.AssignViewId(viewId);
                 _recipeMap[viewId] = recipe;
             }
 
@@ -55,27 +55,31 @@ namespace IntoTheDungeon.Unity.Bridge.View
             return _recipeMap.TryGetValue(viewId, out recipe);
         }
 
-        // 에디터 전용: 동적 추가
+        // 에디터/런타임 동적 추가: 다음 순번을 이 레지스트리가 직접 발급한다.
         public void Register(IViewRecipe recipe)
         {
             if (_recipeMap == null)
                 _recipeMap = new Dictionary<ViewId, IViewRecipe>();
 
-            if (recipe == null || recipe.ViewId == default)
+            if (recipe == null)
             {
                 Debug.LogError("[ViewRecipeRegistry] Invalid recipe");
                 return;
             }
 
-            _recipeMap[recipe.ViewId] = recipe;
+            var viewId = new ViewId(_recipeMap.Count);
+            recipe.AssignViewId(viewId);
+            _recipeMap[viewId] = recipe;
         }
 
 #if UNITY_EDITOR
+        // ViewId는 이제 배열 순번으로 발급되므로 값 충돌은 구조적으로 불가능하다.
+        // 여기서 잡아야 할 진짜 실수는 "같은 에셋이 배열에 두 번 들어간 경우"뿐.
         [ContextMenu("Validate All Recipes")]
         private void ValidateRecipes()
         {
-            var duplicates = new HashSet<ViewId>();
-            var seen = new HashSet<ViewId>();
+            var seen = new HashSet<ViewRecipe>();
+            int duplicateCount = 0;
 
             foreach (var recipe in recipes)
             {
@@ -85,30 +89,17 @@ namespace IntoTheDungeon.Unity.Bridge.View
                     continue;
                 }
 
-                if (recipe.ViewId == default)
+                if (!seen.Add(recipe))
                 {
-                    Debug.LogWarning($"[ViewRecipeRegistry] Recipe '{recipe.name}' has default ViewId");
-                    continue;
-                }
-
-                if (seen.Contains(recipe.ViewId))
-                {
-                    duplicates.Add(recipe.ViewId);
-                }
-                else
-                {
-                    seen.Add(recipe.ViewId);
+                    duplicateCount++;
+                    Debug.LogError($"[ViewRecipeRegistry] '{recipe.name}' 에셋이 배열에 중복 등록되어 있습니다.");
                 }
             }
 
-            if (duplicates.Count > 0)
-            {
-                Debug.LogError($"[ViewRecipeRegistry] Found {duplicates.Count} duplicate ViewIds!");
-            }
+            if (duplicateCount > 0)
+                Debug.LogError($"[ViewRecipeRegistry] Found {duplicateCount} duplicate entries!");
             else
-            {
                 Debug.Log($"[ViewRecipeRegistry] Validation passed: {recipes.Length} unique recipes");
-            }
         }
 
         [ContextMenu("Auto-Collect Recipes from Assets")]

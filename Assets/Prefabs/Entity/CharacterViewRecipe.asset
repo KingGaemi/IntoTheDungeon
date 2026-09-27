@@ -13,6 +13,8 @@ MonoBehaviour:
   m_Name: CharacterViewRecipe
   m_EditorClassIdentifier: 
   prefab: {fileID: 8985043570437363188, guid: d90d0adf33d597a4e9d70704c658c505, type: 3}
+  attackWindupClip: {fileID: 7400000, guid: 8e0f2cb332d20d047beb30bcf47d0c68, type: 2}
+  attackRecoveryClip: {fileID: 7400000, guid: ff1b6fdcb0cf0b6448b5fd8191512435, type: 2}
   visualBehaviourTypeNames:
   - UnityEngine.SpriteRenderer, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral,
     PublicKeyToken=null
@@ -29,3 +31,6 @@ MonoBehaviour:
     Culture=neutral, PublicKeyToken=null
   - IntoTheDungeon.Unity.Behaviour.CharacterInitBehaviour, Assembly-CSharp, Version=0.0.0.0,
     Culture=neutral, PublicKeyToken=null
+  - IntoTheDungeon.Unity.DebugTools.EntityStatusViewer, Assembly-CSharp, Version=0.0.0.0,
+    Culture=neutral, PublicKeyToken=null
+  displayName: Catherine

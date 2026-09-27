@@ -32,8 +32,10 @@ namespace IntoTheDungeon.Unity
         [SerializeField] EntityViewMappingTable mappingTable;
 
         [Header("Entity Data")]
-        [Tooltip("팩토리에 등록할 캐릭터/몬스터 이름들 (예: Catherine, Orc1, Slime)")]
-        [SerializeField] string[] characterNames = { "Character", "Catherine", "Orc1" };
+        [Tooltip("플레이어 입력을 받는 RecipeId 이름. PlayerInputSystem 쿼리에 걸려야 하는 유일한 이름.")]
+        [SerializeField] string playerCharacterName = "Character";
+        [Tooltip("몹으로 등록할 이름들 (예: Catherine, Orc1, Slime). PlayerTag가 붙지 않는다.")]
+        [SerializeField] string[] monsterNames = { "Catherine", "Orc1" };
         public override void Install(GameWorld world)
         {
             Debug.Log("[Installer] EventHub");
@@ -42,21 +44,30 @@ namespace IntoTheDungeon.Unity
             Debug.Log("[Installer] INameTable");
             world.SetOnce<INameTable>(new NameTable());
 
+            Debug.Log("[Installer] IRecipeTable");
+            var recipeTable = new RecipeTable();
+            world.SetOnce<IRecipeTable>(recipeTable);
+
             Debug.Log("[Installer] INameToRecipeRegistry");
             world.SetOnce<INameToRecipeRegistry>(new NameToRecipeRegistry());
 
             Debug.Log("[Installer] EntityRecipeRegistry");
             var entityRecipeRegistry = new EntityRecipeRegistry();
             world.SetOnce<IEntityRecipeRegistry>(entityRecipeRegistry);
-            // 1. 단일 공용 팩토리 생성 (인스펙터 할당 불필요, 여기서 한 번만 생성)
-            var characterFactory = new CharacterCoreFactory();
 
-            // 2. 인스펙터(또는 JSON)에 등록된 모든 이름을 하나의 캐릭터 팩토리로 일괄 매핑
-            foreach (var name in characterNames)
+            // 1. 플레이어 전용 팩토리 / 몹 전용 팩토리를 분리 생성 (PlayerTag는 플레이어만 받는다)
+            var characterFactory = new CharacterCoreFactory(isPlayer: true);
+            var monsterFactory = new CharacterCoreFactory(isPlayer: false);
+
+            var playerRecipeId = recipeTable.GetId(playerCharacterName);
+            entityRecipeRegistry.Register(playerRecipeId, characterFactory);
+            Debug.Log($"[Installer] Registered RecipeId: {playerCharacterName} → {playerRecipeId.Value} (player)");
+
+            foreach (var name in monsterNames)
             {
-                var recipeId = RecipeId.FromString(name);
-                entityRecipeRegistry.Register(recipeId, characterFactory);
-                Debug.Log($"[Installer] Registered RecipeId: {name}");
+                var recipeId = recipeTable.GetId(name);
+                entityRecipeRegistry.Register(recipeId, monsterFactory);
+                Debug.Log($"[Installer] Registered RecipeId: {name} → {recipeId.Value} (monster)");
             }
 
             // ... (기존 ViewRegistry 등록 및 시스템 추가 코드 유지)
@@ -65,17 +76,10 @@ namespace IntoTheDungeon.Unity
             viewRecipeRegistry.Initialize();
             world.SetOnce<IViewRecipeRegistry>(viewRecipeRegistry);
 
-
-
-            if (!viewRecipeRegistry) { Debug.LogError("viewRecipeRegistry null"); return; }
-            viewRecipeRegistry.Initialize();
-            world.SetOnce<IViewRecipeRegistry>(viewRecipeRegistry);
-
-
             var evMapRegistry = new EntityViewMapRegistry();
             Debug.Log("[Installer] EntityViewMapRegistry");
             world.SetOnce<IEntityViewMapRegistry>(evMapRegistry);
-            mappingTable.ApplyMappings(evMapRegistry, viewRecipeRegistry);
+            mappingTable.ApplyMappings(evMapRegistry, viewRecipeRegistry, recipeTable);
 
             int viewOpQueueCapacity = 512;
             Debug.Log($"[Installer] ViewOpQueue({viewOpQueueCapacity})");

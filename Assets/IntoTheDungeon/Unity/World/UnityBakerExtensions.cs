@@ -82,7 +82,7 @@ namespace IntoTheDungeon.Unity.World
 
                 ViewMarker viewMarker = vmProvider.BuildMarker();
 
-                if (gpa?.TryGetRecipe(out var rid1) == true)
+                if (gpa?.TryGetRecipe(world, out var rid1) == true)
                     recipe = rid1;
                 else if (name2recipe?.TryGet(t.name, out var rid2) == true)
                     recipe = rid2;

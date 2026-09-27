@@ -4,6 +4,7 @@ using IntoTheDungeon.Core.Abstractions.Messages.Combat;
 using IntoTheDungeon.Core.Abstractions.Messages.Animation;
 using IntoTheDungeon.Core.Abstractions.Messages.Spawn;
 using IntoTheDungeon.Unity.Bridge.View.Abstractions;
+using IntoTheDungeon.Unity.Bridge.View;
 
 
 
@@ -15,7 +16,8 @@ namespace IntoTheDungeon.Features.Character
         IViewComponent,
         IStateEventListener,
         IStatusEventListener,
-        IAnimationEventListener // 
+        IAnimationEventListener,
+        IRecipeBindable
     {
         public RecipeId recipeId;
         public short sortingLayerId;
@@ -61,7 +63,6 @@ namespace IntoTheDungeon.Features.Character
         {
             if (!_animator) _animator = GetComponent<Animator>();
             if (!_sprite) _sprite = GetComponent<SpriteRenderer>();
-            CacheClipLengths();
         }
 
 
@@ -188,25 +189,6 @@ namespace IntoTheDungeon.Features.Character
         // Utilities
         // ============================================
 
-        void CacheClipLengths()
-        {
-            if (_animator?.runtimeAnimatorController == null) return;
-
-            var clips = _animator.runtimeAnimatorController.animationClips;
-            foreach (var clip in clips)
-            {
-                switch (clip.name)
-                {
-                    case "AttackWindup":
-                        _lenWindup = clip.length;
-                        break;
-                    case "AttackRecovery":
-                        _lenRecovery = clip.length;
-                        break;
-                }
-            }
-        }
-
         Color GetTeamColor(int teamId)
         {
             return teamId switch
@@ -216,6 +198,16 @@ namespace IntoTheDungeon.Features.Character
                 _ => Color.white
             };
         }
+
+        public void Bind(IViewRecipe recipe)
+        {
+            if (recipe is IAttackAnimatable atk)
+            {
+                _lenWindup = atk.AttackWindupClip ? atk.AttackWindupClip.length : 0f;
+                _lenRecovery = atk.AttackRecoveryClip ? atk.AttackRecoveryClip.length : 0f;
+            }
+        }
+
 
     }
 }

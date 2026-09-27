@@ -12,6 +12,22 @@ PrefabInstance:
       propertyPath: m_Name
       value: DefaultCharacter
       objectReference: {fileID: 0}
+    - target: {fileID: 7702849504103185764, guid: cfb6067a91b6bf64a871201232b8ddc8, type: 3}
+      propertyPath: m_Size.x
+      value: 2.56
+      objectReference: {fileID: 0}
+    - target: {fileID: 7702849504103185764, guid: cfb6067a91b6bf64a871201232b8ddc8, type: 3}
+      propertyPath: m_Size.y
+      value: 2.56
+      objectReference: {fileID: 0}
+    - target: {fileID: 7702849504103185764, guid: cfb6067a91b6bf64a871201232b8ddc8, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 6246832655069406539, guid: 043dab11ee0321744a25d3edd6c3733d, type: 3}
+    - target: {fileID: 7702849504103185764, guid: cfb6067a91b6bf64a871201232b8ddc8, type: 3}
+      propertyPath: m_WasSpriteAssigned
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8629315075781268868, guid: cfb6067a91b6bf64a871201232b8ddc8, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -74,6 +90,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 5200972905276851491, guid: cfb6067a91b6bf64a871201232b8ddc8, type: 3}
       insertIndex: -1
       addedObject: {fileID: 3385789487128014676}
+    - targetCorrespondingSourceObject: {fileID: 5200972905276851491, guid: cfb6067a91b6bf64a871201232b8ddc8, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 642168308524659016}
   m_SourcePrefab: {fileID: 100100000, guid: cfb6067a91b6bf64a871201232b8ddc8, type: 3}
 --- !u!1 &933548378582829703 stripped
 GameObject:
@@ -190,3 +209,20 @@ MonoBehaviour:
   skinToken: 
   typeName: 
   teamFlag: 0
+--- !u!114 &642168308524659016
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3978646361252175250}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 38cc04d19f9c14245b7d68174489a24b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  EntityIndex: -1
+  EntityName: 
+  RecipeHash: 0
+  LogicPosition: {x: 0, y: 0}
+  LogicDirection: {x: 0, y: 0}

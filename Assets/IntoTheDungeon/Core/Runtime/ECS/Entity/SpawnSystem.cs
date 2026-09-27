@@ -16,6 +16,7 @@ namespace IntoTheDungeon.Core.Runtime.ECS
         IEntityFactory _factory;
         ILogger _log;
         ISystemSpawnQueue _sysQueue;
+        IRecipeTable _recipeTable;
         readonly List<SpawnOrder> _inbox = new(128);
         public override void Initialize(IWorld world)
         {
@@ -23,7 +24,8 @@ namespace IntoTheDungeon.Core.Runtime.ECS
             Enabled =
             world.TryGet(out _factory) &&
             world.TryGet(out _log) &&
-            world.TryGet(out _sysQueue);
+            world.TryGet(out _sysQueue) &&
+            world.TryGet(out _recipeTable);
         }
         public void Tick(float dt)
         {
@@ -53,7 +55,7 @@ namespace IntoTheDungeon.Core.Runtime.ECS
                 var order = _inbox[i];
                 if (!_factory.TrySpawn(order.RecipeId, order.Spec, out _))
                 {
-                    _log.Warn($"Spawn failed: id={order.RecipeId.ToString()}");
+                    _log.Warn($"Spawn failed: id={order.RecipeId.Value}({_recipeTable.GetName(order.RecipeId)})");
                 }
             }
         }

@@ -31,6 +31,7 @@ namespace IntoTheDungeon.Unity.Bridge.View
         #endregion
 
         #region Services
+        IWorld _world;
         IEventHub _hub;
         IViewRecipeRegistry _viewRecipeRegistry;
         IViewOpQueue _viewOpQueue;
@@ -63,6 +64,7 @@ namespace IntoTheDungeon.Unity.Bridge.View
         #region Init
         public void Init(IWorld world)
         {
+            _world = world;
             if (!world.TryGet(out _hub))
             {
                 Debug.Log("[ViewBridge] no _hub");
@@ -255,6 +257,7 @@ namespace IntoTheDungeon.Unity.Bridge.View
             if (_entityToGO.ContainsKey(entity)) return;
 
             var data = ViewDataStores.Spawn[idx];
+            Debug.Log($"[ViewBridge] Spawn Entity {entity.Index} with RecipeId {data.RecipeId} and SceneLinkId {data.SceneLinkId} ,  {idx}");
 
             _entityViewMapRegistry.TryGetView(data.RecipeId, out var viewId);
 
@@ -277,8 +280,9 @@ namespace IntoTheDungeon.Unity.Bridge.View
                 go = viewRecipe.Prefab ? Instantiate(viewRecipe.Prefab) : new GameObject($"Entity_{entity.Index}");
 
             }
-
-            go.name = $"Entity_{entity.Index}";
+            // ViewBridge.Spawn()
+            string debugName = string.IsNullOrEmpty(viewRecipe.DisplayName) ? viewRecipe.Prefab?.name ?? "Entity" : viewRecipe.DisplayName;
+            go.name = $"{debugName}_{entity.Index}";
             go.SetActive(true);
             go.transform.SetParent(gameObject.transform);
             go.transform.position = gameObject.transform.position;
@@ -297,13 +301,20 @@ namespace IntoTheDungeon.Unity.Bridge.View
             }
 
             AttachBehaviours(root, viewRecipe);
+            foreach (var comp in root.GetComponentsInChildren<IRecipeBindable>())
+                comp.Bind(viewRecipe);   // 바인드 주입
             ApplyRender(go, data);
             CacheListeners(entity, go);
 
             _entityToGO[entity] = go;
             _goToEntity[go] = entity;
 
-
+            // --- [여기에 디버거 바인딩 코드 추가] ---
+#if UNITY_EDITOR
+            var viewer = Ensure<IntoTheDungeon.Unity.DebugTools.EntityStatusViewer>(go);
+            viewer.BindEntity(_world, entity);
+#endif
+            // ----------------------------------------
 
         }
 

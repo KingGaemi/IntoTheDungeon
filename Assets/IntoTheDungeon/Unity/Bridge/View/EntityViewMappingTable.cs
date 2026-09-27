@@ -2,7 +2,7 @@
 using UnityEngine;
 using System;
 using IntoTheDungeon.Core.ECS.Abstractions;
-using IntoTheDungeon.Core.Abstractions.Types;
+using IntoTheDungeon.Core.Abstractions.Services;
 
 namespace IntoTheDungeon.Unity.Bridge.View
 {
@@ -21,7 +21,7 @@ namespace IntoTheDungeon.Unity.Bridge.View
 
         [SerializeField] private Mapping[] mappings;
 
-        public void ApplyMappings(IEntityViewMapRegistry registry, ViewRecipeRegistry viewRegistry)
+        public void ApplyMappings(IEntityViewMapRegistry registry, ViewRecipeRegistry viewRegistry, IRecipeTable recipeTable)
         {
             foreach (var mapping in mappings)
             {
@@ -31,20 +31,14 @@ namespace IntoTheDungeon.Unity.Bridge.View
                     continue;
                 }
 
-                var recipeId = new RecipeId(RecipeStringToId(mapping.recipeIdString));
+                // ViewRecipeRegistry.Initialize()가 이 호출보다 먼저 실행되어야
+                // mapping.viewRecipe.ViewId가 유효하다 (UnityCoreInstaller에서 순서 보장).
+                var recipeId = recipeTable.GetId(mapping.recipeIdString);
                 var viewId = mapping.viewRecipe.ViewId;
 
                 registry.Register(recipeId, viewId);
                 Debug.Log($"[EntityViewMapping] {recipeId.Value} → ViewId {viewId.Value}");
             }
         }
-
-        RecipeId RecipeStringToId(in string recipeString)
-        {
-            // 스위치문 없이, 문자열 자체를 해시화하여 고유 ID로 사용
-            return RecipeId.FromString(recipeString);
-        }
-
-
     }
 }

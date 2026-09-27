@@ -22,6 +22,7 @@ namespace IntoTheDungeon.Features.Input
         ILogger _logger;
         IInputService _input;
         uint _lastSeq;
+        RecipeId _orc1RecipeId; // R키 스폰용 - 매 프레임 재해석하지 않도록 Initialize에서 한 번만 캐싱
         public override void Initialize(IWorld world)
         {
             base.Initialize(world);
@@ -35,7 +36,12 @@ namespace IntoTheDungeon.Features.Input
                 Enabled = false;
                 return;
             }
-
+            if (!world.TryGet(out IRecipeTable recipeTable))
+            {
+                Enabled = false;
+                return;
+            }
+            _orc1RecipeId = recipeTable.GetId("Orc1");
         }
         public void Tick(float dt)
         {
@@ -112,7 +118,7 @@ namespace IntoTheDungeon.Features.Input
                     {
                         ref var trans = ref transforms[i];
                         var order = new SpawnOrder(
-                            RecipeId.FromString("Orc1"),
+                            _orc1RecipeId,
                             new SpawnSpec
                             {
                                 PhysHandle = new(-1, 0),// handle
