@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Orc1ViewRecipe
   m_EditorClassIdentifier: 
   prefab: {fileID: 7626262773234588638, guid: ec719485a57ed7f4b87c6765a6603848, type: 3}
-  attackWindupClip: {fileID: 0}
-  attackRecoveryClip: {fileID: 0}
+  attackWindupClip: {fileID: 7400000, guid: a2fcbddbdb7445e98bac57fa5df163c6, type: 2}
+  attackRecoveryClip: {fileID: 7400000, guid: af21ad720110490caa5baefd29133e17, type: 2}
   visualBehaviourTypeNames:
   - UnityEngine.SpriteRenderer, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral,
     PublicKeyToken=null
