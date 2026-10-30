@@ -4,6 +4,7 @@ using IntoTheDungeon.Core.Abstractions.Messages.Spawn;
 using IntoTheDungeon.Core.Abstractions.Types;
 using IntoTheDungeon.Core.Abstractions.Services;
 using IntoTheDungeon.Core.Abstractions.World;
+using IntoTheDungeon.Core.Abstractions.Gameplay;
 using IntoTheDungeon.Core.ECS.Abstractions;
 using IntoTheDungeon.Core.ECS.Components;
 using IntoTheDungeon.Core.Physics.Abstractions;
@@ -78,6 +79,10 @@ namespace IntoTheDungeon.Core.Runtime.ECS
                 foreach (var init in spec.Inits)
                     init.Apply(_world, e);
             }
+
+            // 스폰 요청에 팀이 명시돼 있으면 프리팹 기본값(TeamInit)보다 우선
+            if (spec.TeamFlag != TeamFlag.None && em.HasComponent<TeamComponent>(e))
+                em.GetComponent<TeamComponent>(e).TeamFlag = spec.TeamFlag;
 
             // 뷰 마커(필요시)
             if (f.HasView)

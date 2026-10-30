@@ -17,6 +17,7 @@ namespace IntoTheDungeon.Features.Character
         IStateEventListener,
         IStatusEventListener,
         IAnimationEventListener,
+        IDamageEventListener,
         IRecipeBindable
     {
         public RecipeId recipeId;
@@ -37,6 +38,7 @@ namespace IntoTheDungeon.Features.Character
         static readonly int HashAttackSpeed = Animator.StringToHash("AttackSpeed");
         static readonly int HashMovementSpeed = Animator.StringToHash("MovementSpeed");
         static readonly int HashDeath = Animator.StringToHash("Death");
+        static readonly int HashHurt = Animator.StringToHash("Hurt");
         static readonly int HashPhaseProgress = Animator.StringToHash("PhaseProgress");
         static readonly int HashAttacking = Animator.StringToHash("Attacking");
         static readonly int HashWindup = Animator.StringToHash("Windup");
@@ -116,6 +118,13 @@ namespace IntoTheDungeon.Features.Character
             {
                 _animator.SetFloat(HashMovementSpeed, evt.MovementSpeed * _multiplier);
             }
+        }
+
+        public void OnDamaged(in DamagedEvent evt)
+        {
+            // 치명타면 Death 트리거(StateChanged)가 따로 오므로 Hurt는 건너뛴다
+            if (evt.RemainingHp <= 0) return;
+            _animator.SetTrigger(HashHurt);
         }
 
         //  AnimationPhase 이벤트 처리

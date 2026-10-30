@@ -3,7 +3,8 @@ using IntoTheDungeon.Core.Abstractions.World;
 using IntoTheDungeon.Core.Abstractions.Services;
 using IntoTheDungeon.Core.ECS.Components;
 using IntoTheDungeon.Core.ECS.Abstractions; // InformationComponent, TransformComponent 등이 있는 네임스페이스
-// using IntoTheDungeon.Features.Character; // HealthComponent 등 스탯 컴포넌트 네임스페이스
+using IntoTheDungeon.Core.Abstractions.Gameplay;
+using IntoTheDungeon.Features.Status;
 
 namespace IntoTheDungeon.Unity.DebugTools
 {
@@ -19,9 +20,11 @@ namespace IntoTheDungeon.Unity.DebugTools
         public Vector2 LogicPosition;
         public Vector2 LogicDirection;
 
-        // [Header("Status")]
-        // public float CurrentHp;
-        // public float MaxHp;
+        [Header("Status")]
+        public int CurrentHp;
+        public int MaxHp;
+        public bool IsAlive;
+        public TeamFlag Team;
 
         private IWorld _world;
         private Entity _entity;
@@ -61,14 +64,15 @@ namespace IntoTheDungeon.Unity.DebugTools
                 LogicDirection = new Vector2(trans.Direction.X, trans.Direction.Y);
             }
 
-            // 3. 체력/스탯 등 프로젝트에 존재하는 컴포넌트 읽기 (주석 해제 후 사용)
-            /*
-            if (em.TryGetComponent<CharacterStatComponent>(_entity, out var stats))
+            // 3. 체력/팀
+            if (em.TryGetComponent<StatusComponent>(_entity, out var stats))
             {
-                CurrentHp = stats.Hp;
+                CurrentHp = stats.CurrentHp;
                 MaxHp = stats.MaxHp;
+                IsAlive = stats.IsAlive;
             }
-            */
+            if (em.TryGetComponent<TeamComponent>(_entity, out var team))
+                Team = team.TeamFlag;
         }
     }
 }

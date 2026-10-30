@@ -12,6 +12,11 @@ namespace IntoTheDungeon.Core.Abstractions.Messages.Combat
         void OnStatusChanged(in StatusChangedEvent evt);
     }
 
+    public interface IDamageEventListener
+    {
+        void OnDamaged(in DamagedEvent evt);
+    }
+
 }
 namespace IntoTheDungeon.Core.Abstractions.Messages.Animation
 {

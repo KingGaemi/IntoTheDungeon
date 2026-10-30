@@ -9,6 +9,7 @@ using IntoTheDungeon.Core.Physics.Implementation;
 using IntoTheDungeon.Features.Status;
 using IntoTheDungeon.Features.Command;
 using IntoTheDungeon.Features.State;
+using IntoTheDungeon.Features.Attack;
 using IntoTheDungeon.Features.Physics.Systems;
 using IntoTheDungeon.Features.Input;
 using IntoTheDungeon.Core.ECS.Systems;
@@ -131,6 +132,14 @@ namespace IntoTheDungeon.Unity
             world.SystemManager.AddUnique(new SpawnSystem());
             world.SystemManager.AddUnique(new CharacterIntentApplySystem());
             world.SystemManager.AddUnique(new PhaseControlSystem());
+
+            // 전투: 히트박스 생성 → 위치 갱신 → 판정 → HP 적용 → 사망 상태 → 수명 정리
+            world.SystemManager.AddUnique(new AttackSystem());
+            world.SystemManager.AddUnique(new FollowOwnerSystem());
+            world.SystemManager.AddUnique(new HitDetectSystem());
+            world.SystemManager.AddUnique(new DamageProcessingSystem());
+            world.SystemManager.AddUnique(new DeathStateSystem());
+            world.SystemManager.AddUnique(new LifetimeSystem());
 
             world.SystemManager.AddUnique(new KinematicPlannerSystem());
 

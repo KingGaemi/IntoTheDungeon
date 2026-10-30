@@ -54,6 +54,7 @@ namespace IntoTheDungeon.Unity.Bridge.View
         readonly Dictionary<Entity, IStateEventListener[]> _stateListeners = new();
         readonly Dictionary<Entity, IStatusEventListener[]> _statusListeners = new();
         readonly Dictionary<Entity, IAnimationEventListener[]> _animListeners = new();
+        readonly Dictionary<Entity, IDamageEventListener[]> _damageListeners = new();
         readonly Dictionary<Entity, Transform> _trCache = new();
         readonly Dictionary<Entity, State> _state = new();
 
@@ -327,6 +328,7 @@ namespace IntoTheDungeon.Unity.Bridge.View
             _stateListeners.Remove(entity);
             _statusListeners.Remove(entity);
             _animListeners.Remove(entity);
+            _damageListeners.Remove(entity);
             _entityToGO.Remove(entity);
             _goToEntity.Remove(go);
 
@@ -401,6 +403,7 @@ namespace IntoTheDungeon.Unity.Bridge.View
             _stateListeners[entity] = go.GetComponentsInChildren<IStateEventListener>();
             _statusListeners[entity] = go.GetComponentsInChildren<IStatusEventListener>();
             _animListeners[entity] = go.GetComponentsInChildren<IAnimationEventListener>();
+            _damageListeners[entity] = go.GetComponentsInChildren<IDamageEventListener>();
 
 
         }
@@ -417,6 +420,7 @@ namespace IntoTheDungeon.Unity.Bridge.View
             BroadcastStateEvents();
             BroadcastStatusEvents();
             BroadcastAnimationEvents();
+            BroadcastDamageEvents();
         }
         void BroadcastStateEvents()
         {
@@ -463,6 +467,22 @@ namespace IntoTheDungeon.Unity.Bridge.View
             }
 
             _hub.Clear<AnimationPhaseChangedEvent>();
+        }
+
+        void BroadcastDamageEvents()
+        {
+            var events = _hub.Consume<DamagedEvent>();
+
+            foreach (ref readonly var evt in events)
+            {
+                if (_damageListeners.TryGetValue(evt.Victim, out var listeners))
+                {
+                    foreach (var l in listeners)
+                        l.OnDamaged(evt);
+                }
+            }
+
+            _hub.Clear<DamagedEvent>();
         }
 
 

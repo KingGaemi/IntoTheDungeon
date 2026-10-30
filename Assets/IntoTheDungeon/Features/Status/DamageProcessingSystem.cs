@@ -41,26 +41,23 @@ namespace IntoTheDungeon.Features.Status
 
                     if (!s.IsAlive) { q.Clear(); continue; }
 
-                    int prevHp = s.CurrentHp;
-                    Entity lastSrc = Entity.Null;
-                    int lastDmg = 0;
-
                     while (q.TryDequeue(out var m))
                     {
-                        if (m.Kind == HpModification.ModKind.Damage)
-                        { lastSrc = m.Source; lastDmg = m.Value; }
-
+                        int before = s.CurrentHp;
                         ApplyModification(ref s, in m);
-                        if (prevHp > 0 && s.CurrentHp <= 0)
+
+                        if (m.Kind == HpModification.ModKind.Damage)
+                            _hub.Publish(new DamagedEvent(entities[i], m.Source, before - s.CurrentHp, s.CurrentHp));
+
+                        if (s.CurrentHp <= 0)
                         {
                             s.IsAlive = false;
-                            _hub.Publish(new KillEvent(lastSrc, entities[i], lastDmg, DamageType.Attack));
-                            _hub.Publish(new DeathEvent(entities[i], lastSrc));
+                            _hub.Publish(new KillEvent(m.Source, entities[i], m.Value, DamageType.Attack));
+                            _hub.Publish(new DeathEvent(entities[i], m.Source));
+                            q.Clear();   // 죽은 뒤 들어온 나머지는 버린다
+                            break;
                         }
                     }
-
-
-
                 }
             }
         }

@@ -3,11 +3,16 @@ using IntoTheDungeon.Core.ECS.Abstractions;
 
 namespace IntoTheDungeon.Features.Attack
 {
-    public struct PiercingComponent : IComponentData
+    /// <summary>
+    /// 히트박스 하나가 이미 맞힌 대상(Entity.Index). 같은 대상을 두 번 때리지 않게 한다.
+    /// 최대 8명까지 기억하고, 그 이상은 IsFull로 판단해 더 때리지 않는다.
+    /// </summary>
+    public struct HitListComponent : IComponentData
     {
         public int Hit0, Hit1, Hit2, Hit3, Hit4, Hit5, Hit6, Hit7;
         public int HitCount;
-        public int MaxPierceCount;
+
+        public readonly bool IsFull => HitCount >= 8;
 
         public readonly bool AlreadyHit(int entityId)
         {

@@ -9,6 +9,8 @@ using IntoTheDungeon.Features.Physics.Components;
 using IntoTheDungeon.Features.State;
 using IntoTheDungeon.Features.Status;
 using IntoTheDungeon.Core.Collections;
+using IntoTheDungeon.Core.Util;
+using IntoTheDungeon.Features.Attack;
 
 namespace IntoTheDungeon.Features.Character
 {
@@ -31,7 +33,8 @@ namespace IntoTheDungeon.Features.Character
                 CurrentHp = _maxHp,
                 MovementSpeed = _movSpd,
                 AttackSpeed = _atkSpd,
-                Damage = 1
+                Damage = 1,
+                IsAlive = true
             });
             em.AddComponent(e, new KinematicComponent());
             em.AddComponent(e, new CharacterIntentBuffer());
@@ -40,6 +43,9 @@ namespace IntoTheDungeon.Features.Character
             em.AddComponent(e, new HpModificationQueue());
             em.AddComponent(e, new SpawnOutbox());
             em.AddComponent(e, new IntoTheDungeon.Core.ECS.Components.TeamComponent());
+            // 판정 크기는 임시값. HitDetectSystem의 디버그 박스를 보며 조정
+            em.AddComponent(e, new HurtboxComponent { Offset = new Vec2(0f, 0f), HalfExtents = new Vec2(0.3f, 0.4f) });
+            em.AddComponent(e, MeleeAttackComponent.Default);
         }
     }
 }
