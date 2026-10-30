@@ -1,5 +1,6 @@
 using UnityEngine;
 using IntoTheDungeon.Core.Abstractions.World;
+using IntoTheDungeon.Core.Abstractions.Services;
 using IntoTheDungeon.Core.ECS.Components;
 using IntoTheDungeon.Core.ECS.Abstractions; // InformationComponent, TransformComponent 등이 있는 네임스페이스
 // using IntoTheDungeon.Features.Character; // HealthComponent 등 스탯 컴포넌트 네임스페이스
@@ -11,7 +12,8 @@ namespace IntoTheDungeon.Unity.DebugTools
         [Header("Entity Info")]
         public int EntityIndex = -1;
         public string EntityName;
-        public int RecipeHash;
+        public string RecipeName;
+        public int RecipeIdValue;
 
         [Header("Transform (Logic)")]
         public Vector2 LogicPosition;
@@ -23,6 +25,8 @@ namespace IntoTheDungeon.Unity.DebugTools
 
         private IWorld _world;
         private Entity _entity;
+        private INameTable _nameTable;
+        private IRecipeTable _recipeTable;
         private bool _isBound = false;
 
         // 뷰 브릿지가 뷰 마커를 바인딩할 때 이 함수를 호출해 엔진 레퍼런스를 넘겨주도록 합니다.
@@ -31,6 +35,8 @@ namespace IntoTheDungeon.Unity.DebugTools
             _world = world;
             _entity = entity;
             EntityIndex = entity.Index;
+            world.TryGet(out _nameTable);
+            world.TryGet(out _recipeTable);
             _isBound = true;
         }
 
@@ -43,8 +49,9 @@ namespace IntoTheDungeon.Unity.DebugTools
             // 1. 기본 정보 읽기
             if (em.TryGetComponent<InformationComponent>(_entity, out var info))
             {
-                RecipeHash = info.RecipeId.Value;
-                // 이름 테이블 서비스가 있다면 ID로 이름을 찾아 EntityName에 넣을 수도 있습니다.
+                RecipeIdValue = info.RecipeId.Value;
+                if (_nameTable != null) EntityName = _nameTable.GetName(info.NameId);
+                if (_recipeTable != null) RecipeName = _recipeTable.GetName(info.RecipeId);
             }
 
             // 2. 로직 상의 트랜스폼 읽기

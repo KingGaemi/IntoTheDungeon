@@ -7,8 +7,6 @@ namespace IntoTheDungeon.Features.Character
 {
     public sealed class CharacterCoreFactory : IEntityRecipeFactory
     {
-        [SerializeField] RecipeId id = RecipeId.Default; // 레지스트리 등록/기본값 용도로만 유지
-        public RecipeId RecipeId => id;
         public bool HasView => true;
         public bool HasPhys => true;
 
