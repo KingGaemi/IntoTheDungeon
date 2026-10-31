@@ -20,7 +20,7 @@ namespace IntoTheDungeon.Features.Attack
             HalfExtents = new Vec2(0.4f, 0.25f),   // Y = 깊이 반두께
             ActiveTime = 0.1f,
             KnockbackSpeed = 3f,   // 약 0.3 유닛 밀림
-            LaunchSpeed = 5f       // 약 0.4 유닛 뜨고 0.33초 체공
+            LaunchSpeed = 2f       // 평타: 약 0.07 유닛 들썩(0.13초). 띄우기 전용 공격은 따로 크게
         };
     }
 }
