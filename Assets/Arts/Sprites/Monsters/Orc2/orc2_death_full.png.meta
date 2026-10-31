@@ -1,103 +1,7 @@
 fileFormatVersion: 2
 guid: d1425455d7cd9044b9c1b2d4ed2b61d6
 TextureImporter:
-  internalIDToNameTable:
-  - first:
-      213: -6802624349586204851
-    second: orc2_death_full_0
-  - first:
-      213: 8663266735953950996
-    second: orc2_death_full_1
-  - first:
-      213: 6021428433520766637
-    second: orc2_death_full_2
-  - first:
-      213: -2129690173217272692
-    second: orc2_death_full_3
-  - first:
-      213: 8781018319244804904
-    second: orc2_death_full_4
-  - first:
-      213: 3808449273859761547
-    second: orc2_death_full_5
-  - first:
-      213: 6402181394030454522
-    second: orc2_death_full_6
-  - first:
-      213: -2984467847592374739
-    second: orc2_death_full_7
-  - first:
-      213: -6199664375891687359
-    second: orc2_death_full_8
-  - first:
-      213: -2428715546060217011
-    second: orc2_death_full_9
-  - first:
-      213: -1920822793464637583
-    second: orc2_death_full_10
-  - first:
-      213: 1722252658352674722
-    second: orc2_death_full_11
-  - first:
-      213: 4131781587621265938
-    second: orc2_death_full_12
-  - first:
-      213: 3009339547432671313
-    second: orc2_death_full_13
-  - first:
-      213: -810099453620250536
-    second: orc2_death_full_14
-  - first:
-      213: -6381696234731782084
-    second: orc2_death_full_15
-  - first:
-      213: -839358367982762757
-    second: orc2_death_full_16
-  - first:
-      213: -52417316973090403
-    second: orc2_death_full_17
-  - first:
-      213: -436722922155996189
-    second: orc2_death_full_18
-  - first:
-      213: -2886803859736435922
-    second: orc2_death_full_19
-  - first:
-      213: 7854454087206413751
-    second: orc2_death_full_20
-  - first:
-      213: 8626747008590225308
-    second: orc2_death_full_21
-  - first:
-      213: -1197549672429980523
-    second: orc2_death_full_22
-  - first:
-      213: 3828213667989657955
-    second: orc2_death_full_23
-  - first:
-      213: -2526754306227192234
-    second: orc2_death_full_24
-  - first:
-      213: 7320336561350659170
-    second: orc2_death_full_25
-  - first:
-      213: -6460835277078443654
-    second: orc2_death_full_26
-  - first:
-      213: 1834678003192056621
-    second: orc2_death_full_27
-  - first:
-      213: -5837881599256081673
-    second: orc2_death_full_28
-  - first:
-      213: 8373644193251688805
-    second: orc2_death_full_29
-  - first:
-      213: -2557931363402556360
-    second: orc2_death_full_30
-  - first:
-      213: -6353639060160551091
-    second: orc2_death_full_31
+  internalIDToNameTable: []
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -209,20 +113,20 @@ TextureImporter:
       name: orc2_death_full_0
       rect:
         serializedVersion: 2
-        x: 9
-        y: 209
-        width: 38
-        height: 36
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 0
+        y: 192
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: d47dd7622393891a0800000000000000
-      internalID: -6802624349586204851
+      spriteID: ffe7d225b75747abaa43ce429d55743d
+      internalID: -1441756409
       vertices: []
       indices: 
       edges: []
@@ -231,20 +135,20 @@ TextureImporter:
       name: orc2_death_full_1
       rect:
         serializedVersion: 2
-        x: 72
-        y: 209
-        width: 40
-        height: 34
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 64
+        y: 192
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 4193ef6423b1a3870800000000000000
-      internalID: 8663266735953950996
+      spriteID: 776b475dfd4748f8b852abf1f3601d5d
+      internalID: -378535701
       vertices: []
       indices: 
       edges: []
@@ -253,20 +157,20 @@ TextureImporter:
       name: orc2_death_full_2
       rect:
         serializedVersion: 2
-        x: 136
-        y: 209
-        width: 39
-        height: 33
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 128
+        y: 192
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: dae2174e149609350800000000000000
-      internalID: 6021428433520766637
+      spriteID: 8919958e98ac48e39900dc72e5e9de95
+      internalID: 1817509334
       vertices: []
       indices: 
       edges: []
@@ -275,20 +179,20 @@ TextureImporter:
       name: orc2_death_full_3
       rect:
         serializedVersion: 2
-        x: 200
-        y: 209
-        width: 39
-        height: 26
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 192
+        y: 192
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: c8c8ebf2212d172e0800000000000000
-      internalID: -2129690173217272692
+      spriteID: b647f122f1a54324b8133549bb330d94
+      internalID: 673987040
       vertices: []
       indices: 
       edges: []
@@ -297,20 +201,20 @@ TextureImporter:
       name: orc2_death_full_4
       rect:
         serializedVersion: 2
-        x: 264
-        y: 207
-        width: 40
-        height: 20
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 256
+        y: 192
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 823c8c433a17cd970800000000000000
-      internalID: 8781018319244804904
+      spriteID: c73c6e0acc3144c793233ad571ca4248
+      internalID: 1470308845
       vertices: []
       indices: 
       edges: []
@@ -319,20 +223,20 @@ TextureImporter:
       name: orc2_death_full_5
       rect:
         serializedVersion: 2
-        x: 328
-        y: 207
-        width: 40
-        height: 23
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 320
+        y: 192
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: b856181cf645ad430800000000000000
-      internalID: 3808449273859761547
+      spriteID: 51c365f41fcf468b97a1eb9db89750d6
+      internalID: -1466815640
       vertices: []
       indices: 
       edges: []
@@ -341,20 +245,20 @@ TextureImporter:
       name: orc2_death_full_6
       rect:
         serializedVersion: 2
-        x: 392
-        y: 207
-        width: 40
-        height: 23
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 384
+        y: 192
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: af6ecc2ce0e19d850800000000000000
-      internalID: 6402181394030454522
+      spriteID: 1c15b1f220934e39ae01b1770435bb7c
+      internalID: 801555593
       vertices: []
       indices: 
       edges: []
@@ -363,20 +267,20 @@ TextureImporter:
       name: orc2_death_full_7
       rect:
         serializedVersion: 2
-        x: 456
-        y: 207
-        width: 40
-        height: 23
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 448
+        y: 192
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: d2e8ea41e4a0596d0800000000000000
-      internalID: -2984467847592374739
+      spriteID: c40c53e1b6234cec985c7b0504185c5e
+      internalID: -1049578642
       vertices: []
       indices: 
       edges: []
@@ -385,20 +289,20 @@ TextureImporter:
       name: orc2_death_full_8
       rect:
         serializedVersion: 2
-        x: 16
-        y: 145
-        width: 38
-        height: 36
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 0
+        y: 128
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 148055ce81e56f9a0800000000000000
-      internalID: -6199664375891687359
+      spriteID: c2e631a58453425ea56715c412794fbd
+      internalID: 619443829
       vertices: []
       indices: 
       edges: []
@@ -407,20 +311,20 @@ TextureImporter:
       name: orc2_death_full_9
       rect:
         serializedVersion: 2
-        x: 81
-        y: 145
-        width: 39
-        height: 34
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 64
+        y: 128
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: d45ac9824187b4ed0800000000000000
-      internalID: -2428715546060217011
+      spriteID: 7a8a9196b6e44e69bd52bfdd5dd8393f
+      internalID: 978692764
       vertices: []
       indices: 
       edges: []
@@ -429,20 +333,20 @@ TextureImporter:
       name: orc2_death_full_10
       rect:
         serializedVersion: 2
-        x: 145
-        y: 145
-        width: 39
-        height: 33
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 128
+        y: 128
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 1771117a8ddd755e0800000000000000
-      internalID: -1920822793464637583
+      spriteID: cd578b7b0662449a86ee1951f3e3b5a6
+      internalID: -1932148539
       vertices: []
       indices: 
       edges: []
@@ -451,20 +355,20 @@ TextureImporter:
       name: orc2_death_full_11
       rect:
         serializedVersion: 2
-        x: 210
-        y: 145
-        width: 38
-        height: 25
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 192
+        y: 128
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 2a7559afaaba6e710800000000000000
-      internalID: 1722252658352674722
+      spriteID: 55938fa208554ea1831dc4b652eb066f
+      internalID: 369006235
       vertices: []
       indices: 
       edges: []
@@ -473,20 +377,20 @@ TextureImporter:
       name: orc2_death_full_12
       rect:
         serializedVersion: 2
-        x: 272
-        y: 145
-        width: 40
-        height: 18
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 256
+        y: 128
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 2124aab7679075930800000000000000
-      internalID: 4131781587621265938
+      spriteID: 56bb50983ec84a18a16f121daca0f9e5
+      internalID: -1345156887
       vertices: []
       indices: 
       edges: []
@@ -495,20 +399,20 @@ TextureImporter:
       name: orc2_death_full_13
       rect:
         serializedVersion: 2
-        x: 336
-        y: 145
-        width: 40
-        height: 21
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 320
+        y: 128
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 158524dcf5253c920800000000000000
-      internalID: 3009339547432671313
+      spriteID: a7d6591607fe4fae8bff13b7223ecb61
+      internalID: 1091572257
       vertices: []
       indices: 
       edges: []
@@ -517,20 +421,20 @@ TextureImporter:
       name: orc2_death_full_14
       rect:
         serializedVersion: 2
-        x: 400
-        y: 145
-        width: 40
-        height: 21
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 384
+        y: 128
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 8581a3ac6d2f1c4f0800000000000000
-      internalID: -810099453620250536
+      spriteID: fe33aeb30af844cc936dd07efd365175
+      internalID: 573758784
       vertices: []
       indices: 
       edges: []
@@ -539,20 +443,20 @@ TextureImporter:
       name: orc2_death_full_15
       rect:
         serializedVersion: 2
-        x: 464
-        y: 145
-        width: 40
-        height: 21
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 448
+        y: 128
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: c304d501619af67a0800000000000000
-      internalID: -6381696234731782084
+      spriteID: 610e6fbb17384495bcf8e791ab2a2b5c
+      internalID: 1643927979
       vertices: []
       indices: 
       edges: []
@@ -561,20 +465,20 @@ TextureImporter:
       name: orc2_death_full_16
       rect:
         serializedVersion: 2
-        x: 20
-        y: 81
-        width: 24
-        height: 36
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 0
+        y: 64
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: bf4c22de2000a54f0800000000000000
-      internalID: -839358367982762757
+      spriteID: ed141fd95d154d019278191ef9a08ff4
+      internalID: -1879255962
       vertices: []
       indices: 
       edges: []
@@ -583,20 +487,20 @@ TextureImporter:
       name: orc2_death_full_17
       rect:
         serializedVersion: 2
-        x: 84
-        y: 81
-        width: 25
-        height: 34
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 64
+        y: 64
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: d996db95ab6c54ff0800000000000000
-      internalID: -52417316973090403
+      spriteID: af7b9690ba704de4ba5863e9be9ea552
+      internalID: -575930465
       vertices: []
       indices: 
       edges: []
@@ -605,20 +509,20 @@ TextureImporter:
       name: orc2_death_full_18
       rect:
         serializedVersion: 2
-        x: 147
-        y: 81
-        width: 27
-        height: 32
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 128
+        y: 64
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 3eb0f9fe0d270f9f0800000000000000
-      internalID: -436722922155996189
+      spriteID: d2118b4d362d4bbbadc4c20dd2219720
+      internalID: 1837510842
       vertices: []
       indices: 
       edges: []
@@ -627,20 +531,20 @@ TextureImporter:
       name: orc2_death_full_19
       rect:
         serializedVersion: 2
-        x: 204
-        y: 81
-        width: 30
-        height: 26
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 192
+        y: 64
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: e23ee2c3f2300f7d0800000000000000
-      internalID: -2886803859736435922
+      spriteID: 83892f16b06c44caacf727c430a9b03d
+      internalID: 343538632
       vertices: []
       indices: 
       edges: []
@@ -649,20 +553,20 @@ TextureImporter:
       name: orc2_death_full_20
       rect:
         serializedVersion: 2
-        x: 265
-        y: 81
-        width: 33
-        height: 20
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 256
+        y: 64
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 7b5ad8ca060a00d60800000000000000
-      internalID: 7854454087206413751
+      spriteID: cbd7531bab574129b54758f85a1f9e3b
+      internalID: -1773557966
       vertices: []
       indices: 
       edges: []
@@ -671,20 +575,20 @@ TextureImporter:
       name: orc2_death_full_21
       rect:
         serializedVersion: 2
-        x: 329
-        y: 81
-        width: 33
-        height: 23
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 320
+        y: 64
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: c9f1f26a2bc58b770800000000000000
-      internalID: 8626747008590225308
+      spriteID: f8f7001fdc7d4c8888afcb36b8ae49a1
+      internalID: -1760848909
       vertices: []
       indices: 
       edges: []
@@ -693,20 +597,20 @@ TextureImporter:
       name: orc2_death_full_22
       rect:
         serializedVersion: 2
-        x: 393
-        y: 81
-        width: 33
-        height: 23
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 384
+        y: 64
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 594fce5fae2716fe0800000000000000
-      internalID: -1197549672429980523
+      spriteID: 6fe1dde51c81424b9ff49a512f61f440
+      internalID: -1682927217
       vertices: []
       indices: 
       edges: []
@@ -715,20 +619,20 @@ TextureImporter:
       name: orc2_death_full_23
       rect:
         serializedVersion: 2
-        x: 457
-        y: 81
-        width: 33
-        height: 23
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 448
+        y: 64
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 36991dc5c0c802530800000000000000
-      internalID: 3828213667989657955
+      spriteID: 58dfcd702018479694e49cf690b541fd
+      internalID: 1874786338
       vertices: []
       indices: 
       edges: []
@@ -737,20 +641,20 @@ TextureImporter:
       name: orc2_death_full_24
       rect:
         serializedVersion: 2
-        x: 20
-        y: 17
-        width: 23
-        height: 36
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 0
+        y: 0
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 65eb3a6885a2fecd0800000000000000
-      internalID: -2526754306227192234
+      spriteID: 65f89888f5ad4b198f69d485f5a526aa
+      internalID: 238690003
       vertices: []
       indices: 
       edges: []
@@ -759,20 +663,20 @@ TextureImporter:
       name: orc2_death_full_25
       rect:
         serializedVersion: 2
-        x: 83
-        y: 17
-        width: 25
-        height: 34
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 64
+        y: 0
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 26c4c97515f079560800000000000000
-      internalID: 7320336561350659170
+      spriteID: 90c605f200fa4ef2a4ef8ee82f10f58f
+      internalID: 1243253844
       vertices: []
       indices: 
       edges: []
@@ -781,20 +685,20 @@ TextureImporter:
       name: orc2_death_full_26
       rect:
         serializedVersion: 2
-        x: 146
-        y: 17
-        width: 27
-        height: 32
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 128
+        y: 0
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: a794d65eb808656a0800000000000000
-      internalID: -6460835277078443654
+      spriteID: 2e80434fc3f740b587412345d8dd4b25
+      internalID: 774686106
       vertices: []
       indices: 
       edges: []
@@ -803,20 +707,20 @@ TextureImporter:
       name: orc2_death_full_27
       rect:
         serializedVersion: 2
-        x: 213
-        y: 17
-        width: 31
-        height: 26
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 192
+        y: 0
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: d2b4c716ce5167910800000000000000
-      internalID: 1834678003192056621
+      spriteID: 66adde8663bd46c589468a7fb276855d
+      internalID: 193960860
       vertices: []
       indices: 
       edges: []
@@ -825,20 +729,20 @@ TextureImporter:
       name: orc2_death_full_28
       rect:
         serializedVersion: 2
-        x: 277
-        y: 17
-        width: 34
-        height: 20
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 256
+        y: 0
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 7fa4d8bad9dabfea0800000000000000
-      internalID: -5837881599256081673
+      spriteID: a352d7f42f2c480399691e46999dab37
+      internalID: 384364820
       vertices: []
       indices: 
       edges: []
@@ -847,20 +751,20 @@ TextureImporter:
       name: orc2_death_full_29
       rect:
         serializedVersion: 2
-        x: 341
-        y: 17
-        width: 34
-        height: 23
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 320
+        y: 0
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 561874e3709253470800000000000000
-      internalID: 8373644193251688805
+      spriteID: a5b4092018b646e0b041491f5bdae73b
+      internalID: 343911031
       vertices: []
       indices: 
       edges: []
@@ -869,20 +773,20 @@ TextureImporter:
       name: orc2_death_full_30
       rect:
         serializedVersion: 2
-        x: 405
-        y: 17
-        width: 34
-        height: 23
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 384
+        y: 0
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 83c5f8c3af6608cd0800000000000000
-      internalID: -2557931363402556360
+      spriteID: 549c50afd8e44aaaa235d819db047944
+      internalID: -695235752
       vertices: []
       indices: 
       edges: []
@@ -891,20 +795,20 @@ TextureImporter:
       name: orc2_death_full_31
       rect:
         serializedVersion: 2
-        x: 469
-        y: 17
-        width: 34
-        height: 23
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 448
+        y: 0
+        width: 64
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.34375}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: d47651410f653d7a0800000000000000
-      internalID: -6353639060160551091
+      spriteID: bdf0cb8a83bf424a8b363a81fb639367
+      internalID: -307547451
       vertices: []
       indices: 
       edges: []
@@ -913,7 +817,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 6f5b1e902b7056847b5d43bc44bb9680
     internalID: 0
     vertices: []
     indices: 
@@ -923,38 +827,38 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      orc2_death_full_0: -6802624349586204851
-      orc2_death_full_1: 8663266735953950996
-      orc2_death_full_10: -1920822793464637583
-      orc2_death_full_11: 1722252658352674722
-      orc2_death_full_12: 4131781587621265938
-      orc2_death_full_13: 3009339547432671313
-      orc2_death_full_14: -810099453620250536
-      orc2_death_full_15: -6381696234731782084
-      orc2_death_full_16: -839358367982762757
-      orc2_death_full_17: -52417316973090403
-      orc2_death_full_18: -436722922155996189
-      orc2_death_full_19: -2886803859736435922
-      orc2_death_full_2: 6021428433520766637
-      orc2_death_full_20: 7854454087206413751
-      orc2_death_full_21: 8626747008590225308
-      orc2_death_full_22: -1197549672429980523
-      orc2_death_full_23: 3828213667989657955
-      orc2_death_full_24: -2526754306227192234
-      orc2_death_full_25: 7320336561350659170
-      orc2_death_full_26: -6460835277078443654
-      orc2_death_full_27: 1834678003192056621
-      orc2_death_full_28: -5837881599256081673
-      orc2_death_full_29: 8373644193251688805
-      orc2_death_full_3: -2129690173217272692
-      orc2_death_full_30: -2557931363402556360
-      orc2_death_full_31: -6353639060160551091
-      orc2_death_full_4: 8781018319244804904
-      orc2_death_full_5: 3808449273859761547
-      orc2_death_full_6: 6402181394030454522
-      orc2_death_full_7: -2984467847592374739
-      orc2_death_full_8: -6199664375891687359
-      orc2_death_full_9: -2428715546060217011
+      orc2_death_full_0: -1441756409
+      orc2_death_full_1: -378535701
+      orc2_death_full_2: 1817509334
+      orc2_death_full_3: 673987040
+      orc2_death_full_4: 1470308845
+      orc2_death_full_5: -1466815640
+      orc2_death_full_6: 801555593
+      orc2_death_full_7: -1049578642
+      orc2_death_full_8: 619443829
+      orc2_death_full_9: 978692764
+      orc2_death_full_10: -1932148539
+      orc2_death_full_11: 369006235
+      orc2_death_full_12: -1345156887
+      orc2_death_full_13: 1091572257
+      orc2_death_full_14: 573758784
+      orc2_death_full_15: 1643927979
+      orc2_death_full_16: -1879255962
+      orc2_death_full_17: -575930465
+      orc2_death_full_18: 1837510842
+      orc2_death_full_19: 343538632
+      orc2_death_full_20: -1773557966
+      orc2_death_full_21: -1760848909
+      orc2_death_full_22: -1682927217
+      orc2_death_full_23: 1874786338
+      orc2_death_full_24: 238690003
+      orc2_death_full_25: 1243253844
+      orc2_death_full_26: 774686106
+      orc2_death_full_27: 193960860
+      orc2_death_full_28: 384364820
+      orc2_death_full_29: 343911031
+      orc2_death_full_30: -695235752
+      orc2_death_full_31: -307547451
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

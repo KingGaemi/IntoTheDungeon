@@ -17,3 +17,7 @@ MonoBehaviour:
     viewRecipe: {fileID: 11400000, guid: d6d911a4d86d4b947925bdd20ccf966b, type: 2}
   - recipeIdString: Orc1
     viewRecipe: {fileID: 11400000, guid: e3086b39512e74e4b837de30386d58a4, type: 2}
+  - recipeIdString: Orc2
+    viewRecipe: {fileID: 11400000, guid: ae69f836fda54385b04b44515e70f014, type: 2}
+  - recipeIdString: Orc3
+    viewRecipe: {fileID: 11400000, guid: df7964d54ac949c29f7bff80d4d8e42d, type: 2}

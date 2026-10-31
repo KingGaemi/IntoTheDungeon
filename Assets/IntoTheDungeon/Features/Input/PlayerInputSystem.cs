@@ -23,7 +23,9 @@ namespace IntoTheDungeon.Features.Input
         ILogger _logger;
         IInputService _input;
         uint _lastSeq;
-        RecipeId _orc1RecipeId; // R키 스폰용 - 매 프레임 재해석하지 않도록 Initialize에서 한 번만 캐싱
+        static readonly string[] OrcRecipeNames = { "Orc1", "Orc2", "Orc3" };
+        RecipeId[] _orcRecipeIds; // R키 스폰용(누를 때마다 Orc1→2→3 순서) - Initialize에서 한 번만 캐싱
+        int _nextOrc;
         RecipeId _allyRecipeId; // T키 동료 소환용
         const string AllyRecipeName = "Catherine";   // 동료로 소환할 레시피(팀만 Player로 바꿔 스폰)
         const float ManualPause = 1.5f;              // 자동전투 중 직접 조작하면 이 시간 동안 AI를 쉰다
@@ -45,7 +47,9 @@ namespace IntoTheDungeon.Features.Input
                 Enabled = false;
                 return;
             }
-            _orc1RecipeId = recipeTable.GetId("Orc1");
+            _orcRecipeIds = new RecipeId[OrcRecipeNames.Length];
+            for (int k = 0; k < OrcRecipeNames.Length; k++)
+                _orcRecipeIds[k] = recipeTable.GetId(OrcRecipeNames[k]);
             _allyRecipeId = recipeTable.GetId(AllyRecipeName);
         }
         public void Tick(float dt)
@@ -161,15 +165,17 @@ namespace IntoTheDungeon.Features.Input
                     if (_input.R_Down)
                     {
                         ref var trans = ref transforms[i];
+                        int orc = _nextOrc;
+                        _nextOrc = (_nextOrc + 1) % _orcRecipeIds.Length;
                         var order = new SpawnOrder(
-                            _orc1RecipeId,
+                            _orcRecipeIds[orc],
                             new SpawnSpec
                             {
                                 PhysHandle = new(-1, 0),// handle
                                 // name
                                 Pos = new Vec2(trans.Position.X + 5, trans.Position.Y),
                                 Dir = trans.Direction,
-                                Name = "Orc1",
+                                Name = OrcRecipeNames[orc],
                                 TeamFlag = TeamFlag.Enemy
 
                             }

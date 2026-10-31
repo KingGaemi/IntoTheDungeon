@@ -21,6 +21,12 @@ namespace IntoTheDungeon.Unity.Bridge.View
 
         [SerializeField] private Mapping[] mappings;
 
+        // 등록된 엔티티 레시피 이름들(뷰가 있는 레시피 = 스폰 가능한 캐릭터)
+        public System.Collections.Generic.IEnumerable<string> RecipeNames
+        {
+            get { foreach (var m in mappings) if (!string.IsNullOrEmpty(m.recipeIdString)) yield return m.recipeIdString; }
+        }
+
         public void ApplyMappings(IEntityViewMapRegistry registry, ViewRecipeRegistry viewRegistry, IRecipeTable recipeTable)
         {
             foreach (var mapping in mappings)

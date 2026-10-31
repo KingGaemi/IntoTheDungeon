@@ -36,8 +36,8 @@ namespace IntoTheDungeon.Unity
         [Header("Entity Data")]
         [Tooltip("플레이어 입력을 받는 RecipeId 이름. PlayerInputSystem 쿼리에 걸려야 하는 유일한 이름.")]
         [SerializeField] string playerCharacterName = "Character";
-        [Tooltip("몹으로 등록할 이름들 (예: Catherine, Orc1, Slime). PlayerTag가 붙지 않는다.")]
-        [SerializeField] string[] monsterNames = { "Catherine", "Orc1" };
+        [Tooltip("매핑 테이블(EntityViewMappingTable)에 없는데 몹으로 등록할 이름. 매핑 테이블에 있는 레시피는 플레이어 외 전부 자동으로 몹 등록된다.")]
+        [SerializeField] string[] monsterNames = { };
 
         [Header("2.5D 걸을 수 있는 영역 (X 가로, Y 깊이)")]
         [Tooltip("씬에 WalkAreaAuthoring이 없을 때만 쓰는 기본값")]
@@ -70,7 +70,11 @@ namespace IntoTheDungeon.Unity
             entityRecipeRegistry.Register(playerRecipeId, characterFactory);
             Debug.Log($"[Installer] Registered RecipeId: {playerCharacterName} → {playerRecipeId.Value} (player)");
 
-            foreach (var name in monsterNames)
+            // 몹 = 매핑 테이블의 모든 레시피(플레이어 제외) + 추가 이름. 새 몹은 매핑 테이블에만 넣으면 된다
+            var monsters = new System.Collections.Generic.HashSet<string>(monsterNames);
+            if (mappingTable) monsters.UnionWith(mappingTable.RecipeNames);
+            monsters.Remove(playerCharacterName);
+            foreach (var name in monsters)
             {
                 var recipeId = recipeTable.GetId(name);
                 entityRecipeRegistry.Register(recipeId, monsterFactory);
