@@ -40,6 +40,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6226707474981014172}
+  - component: {fileID: 2567476167687478430}
+  - component: {fileID: 8944222696267169635}
   m_Layer: 0
   m_Name: FirstRoom
   m_TagString: Untagged
@@ -20915,3 +20917,31 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1.0392637, y: 2.2246208}
   m_EdgeRadius: 0
+--- !u!114 &2567476167687478430
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 732768407402851415}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 10dc3cdefbf742b9b0467cd0acbd2e75, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  xRange: {x: -19.2, y: 19.7}
+  depthRange: {x: -16.7, y: -13.95}
+  cameraXRange: {x: -22.74, y: 29.26}
+  cameraHeightAboveFront: 3.25
+--- !u!114 &8944222696267169635
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 732768407402851415}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 78e6384a38e24a61a020ddd3fe451ad8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

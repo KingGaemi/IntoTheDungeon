@@ -40,7 +40,7 @@ namespace IntoTheDungeon.Unity
         [SerializeField] string[] monsterNames = { "Catherine", "Orc1" };
 
         [Header("2.5D 걸을 수 있는 영역 (X 가로, Y 깊이)")]
-        [Tooltip("맵 작업 전까지는 넓게 열어 둔다")]
+        [Tooltip("씬에 WalkAreaAuthoring이 없을 때만 쓰는 기본값")]
         [SerializeField] Vector2 walkAreaX = new(-100f, 100f);
         [SerializeField] Vector2 walkAreaDepth = new(-100f, 100f);
         public override void Install(GameWorld world)
@@ -152,9 +152,13 @@ namespace IntoTheDungeon.Unity
 
             Debug.Log("[Installer] F");
             world.SystemManager.AddUnique(new KinematicSystem());       // 물리 바디가 있는 엔티티용
-            world.SetOnce<IWalkArea>(new RectWalkArea(walkAreaX.x, walkAreaX.y, walkAreaDepth.x, walkAreaDepth.y));
+            // 방(맵)에 WalkAreaAuthoring이 있으면 그 영역, 없으면 설치기 기본값
+            var authoring = FindFirstObjectByType<WalkAreaAuthoring>();
+            world.SetOnce<IWalkArea>(authoring ? authoring.ToWalkArea()
+                                               : new RectWalkArea(walkAreaX.x, walkAreaX.y, walkAreaDepth.x, walkAreaDepth.y));
             world.SystemManager.AddUnique(new MotionSystem());          // 2.5D 캐릭터 이동(TransformProjection보다 먼저)
             world.SystemManager.AddUnique(new HeightMotionSystem());    // 2.5D 높이: 중력·착지
+            world.SystemManager.AddUnique(new KnockbackSystem());       // 피격 밀림
 
 
 

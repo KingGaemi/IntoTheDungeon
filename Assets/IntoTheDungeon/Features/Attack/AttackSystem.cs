@@ -85,7 +85,10 @@ namespace IntoTheDungeon.Features.Attack
                 Damage = r.Damage,
                 Center = FollowOwnerSystem.ComputeCenter(r.OwnerPos, r.Melee.Offset, r.FacingSign),
                 HalfExtents = r.Melee.HalfExtents,
-                Height = r.OwnerHeight
+                Height = r.OwnerHeight,
+                FacingSign = r.FacingSign,
+                KnockbackSpeed = r.Melee.KnockbackSpeed,
+                LaunchSpeed = r.Melee.LaunchSpeed
             });
             em.AddComponent(e, new FollowOwnerComponent { Offset = r.Melee.Offset });
             em.AddComponent(e, new LifetimeComponent { Remaining = r.Melee.ActiveTime });

@@ -16,5 +16,8 @@ namespace IntoTheDungeon.Features.Attack
         public Vec2 Center;     // 바닥 평면 좌표(X 가로, Y 깊이). FollowOwnerSystem 등이 갱신
         public Vec2 HalfExtents;
         public float Height;    // 히트박스 높이(공격자 발 높이). 높이 차이가 크면 안 맞는다
+        public float FacingSign;     // 공격 방향(+1 오른쪽, -1 왼쪽): 넉백 방향
+        public float KnockbackSpeed;
+        public float LaunchSpeed;
     }
 }

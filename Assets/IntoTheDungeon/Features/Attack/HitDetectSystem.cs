@@ -6,6 +6,7 @@ using IntoTheDungeon.Core.ECS.Components;
 using IntoTheDungeon.Core.Abstractions.Gameplay;
 using IntoTheDungeon.Core.Util;
 using IntoTheDungeon.Features.Status;
+using IntoTheDungeon.Features.Physics.Components;
 
 namespace IntoTheDungeon.Features.Attack
 {
@@ -59,6 +60,7 @@ namespace IntoTheDungeon.Features.Attack
                         hits.AddHit(t.E.Index);
                         ref var q = ref em.GetComponent<HpModificationQueue>(t.E);
                         q.Enqueue(HpModification.Damage(hb.Damage, hb.Owner));
+                        ApplyHitReaction(em, t.E, hb);
                     }
                 }
             }
@@ -96,6 +98,21 @@ namespace IntoTheDungeon.Features.Attack
                     DrawBox(t.Min, t.Max, t.Height, UnityEngine.Color.green);
 #endif
                 }
+            }
+        }
+
+        // 맞은 쪽을 공격 방향으로 밀고 위로 띄운다(공중에서 또 맞으면 다시 띄워 공중 콤보)
+        static void ApplyHitReaction(IEntityManager em, Entity victim, in HitboxComponent hb)
+        {
+            if (hb.KnockbackSpeed > 0f && em.HasComponent<KnockbackComponent>(victim))
+            {
+                ref var k = ref em.GetComponent<KnockbackComponent>(victim);
+                k.Velocity = new Vec2(hb.FacingSign * hb.KnockbackSpeed, 0f);
+            }
+            if (hb.LaunchSpeed > 0f && em.HasComponent<HeightMotionComponent>(victim))
+            {
+                ref var m = ref em.GetComponent<HeightMotionComponent>(victim);
+                if (m.VelocityZ < hb.LaunchSpeed) m.VelocityZ = hb.LaunchSpeed;
             }
         }
 
