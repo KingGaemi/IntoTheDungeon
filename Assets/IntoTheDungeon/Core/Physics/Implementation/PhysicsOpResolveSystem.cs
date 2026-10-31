@@ -19,7 +19,7 @@ namespace IntoTheDungeon.Core.Physics.Implementation
 
         static PhysicsOpResolveSystem()
         {
-            OpPriority = new int[10];
+            OpPriority = new int[System.Enum.GetValues(typeof(PhysicsOpKind)).Length];
             OpPriority[(int)PhysicsOpKind.AddForce] = 0;
             OpPriority[(int)PhysicsOpKind.AddImpulse] = 1;
             OpPriority[(int)PhysicsOpKind.AddTorque] = 2;
@@ -29,6 +29,7 @@ namespace IntoTheDungeon.Core.Physics.Implementation
             OpPriority[(int)PhysicsOpKind.Teleport] = 6;
             OpPriority[(int)PhysicsOpKind.SyncEcsToPhys] = 7;
             OpPriority[(int)PhysicsOpKind.SyncPhysToEcs] = 8;
+            OpPriority[(int)PhysicsOpKind.SetSimulated] = 9;
         }
 
         public PhysicsOpResolveSystem(IPhysicsOpQueue queue, PhysicsOpStore store)

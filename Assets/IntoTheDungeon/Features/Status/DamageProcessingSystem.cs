@@ -47,7 +47,7 @@ namespace IntoTheDungeon.Features.Status
                         ApplyModification(ref s, in m);
 
                         if (m.Kind == HpModification.ModKind.Damage)
-                            _hub.Publish(new DamagedEvent(entities[i], m.Source, before - s.CurrentHp, s.CurrentHp));
+                            _hub.Publish(new DamagedEvent(entities[i], m.Source, before - s.CurrentHp, s.CurrentHp, s.MaxHp));
 
                         if (s.CurrentHp <= 0)
                         {

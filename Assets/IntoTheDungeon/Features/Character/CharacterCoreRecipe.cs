@@ -17,11 +17,11 @@ namespace IntoTheDungeon.Features.Character
     public sealed class CharacterCoreRecipe : IEntityRecipe
     {
         public RecipeId Id { get; }
-        readonly int _maxHp; readonly float _movSpd, _atkSpd;
+        readonly int _maxHp, _damage; readonly float _movSpd, _atkSpd;
         readonly bool _isPlayer;
         public CharacterCoreRecipe(RecipeId id,
-            int maxHp, float movSpd, float atkSpd, bool isPlayer = false)
-        { Id = id; _maxHp = maxHp; _movSpd = movSpd; _atkSpd = atkSpd; _isPlayer = isPlayer; }
+            int maxHp, float movSpd, float atkSpd, int damage, bool isPlayer = false)
+        { Id = id; _maxHp = maxHp; _movSpd = movSpd; _atkSpd = atkSpd; _damage = damage; _isPlayer = isPlayer; }
         public void Apply(IEntityManager em, Entity e)
         {
             if (_isPlayer)
@@ -33,7 +33,7 @@ namespace IntoTheDungeon.Features.Character
                 CurrentHp = _maxHp,
                 MovementSpeed = _movSpd,
                 AttackSpeed = _atkSpd,
-                Damage = 1,
+                Damage = _damage,
                 IsAlive = true
             });
             em.AddComponent(e, new KinematicComponent());

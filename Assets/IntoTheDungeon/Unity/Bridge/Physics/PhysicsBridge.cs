@@ -147,6 +147,10 @@ namespace IntoTheDungeon.Unity.Bridge.Physics
                     rb.angularVelocity = angle * Mathf.Rad2Deg;
                     break;
 
+                case PhysicsOpKind.SetSimulated:
+                    rb.simulated = vec.X != 0f;
+                    break;
+
                 case PhysicsOpKind.SyncEcsToPhys:
                     // 구현 필요
                     break;

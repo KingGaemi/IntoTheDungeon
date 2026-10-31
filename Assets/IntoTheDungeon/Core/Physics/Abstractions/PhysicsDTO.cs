@@ -55,7 +55,8 @@ namespace IntoTheDungeon.Core.Physics.Abstractions
         SyncPhysToEcs,
         SetTransform,
         SetLinearVelocity,
-        SetAngularVelocity
+        SetAngularVelocity,
+        SetSimulated        // Vec.X != 0 이면 켜고, 0이면 끈다(충돌·중력 모두 정지)
     }
 
     public struct PhysicsOp
