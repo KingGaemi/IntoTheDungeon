@@ -72,8 +72,16 @@ namespace IntoTheDungeon.Features.Character
         // Event Handlers 
         // ============================================
 
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        void LogEvt(string msg)
+        {
+            if (IntoTheDungeon.Unity.DebugTools.EntityStatusViewer.LogAnimation)
+                Debug.Log($"[AnimEvt] {name} {msg}");
+        }
+
         public void OnStateChanged(in StateChangedEvent evt)
         {
+            LogEvt($"State mask={evt.Mask} action={evt.ActionState} move={evt.MovementState} control={evt.ControlState} facing={evt.Facing}");
             // Movement 변경
             if (evt.HasMovement && _lastMovement != evt.MovementState)
             {
@@ -94,15 +102,13 @@ namespace IntoTheDungeon.Features.Character
                 HandleDeath();
             }
 
-            // Action 변경 (Attack)
-            if (evt.HasAction && evt.ActionState == ActionState.Attack)
-            {
-                _animator.SetTrigger(HashAttack);
-            }
+            // 공격 애니메이션 시작은 OnAnimationPhaseChanged(Windup)에서 한다.
+            // 여기서 트리거를 켜면 전이 조건이 맞지 않을 때 트리거가 남아 다음 사이클에 유령 공격이 재생된다.
         }
 
         public void OnStatusChanged(in StatusChangedEvent evt)
         {
+            LogEvt($"Status dirty={evt.Dirty} atkSpd={evt.AttackSpeed} movSpd={evt.MovementSpeed}");
             if (evt.Dirty == StatusDirty.All)
             {
                 _animator.SetFloat(HashAttackSpeed, evt.AttackSpeed * _multiplier);
@@ -123,6 +129,7 @@ namespace IntoTheDungeon.Features.Character
         public void OnDamaged(in DamagedEvent evt)
         {
             // 치명타면 Death 트리거(StateChanged)가 따로 오므로 Hurt는 건너뛴다
+            LogEvt($"Damaged amount={evt.Amount} hp={evt.RemainingHp} animatorOk={(_animator && _animator.isActiveAndEnabled)} ctrl={(_animator && _animator.runtimeAnimatorController ? _animator.runtimeAnimatorController.name : "null")}");
             if (evt.RemainingHp <= 0) return;
             _animator.SetTrigger(HashHurt);
         }
@@ -138,8 +145,10 @@ namespace IntoTheDungeon.Features.Character
             {
                 case ActionPhase.Windup:
                     _animator.SetBool(HashAttacking, true);
+                    _animator.SetBool(HashWindupDone, false);
                     _animator.speed = (_lenWindup > 0.001f) ? _lenWindup / duration : 1f;
                     _animator.SetFloat(HashWindup, evt.PhaseProgress);
+                    _animator.SetTrigger(HashAttack);   // 실제 Windup 시작 1회에만
                     break;
 
                 case ActionPhase.Recovery:
@@ -153,6 +162,7 @@ namespace IntoTheDungeon.Features.Character
                     {
                         _animator.SetBool(HashAttacking, false);
                         _animator.SetBool(HashWindupDone, false);
+                        _animator.ResetTrigger(HashAttack);
                         _animator.speed = 1f;
                     }
                     break;
@@ -160,11 +170,13 @@ namespace IntoTheDungeon.Features.Character
                 case ActionPhase.None:
                     _animator.SetBool(HashAttacking, false);
                     _animator.SetBool(HashWindupDone, false);
+                    _animator.ResetTrigger(HashAttack);
                     _animator.speed = 1f;
                     break;
             }
 
             _animator.SetFloat(HashPhaseProgress, evt.WholeProgress);
+            LogEvt($"Phase {evt.Phase} dur={evt.PhaseDuration:0.###} whole={evt.WholeProgress:0.00} lenW={_lenWindup:0.###} lenR={_lenRecovery:0.###} -> animator.speed={_animator.speed:0.###}");
         }
 
         // ============================================

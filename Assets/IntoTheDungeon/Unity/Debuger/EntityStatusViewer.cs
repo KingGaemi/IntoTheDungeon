@@ -98,6 +98,47 @@ namespace IntoTheDungeon.Unity.DebugTools
             ParamRun = ReadBool("Run");
             ParamAttacking = ReadBool("Attacking");
             ParamWindupDone = ReadBool("WindupDone");
+
+            LogAnimChange(st.shortNameHash);
+        }
+
+        // 클립/상태/속도가 바뀌거나 재생이 멈추면 콘솔(=Editor.log)에 남긴다
+        public static bool LogAnimation = true;
+        string _lastClip;
+        int _lastStateHash;
+        float _lastSpeedProduct = -1f;
+        float _lastT;
+        float _stuckTime;
+        bool _stuckLogged;
+
+        void LogAnimChange(int stateHash)
+        {
+            if (!LogAnimation) return;
+            float spd = AnimatorSpeed * StateSpeed;
+            bool changed = CurrentClip != _lastClip || stateHash != _lastStateHash || !Mathf.Approximately(spd, _lastSpeedProduct);
+            if (changed)
+            {
+                Debug.Log($"[Anim] {EntityName}_{EntityIndex} clip={CurrentClip} state#{stateHash} t={NormalizedTime:0.00} " +
+                          $"spd={AnimatorSpeed:0.###}x{StateSpeed:0.###} sprite={CurrentSprite} flip={FlipX} " +
+                          $"Run={ParamRun} Attacking={ParamAttacking} WindupDone={ParamWindupDone} " +
+                          $"ECS={Action}/{Movement}/{Control}/{Facing}");
+                _lastClip = CurrentClip; _lastStateHash = stateHash; _lastSpeedProduct = spd;
+                _stuckTime = 0f; _stuckLogged = false;
+            }
+
+            // 반복하지 않는 클립이 끝난 경우(t>=1)는 정상 정지로 보고 제외
+            if (Mathf.Approximately(NormalizedTime, _lastT) && NormalizedTime < 1f && !InTransition)
+            {
+                _stuckTime += Time.deltaTime;
+                if (_stuckTime > 0.5f && !_stuckLogged)
+                {
+                    Debug.Log($"[Anim:멈춤] {EntityName}_{EntityIndex} clip={CurrentClip} t={NormalizedTime:0.00} " +
+                              $"spd={AnimatorSpeed:0.###}x{StateSpeed:0.###} AttackSpeed={ParamAttackSpeed} MovementSpeed={ParamMovementSpeed}");
+                    _stuckLogged = true;
+                }
+            }
+            else _stuckTime = 0f;
+            _lastT = NormalizedTime;
         }
 
         // 머리 위 디버그 표시: 인스펙터 없이 HP·상태·재생 중인 클립을 바로 확인
