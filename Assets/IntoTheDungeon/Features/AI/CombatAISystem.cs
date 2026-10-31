@@ -6,6 +6,7 @@ using IntoTheDungeon.Core.ECS.Components;
 using IntoTheDungeon.Core.Abstractions.Gameplay;
 using IntoTheDungeon.Core.Abstractions.Types;
 using IntoTheDungeon.Core.Util;
+using IntoTheDungeon.Core.Abstractions.World;
 using IntoTheDungeon.Features.Command;
 using IntoTheDungeon.Features.State;
 using IntoTheDungeon.Features.Status;
@@ -33,9 +34,18 @@ namespace IntoTheDungeon.Features.AI
         bool _hasPartyCenter;
         Vec2 _partyCenter;
 
+        BattleProgress _progress;
+
+        public override void Initialize(IWorld world)
+        {
+            base.Initialize(world);
+            world.TryGet(out _progress);
+        }
+
         public void Tick(float dt)
         {
             _time += dt;
+            if (_progress != null && _progress.Phase == BattlePhase.Map) return;   // 지도에서 방 고르는 동안은 가만히
             var em = _world.EntityManager;
             CollectTargets(em);
             _hasPartyCenter = Party.TryGetCenter(em, out _partyCenter, out _);
@@ -87,13 +97,29 @@ namespace IntoTheDungeon.Features.AI
 
                     // 공격 중이던 상태면 조금 더 벗어나야 다시 쫓는다(경계에서 떨지 않게)
                     float slack = ai.State == CombatAIState.Attack ? ai.ChaseResume : 0f;
-                    bool inX = System.MathF.Abs(dx) <= ai.AttackRange + slack;
+                    float adx = System.MathF.Abs(dx);
+                    bool inX = adx <= ai.AttackRange + slack;
                     bool inZ = System.MathF.Abs(dz) <= ai.DepthTolerance + slack * 0.5f;
 
-                    if (!(inX && inZ))
+                    // 원거리: 너무 붙으면 물러난다. 벽 등으로 1초 넘게 못 벗어나면 거리가 다시 벌어질 때까지 그 자리에서 쏜다
+                    bool tooClose = false;
+                    if (ai.MinRange > 0f)
                     {
-                        // 가로가 멀면 가로로, 줄이 어긋나 있으면 깊이로(둘 다면 대각선)
-                        var want = new Vec2(inX ? 0f : System.MathF.Sign(dx), inZ ? 0f : System.MathF.Sign(dz)).Normalized;
+                        if (ai.HoldGround && adx > ai.MinRange + 0.5f) ai.HoldGround = false;
+                        tooClose = !ai.HoldGround && adx < ai.MinRange;
+                        if (tooClose)
+                        {
+                            ai.RetreatTime += dt;
+                            if (ai.RetreatTime > 1f) { ai.HoldGround = true; tooClose = false; }
+                        }
+                        else ai.RetreatTime = 0f;
+                    }
+
+                    if (!(inX && inZ) || tooClose)
+                    {
+                        // 가로가 멀면 가로로(너무 가까우면 반대로), 줄이 어긋나 있으면 깊이로(둘 다면 대각선)
+                        float wantX = tooClose ? -System.MathF.Sign(dx) : inX ? 0f : System.MathF.Sign(dx);
+                        var want = new Vec2(wantX, inZ ? 0f : System.MathF.Sign(dz)).Normalized;
                         MoveIfChanged(ref buf, states[i], want);
                         ai.State = CombatAIState.Chase;
                     }

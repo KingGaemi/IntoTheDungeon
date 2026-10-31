@@ -338,7 +338,31 @@ namespace IntoTheDungeon.Unity.Bridge.View
             _entityToGO.Remove(entity);
             _goToEntity.Remove(go);
 
-            Destroy(go);
+            StartCoroutine(FadeOutAndDestroy(go, DespawnFadeTime));
+        }
+
+        // 사라질 때 툭 끊기지 않게 그림(그림자 포함)을 옅게 한 뒤 지운다
+        const float DespawnFadeTime = 0.5f;
+        static System.Collections.IEnumerator FadeOutAndDestroy(GameObject go, float duration)
+        {
+            if (!go) yield break;
+            var renderers = go.GetComponentsInChildren<SpriteRenderer>(true);
+            var start = new float[renderers.Length];
+            for (int i = 0; i < renderers.Length; i++) start[i] = renderers[i] ? renderers[i].color.a : 0f;
+
+            for (float t = 0f; t < duration && go; t += Time.deltaTime)
+            {
+                float k = 1f - t / duration;
+                for (int i = 0; i < renderers.Length; i++)
+                {
+                    if (!renderers[i]) continue;
+                    var c = renderers[i].color;
+                    c.a = start[i] * k;
+                    renderers[i].color = c;
+                }
+                yield return null;
+            }
+            if (go) Destroy(go);
         }
         void RegisterView(Entity e, Transform visualTransform)
         {

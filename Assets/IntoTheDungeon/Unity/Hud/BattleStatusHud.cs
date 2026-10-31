@@ -3,12 +3,14 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using IntoTheDungeon.Core.Abstractions.World;
 using IntoTheDungeon.Features.Battle;
+using IntoTheDungeon.Features.Run;
 
 namespace IntoTheDungeon.Unity.Hud
 {
     /// <summary>
     /// 전투 진행 표시(임시 UI, 코드로 만든다): 위쪽 가운데 웨이브·남은 적, 화면 가운데 큰 알림
-    /// ("전투 시작" / "웨이브 클리어" / "클리어!" / "패배"), 끝나면 "다시 하기" 버튼(씬 다시 불러오기).
+    /// ("전투 시작" / "웨이브 클리어" / "방 클리어!" / "던전 클리어!" / "패배"), 끝나면 버튼:
+    /// 이기면 "정비하러 가기"(보상·덱 정비 → 지도), 보스를 깼거나 지면 "새 던전"(새 판). 둘 다 씬을 다시 불러온다.
     /// </summary>
     public sealed class BattleStatusHud : MonoBehaviour, IWorldInjectable
     {
@@ -16,7 +18,7 @@ namespace IntoTheDungeon.Unity.Hud
         [SerializeField] Color defeatColor = new(0.85f, 0.25f, 0.25f, 1f);
 
         BattleProgress _progress;
-        Text _status, _banner;
+        Text _status, _banner, _retryLabel;
         GameObject _retry;
 
         public void Init(IWorld world)
@@ -30,7 +32,9 @@ namespace IntoTheDungeon.Unity.Hud
             if (_progress == null || !_status) return;
             var p = _progress;
 
-            _status.text = p.Wave > 0 ? $"웨이브 {p.Wave} / {p.TotalWaves}   ·   남은 적 {p.EnemiesAlive}" : "";
+            var run = RunState.Current;
+            string room = run.Current != null ? $"{run.CurrentLayer + 1}층 {Encounters.Label(run.Current.Type)}   ·   " : "";
+            _status.text = p.Wave > 0 && p.Phase != BattlePhase.Map ? $"{room}웨이브 {p.Wave} / {p.TotalWaves}   ·   남은 적 {p.EnemiesAlive}" : "";
 
             string banner = "";
             Color color = Color.white;
@@ -39,15 +43,24 @@ namespace IntoTheDungeon.Unity.Hud
                 case BattlePhase.Intro: banner = "전투 시작!"; break;
                 case BattlePhase.Fighting: if (p.PhaseTime < 1.2f) banner = $"웨이브 {p.Wave}"; break;
                 case BattlePhase.Interlude: banner = "웨이브 클리어!"; break;
-                case BattlePhase.Victory: banner = "클리어!"; color = victoryColor; break;
+                case BattlePhase.Victory:
+                    banner = run.Phase == RunPhase.Cleared ? "던전 클리어!" : "방 클리어!";
+                    color = victoryColor;
+                    break;
                 case BattlePhase.Defeat: banner = "패배"; color = defeatColor; break;
             }
+            _retryLabel.text = p.Phase == BattlePhase.Victory && run.Phase == RunPhase.Camp ? "정비하러 가기" : "새 던전";
             _banner.text = banner;
             _banner.color = color;
             if (_retry.activeSelf != p.IsOver) _retry.SetActive(p.IsOver);
         }
 
-        void Retry() => SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        void Retry()
+        {
+            var run = RunState.Current;
+            if (run.Phase is RunPhase.Cleared or RunPhase.Failed) RunState.StartNew();   // 판이 끝났으면 새 지도
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);         // 다시 불러오면 정비 또는 지도부터
+        }
 
         void Build()
         {
@@ -80,7 +93,8 @@ namespace IntoTheDungeon.Unity.Hud
             var label = NewText("Label", _retry.transform, font, 40);
             var lrt = label.rectTransform;
             lrt.anchorMin = Vector2.zero; lrt.anchorMax = Vector2.one; lrt.offsetMin = lrt.offsetMax = Vector2.zero;
-            label.text = "다시 하기";
+            label.text = "다음 방으로";
+            _retryLabel = label;
             _retry.SetActive(false);
         }
 

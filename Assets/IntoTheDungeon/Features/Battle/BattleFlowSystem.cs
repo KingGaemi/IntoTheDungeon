@@ -8,12 +8,16 @@ using IntoTheDungeon.Core.Abstractions.Messages.Spawn;
 using IntoTheDungeon.Core.Abstractions.Types;
 using IntoTheDungeon.Core.Util;
 using IntoTheDungeon.Features.Status;
+using IntoTheDungeon.Features.Run;
+using IntoTheDungeon.Features.Attack;
+using IntoTheDungeon.Features.Physics.Components;
 
 namespace IntoTheDungeon.Features.Battle
 {
     /// <summary>
-    /// 전투 한 판: 시작 연출 → 웨이브 스폰 → 적 전멸이면 다음 웨이브 → 마지막까지 깨면 승리.
-    /// 파티가 전멸하면 패배. 몹은 파티 중심 앞쪽(벽에 막히면 반대쪽)에 나온다.
+    /// 방 하나의 전투: 지도에서 방을 고르면(RunState) 그 방의 몹 구성으로 시작 연출 → 웨이브 스폰 →
+    /// 적 전멸이면 다음 웨이브 → 마지막까지 깨면 승리(파티 체력을 판에 기록). 파티가 전멸하면 패배(판 끝).
+    /// 파티 체력은 방과 방 사이에 이어진다. 몹은 파티 중심 앞쪽(벽에 막히면 반대쪽)에 나온다.
     /// SpawnSystem보다 먼저 돌아야 같은 프레임에 스폰된다.
     /// </summary>
     public sealed class BattleFlowSystem : GameSystem, ITick
@@ -26,7 +30,8 @@ namespace IntoTheDungeon.Features.Battle
         IRecipeTable _recipes;
         IWalkArea _area;
         readonly System.Random _rng = new(7);
-        bool _alliesSpawned;
+        bool _alliesSpawned, _hpApplied;
+        readonly System.Collections.Generic.List<Party.Member> _party = new(8);
 
         public override void Initialize(IWorld world)
         {
@@ -34,7 +39,6 @@ namespace IntoTheDungeon.Features.Battle
             Enabled = world.TryGet(out _progress) && world.TryGet(out _config)
                    && world.TryGet(out _spawnQueue) && world.TryGet(out _recipes);
             world.TryGet(out _area);
-            if (Enabled) _progress.TotalWaves = _config.Waves.Count;
         }
 
         public void Tick(float dt)
@@ -43,28 +47,92 @@ namespace IntoTheDungeon.Features.Battle
             p.PhaseTime += dt;
 
             p.EnemiesAlive = CountEnemies();
+
+            var run = RunState.Current;
+            if (p.Phase == BattlePhase.Map)
+            {
+                if (run.Phase == RunPhase.InRoom && run.Current != null) BeginRoom(run.Current);
+                return;
+            }
+
             bool partyFound = HasPartyMember();
             Party.TryGetCenter(_world.EntityManager, out var partyPos, out int partyAlive);
             if (!partyFound || p.IsOver) return;   // 파티가 아직 스폰 전이면 기다린다
 
-            if (partyAlive == 0) { Enter(BattlePhase.Defeat); return; }
+            if (partyAlive == 0 && _hpApplied) { Enter(BattlePhase.Defeat); run.Lose(); return; }
 
             switch (p.Phase)
             {
                 case BattlePhase.Intro:
-                    if (!_alliesSpawned) { SpawnAllies(partyPos); _alliesSpawned = true; }
-                    if (p.PhaseTime >= _config.IntroTime) StartWave(1, partyPos);
+                    if (!_alliesSpawned) { SpawnAllies(run, partyPos); _alliesSpawned = true; }
+                    else if (!_hpApplied) { ApplyRunToParty(run); _hpApplied = true; }   // 동료가 스폰된 다음 프레임
+                    if (_hpApplied && p.PhaseTime >= _config.IntroTime) StartWave(1, partyPos);
                     break;
 
                 case BattlePhase.Fighting:
                     if (p.PhaseTime >= SpawnSettleTime && p.EnemiesAlive == 0)
-                        Enter(p.Wave < p.TotalWaves ? BattlePhase.Interlude : BattlePhase.Victory);
+                    {
+                        if (p.Wave < p.TotalWaves) Enter(BattlePhase.Interlude);
+                        else { Enter(BattlePhase.Victory); run.WinRoom(CollectPartyHp()); }
+                    }
                     break;
 
                 case BattlePhase.Interlude:
                     if (p.PhaseTime >= _config.InterludeTime) StartWave(p.Wave + 1, partyPos);
                     break;
             }
+        }
+
+        void BeginRoom(MapNode node)
+        {
+            _config.Waves.Clear();
+            _config.Waves.AddRange(Encounters.For(node.Type, node.Layer));
+            _progress.TotalWaves = _config.Waves.Count;
+            _progress.Wave = 0;
+            Enter(BattlePhase.Intro);
+        }
+
+        // 판의 덱(패시브 보정)과 슬롯별 체력 비율을 파티에 입힌다(쓰러졌던 파티원은 다시 쓰러뜨림)
+        void ApplyRunToParty(RunData run)
+        {
+            var em = _world.EntityManager;
+            var mods = run.BuildModifiers();
+            Party.Collect(em, _party);
+            for (int i = 0; i < _party.Count; i++)
+            {
+                var e = _party[i].Entity;
+                ref var st = ref em.GetComponent<StatusComponent>(e);
+
+                st.Damage = (int)System.MathF.Round(st.Damage * mods.DamageMul);
+                st.MaxHp = (int)System.MathF.Round(st.MaxHp * mods.MaxHpMul);
+                st.CurrentHp = st.MaxHp;
+                st.AttackSpeed *= mods.AttackSpeedMul;
+                st.MovementSpeed *= mods.MoveSpeedMul;
+                if (em.HasComponent<SpecialSkillComponent>(e))
+                    em.GetComponent<SpecialSkillComponent>(e).Cooldown *= mods.SkillCooldownMul;
+                if (em.HasComponent<BodyComponent>(e))
+                {
+                    ref var body = ref em.GetComponent<BodyComponent>(e);
+                    body.RadiusAdd += mods.BodyRadiusAdd;
+                    body.MassMul *= mods.BodyMassMul;
+                }
+
+                if (i >= run.PartyHp.Count) continue;   // 기록이 없는 슬롯(새로 영입 등)은 체력 가득
+                float ratio = run.PartyHp[i];
+                if (ratio <= 0f)
+                    em.GetComponent<HpModificationQueue>(e).Enqueue(HpModification.Damage(st.MaxHp * 10, e));
+                else
+                    st.CurrentHp = System.Math.Max(1, (int)System.MathF.Round(st.MaxHp * ratio));
+            }
+        }
+
+        System.Collections.Generic.List<float> CollectPartyHp()
+        {
+            Party.Collect(_world.EntityManager, _party);
+            var hp = new System.Collections.Generic.List<float>(_party.Count);
+            foreach (var m in _party)
+                hp.Add(m.Alive && m.MaxHp > 0 ? (float)m.Hp / m.MaxHp : 0f);
+            return hp;
         }
 
         void Enter(BattlePhase phase)
@@ -95,13 +163,14 @@ namespace IntoTheDungeon.Features.Battle
             }
         }
 
-        void SpawnAllies(Vec2 partyPos)
+        // 씬에 놓인 첫 파티원 뒤로, 판에 기록된 동료들을 슬롯 순서대로 스폰한다
+        void SpawnAllies(RunData run, Vec2 partyPos)
         {
-            if (_config.StartingAllies <= 0 || !_recipes.TryGetId(_config.AllyRecipe, out var id)) return;
-            for (int k = 0; k < _config.StartingAllies; k++)
+            for (int k = 0; k < run.Allies.Count; k++)
             {
-                var pos = new Vec2(partyPos.X - 1.2f - k * 0.8f, RandomDepth(partyPos.Y));   // 플레이어 뒤쪽
-                Enqueue(id, "Ally", pos, 1f, TeamFlag.Player);
+                if (!_recipes.TryGetId(run.Allies[k], out var id)) continue;
+                var pos = new Vec2(partyPos.X - 1.2f - k * 0.8f, RandomDepth(partyPos.Y));   // 뒤쪽에 줄지어
+                Enqueue(id, "Ally", pos, 1f, Party.Team);
             }
         }
 

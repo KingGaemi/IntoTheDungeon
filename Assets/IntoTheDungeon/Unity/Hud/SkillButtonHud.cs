@@ -36,6 +36,8 @@ namespace IntoTheDungeon.Unity.Hud
 
         IWorld _world;
         IInputService _input;
+        BattleProgress _progress;
+        GameObject _canvas;
         readonly Slot[] _slots = new Slot[MaxSlots];
         readonly List<Party.Member> _party = new(8);
         bool _built;
@@ -44,12 +46,16 @@ namespace IntoTheDungeon.Unity.Hud
         {
             _world = world;
             world.TryGet(out _input);
+            world.TryGet(out _progress);
             if (!_built) Build();
         }
 
         void Update()
         {
             if (_world == null || !_built) return;
+            bool show = _progress == null || _progress.Phase != BattlePhase.Map;   // 지도·정비 화면에선 숨김
+            if (_canvas.activeSelf != show) _canvas.SetActive(show);
+            if (!show) return;
             var em = _world.EntityManager;
             Party.Collect(em, _party);
 
@@ -97,6 +103,7 @@ namespace IntoTheDungeon.Unity.Hud
 
             var canvasGo = new GameObject("SkillCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             canvasGo.transform.SetParent(transform, false);
+            _canvas = canvasGo;
             var canvas = canvasGo.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 100;

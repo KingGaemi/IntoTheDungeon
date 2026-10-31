@@ -11,7 +11,7 @@ using IntoTheDungeon.Core.ECS.Components;
 namespace IntoTheDungeon.Features.Attack
 {
     /// <summary>
-    /// 공격이 Active에 들어선 순간(ReadyToAct) 근접 히트박스 엔티티를 만든다.
+    /// 공격이 Active에 들어선 순간(ReadyToAct) 근접 히트박스, 또는 원거리면 화살(날아가는 히트박스)을 만든다.
     /// </summary>
     public sealed class AttackSystem : GameSystem, ITick
     {
@@ -24,6 +24,8 @@ namespace IntoTheDungeon.Features.Attack
             public float OwnerHeight;
             public float FacingSign;
             public MeleeAttackComponent Melee;
+            public bool IsRanged;
+            public RangedAttackComponent Ranged;
         }
 
         readonly List<Request> _requests = new(16);
@@ -37,15 +39,13 @@ namespace IntoTheDungeon.Features.Attack
                                                typeof(StateComponent),
                                                typeof(StatusComponent),
                                                typeof(TransformComponent),
-                                               typeof(TeamComponent),
-                                               typeof(MeleeAttackComponent)))
+                                               typeof(TeamComponent)))
             {
                 var actions = chunk.GetComponentArray<ActionPhaseComponent>();
                 var states = chunk.GetComponentArray<StateComponent>();
                 var statuses = chunk.GetComponentArray<StatusComponent>();
                 var transforms = chunk.GetComponentArray<TransformComponent>();
                 var teams = chunk.GetComponentArray<TeamComponent>();
-                var melees = chunk.GetComponentArray<MeleeAttackComponent>();
                 var entities = chunk.GetEntities();
 
                 for (int i = 0; i < chunk.Count; i++)
@@ -57,22 +57,53 @@ namespace IntoTheDungeon.Features.Attack
                     action.ReadyToAct = false;
                     if (!states[i].CanAttack) continue;
 
+                    var e = entities[i];
+                    MeleeAttackComponent meleeDef = default;
+                    bool ranged = em.TryGetComponent<RangedAttackComponent>(e, out var rangedDef);
+                    if (!ranged && !em.TryGetComponent<MeleeAttackComponent>(e, out meleeDef)) continue;
                     _requests.Add(new Request
                     {
-                        Owner = entities[i],
+                        Owner = e,
                         Team = teams[i].TeamFlag,
                         Damage = statuses[i].Damage,
                         OwnerPos = transforms[i].Position,
                         OwnerHeight = transforms[i].Height,
                         FacingSign = states[i].FacingToSign(),
-                        Melee = melees[i]
+                        Melee = meleeDef,
+                        IsRanged = ranged,
+                        Ranged = rangedDef
                     });
                 }
             }
 
             // 청크 순회 중 구조 변경을 피하려고 생성은 순회가 끝난 뒤에 한다.
             foreach (var r in _requests)
-                CreateMeleeHitbox(em, r);
+            {
+                if (r.IsRanged) CreateArrow(em, r);
+                else CreateMeleeHitbox(em, r);
+            }
+        }
+
+        static void CreateArrow(IEntityManager em, in Request r)
+        {
+            var d = r.Ranged;
+            var e = em.CreateEntity();
+            em.AddComponent(e, new HitboxComponent
+            {
+                Owner = r.Owner,
+                Team = r.Team,
+                Damage = r.Damage,
+                Center = new Vec2(r.OwnerPos.X + r.FacingSign * d.SpawnOffsetX, r.OwnerPos.Y),
+                HalfExtents = d.HalfExtents,
+                Height = r.OwnerHeight,
+                FacingSign = r.FacingSign,
+                KnockbackSpeed = d.KnockbackSpeed,
+                LaunchSpeed = 0f
+            });
+            em.AddComponent(e, new ProjectileComponent { Velocity = new Vec2(r.FacingSign * d.Speed, 0f), DestroyOnHit = !d.Pierce });
+            em.AddComponent(e, new LifetimeComponent { Remaining = d.Lifetime });
+            em.AddComponent(e, new HitListComponent());
+            em.AddComponent(e, new ProjectileVisualComponent { Kind = ProjectileVisual.Arrow, TotalLifetime = d.Lifetime });
         }
 
         static void CreateMeleeHitbox(IEntityManager em, in Request r)

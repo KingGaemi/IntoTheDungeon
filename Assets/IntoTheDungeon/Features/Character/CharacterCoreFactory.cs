@@ -2,18 +2,32 @@ using System.Collections.Generic;
 using IntoTheDungeon.Core.ECS.Abstractions;
 using IntoTheDungeon.Core.Abstractions.Messages.Spawn;
 using IntoTheDungeon.Core.Abstractions.Types;
-using IntoTheDungeon.Features.Physics.Components;
 
 namespace IntoTheDungeon.Features.Character
 {
-    /// <summary>캐릭터 종류별 정의(레시피 이름 기준). 지금은 몸 크기·무게만, 스탯 등은 차차 여기로 옮긴다.</summary>
+    public enum SkillPreset { SwordWave, PowerShot }
+
+    /// <summary>캐릭터 종류별 정의(레시피 이름 기준): 몸 크기·무게, 공격 방식(근접/원거리)·사거리, 동작 시간, 필살기. 스탯은 차차 여기로 옮긴다.</summary>
     public struct CharacterDefinition
     {
         public float BodyRadius;
         public float BodyMass;
         public bool Immovable;
 
-        public static readonly CharacterDefinition Default = new() { BodyRadius = 0.3f, BodyMass = 1f };
+        public bool Ranged;             // true면 화살(RangedAttackComponent), false면 근접(MeleeAttackComponent)
+        public float AttackRange;       // AI가 이 가로 거리 안이면 공격
+        public float MinRange;          // 원거리: 이보다 가까우면 물러남
+        public float WindupDuration;    // 공격 준비(이 끝에 판정·화살이 나감)
+        public float RecoveryDuration;  // 공격 마무리
+        public SkillPreset Skill;
+
+        public static readonly CharacterDefinition Default = new()
+        {
+            BodyRadius = 0.3f, BodyMass = 1f,
+            Ranged = false, AttackRange = 1f, MinRange = 0f,
+            WindupDuration = 0.5f, RecoveryDuration = 0.7f,
+            Skill = SkillPreset.SwordWave
+        };
     }
 
     public sealed class CharacterCoreFactory : IEntityRecipeFactory
@@ -42,7 +56,7 @@ namespace IntoTheDungeon.Features.Character
                 movSpd: DefaultMoveSpd,
                 atkSpd: DefaultAtkSpd,
                 damage: DefaultDamage,
-                body: BodyComponent.Create(def.BodyRadius, def.BodyMass, def.Immovable)
+                def: def
             );
         }
     }

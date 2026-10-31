@@ -175,10 +175,10 @@ namespace IntoTheDungeon.Features.Attack
                 KnockbackSpeed = sk.WaveKnockback,
                 LaunchSpeed = sk.WaveLaunch
             });
-            em.AddComponent(e, new ProjectileComponent { Velocity = new Vec2(r.FacingSign * sk.WaveSpeed, 0f) });
+            em.AddComponent(e, new ProjectileComponent { Velocity = new Vec2(r.FacingSign * sk.WaveSpeed, 0f), DestroyOnHit = false });
             em.AddComponent(e, new LifetimeComponent { Remaining = sk.WaveLifetime });
             em.AddComponent(e, new HitListComponent());   // 관통: 같은 대상은 한 번만
-            em.AddComponent(e, new SwordWaveComponent { TotalLifetime = sk.WaveLifetime });
+            em.AddComponent(e, new ProjectileVisualComponent { Kind = sk.Visual, TotalLifetime = sk.WaveLifetime });
         }
     }
 }

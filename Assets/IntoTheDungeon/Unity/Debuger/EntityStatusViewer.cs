@@ -149,6 +149,8 @@ namespace IntoTheDungeon.Unity.DebugTools
         private void OnGUI()
         {
             if (!ShowOverlay || !_isBound) return;
+            // 지도·정비 화면이 덮고 있을 땐 머리 위 디버그 글자를 숨긴다(OnGUI는 UI보다 위에 그려짐)
+            if (_world.TryGet(out IntoTheDungeon.Features.Battle.BattleProgress bp) && bp.Phase == IntoTheDungeon.Features.Battle.BattlePhase.Map) return;
             var cam = Camera.main;
             if (!cam) return;
 

@@ -79,8 +79,8 @@ namespace IntoTheDungeon.Unity
             Debug.Log("[Bootstrapper] Calling BakeScene()");
             World.BakeScene();
 
-            // 전투 화면 UI(필살기 버튼·웨이브 진행)와 검기 그림: 씬 배치 없이 코드로 만든다(주입 전에 만들어야 Init을 받음)
-            new GameObject("BattleHud", typeof(Hud.SkillButtonHud), typeof(Hud.SwordWaveRenderer), typeof(Hud.BattleStatusHud));
+            // 전투 화면 UI(필살기 버튼·웨이브 진행·던전 지도·정비)와 투사체(검기·화살) 그림: 씬 배치 없이 코드로 만든다(주입 전에 만들어야 Init을 받음)
+            new GameObject("BattleHud", typeof(Hud.SkillButtonHud), typeof(Hud.ProjectileRenderer), typeof(Hud.BattleStatusHud), typeof(Hud.DungeonMapHud), typeof(Hud.CampHud));
 
             Debug.Log("[Bootstrapper] Calling ReinjectScene()");
             _bootstrap.ReinjectScene();
@@ -138,7 +138,8 @@ namespace IntoTheDungeon.Unity
             bridgeGO = new GameObject("[ViewBridge]");
             bridgeGO.transform.position = new Vector3(0, 0, 0);
             _viewBridge = bridgeGO.AddComponent<ViewBridge>();
-            DontDestroyOnLoad(bridgeGO);
+            // 월드는 씬마다 새로 만들므로 다리(와 그 밑에 스폰된 캐릭터 그림)도 씬과 함께 사라져야 한다.
+            // DontDestroyOnLoad면 방을 옮길 때 이전 방의 오크·파티 그림이 남아 겹쳐 보인다.
 
 
             if (_viewBridge == null)
@@ -157,7 +158,6 @@ namespace IntoTheDungeon.Unity
 
             bridgeGO = new GameObject("[PhysicsBridge]");
             bridgeGO.transform.position = new Vector3(0, 0, 0);
-            DontDestroyOnLoad(bridgeGO);
             _physicsBridge = bridgeGO.AddComponent<PhysicsBridge>();
 
 
@@ -177,6 +177,9 @@ namespace IntoTheDungeon.Unity
 #endif
             _bootstrap?.Dispose();
             _bootstrap = null;
+            // 씬이 내려가며 함께 지워지지만, 부트스트래퍼만 따로 지워지는 경우에도 이전 월드 그림이 남지 않게
+            if (_viewBridge) Destroy(_viewBridge.gameObject);
+            if (_physicsBridge) Destroy(_physicsBridge.gameObject);
         }
 
         void Update()

@@ -39,6 +39,7 @@ namespace IntoTheDungeon.Features.Attack
             {
                 var hitboxes = chunk.GetComponentArray<HitboxComponent>();
                 var hitLists = chunk.GetComponentArray<HitListComponent>();
+                var hitboxEntities = chunk.GetEntities();
 
                 for (int i = 0; i < chunk.Count; i++)
                 {
@@ -61,6 +62,14 @@ namespace IntoTheDungeon.Features.Attack
                         ref var q = ref em.GetComponent<HpModificationQueue>(t.E);
                         q.Enqueue(HpModification.Damage(hb.Damage, hb.Owner));
                         ApplyHitReaction(em, t.E, hb);
+
+                        // 일반 화살: 첫 대상에 꽂히고 사라진다(수명을 0으로 → LifetimeSystem이 지움)
+                        var self = hitboxEntities[i];
+                        if (em.TryGetComponent<ProjectileComponent>(self, out var proj) && proj.DestroyOnHit)
+                        {
+                            if (em.HasComponent<LifetimeComponent>(self)) em.GetComponent<LifetimeComponent>(self).Remaining = 0f;
+                            break;
+                        }
                     }
                 }
             }

@@ -55,6 +55,15 @@ namespace IntoTheDungeon.Unity
             public float bodyMass;
             [Tooltip("남을 밀기만 하고 자기는 안 밀림(보스 등)")]
             public bool immovable;
+            [Tooltip("원거리(화살) 공격")]
+            public bool ranged;
+            [Tooltip("이 가로 거리 안이면 공격(0이면 기본 1)")]
+            public float attackRange;
+            [Tooltip("원거리: 이보다 가까우면 물러남")]
+            public float minRange;
+            [Tooltip("공격 준비·마무리 시간(0이면 기본 0.5·0.7)")]
+            public float windup, recovery;
+            public SkillPreset skill;
         }
 
         [Header("캐릭터 종류별 정의(없는 이름은 반지름 0.3·무게 1)")]
@@ -65,22 +74,10 @@ namespace IntoTheDungeon.Unity
             new() { recipe = "Orc1", bodyRadius = 0.35f, bodyMass = 1.2f },
             new() { recipe = "Orc2", bodyRadius = 0.4f, bodyMass = 1.5f },
             new() { recipe = "Orc3", bodyRadius = 0.45f, bodyMass = 2f },
+            new() { recipe = "Archer", bodyRadius = 0.28f, bodyMass = 0.9f, ranged = true, attackRange = 5.5f, minRange = 2f,
+                    windup = 0.6f, recovery = 0.3f, skill = SkillPreset.PowerShot },
         };
 
-        [System.Serializable]
-        public struct WaveSpawnEntry { public string recipe; public int count; }
-        [System.Serializable]
-        public struct WaveEntry { public WaveSpawnEntry[] spawns; }
-
-        [Header("전투 한 판(웨이브)")]
-        [SerializeField] WaveEntry[] waves =
-        {
-            new() { spawns = new[] { new WaveSpawnEntry { recipe = "Orc1", count = 3 } } },
-            new() { spawns = new[] { new WaveSpawnEntry { recipe = "Orc1", count = 2 }, new WaveSpawnEntry { recipe = "Orc2", count = 2 } } },
-            new() { spawns = new[] { new WaveSpawnEntry { recipe = "Orc2", count = 2 }, new WaveSpawnEntry { recipe = "Orc3", count = 2 } } },
-        };
-        [Tooltip("전투 시작 때 씬에 놓인 파티원 곁에 더 붙는 동료 수")]
-        [SerializeField] int partyAllies = 2;
         public override void Install(GameWorld world)
         {
             Debug.Log("[Installer] EventHub");
@@ -104,7 +101,19 @@ namespace IntoTheDungeon.Unity
             var definitions = new System.Collections.Generic.Dictionary<RecipeId, CharacterDefinition>();
             foreach (var d in characterDefs)
                 if (!string.IsNullOrEmpty(d.recipe))
-                    definitions[recipeTable.GetId(d.recipe)] = new CharacterDefinition { BodyRadius = d.bodyRadius, BodyMass = d.bodyMass, Immovable = d.immovable };
+                {
+                    var def = CharacterDefinition.Default;
+                    def.BodyRadius = d.bodyRadius;
+                    def.BodyMass = d.bodyMass;
+                    def.Immovable = d.immovable;
+                    def.Ranged = d.ranged;
+                    if (d.attackRange > 0f) def.AttackRange = d.attackRange;
+                    def.MinRange = d.minRange;
+                    if (d.windup > 0f) def.WindupDuration = d.windup;
+                    if (d.recovery > 0f) def.RecoveryDuration = d.recovery;
+                    def.Skill = d.skill;
+                    definitions[recipeTable.GetId(d.recipe)] = def;
+                }
             var characterFactory = new CharacterCoreFactory(definitions);
             var characters = new System.Collections.Generic.HashSet<string>(monsterNames) { playerCharacterName };
             if (mappingTable) characters.UnionWith(mappingTable.RecipeNames);
@@ -195,6 +204,7 @@ namespace IntoTheDungeon.Unity
             world.SystemManager.AddUnique(new HitDetectSystem());
             world.SystemManager.AddUnique(new DamageProcessingSystem());
             world.SystemManager.AddUnique(new DeathStateSystem());
+            world.SystemManager.AddUnique(new CorpseCleanupSystem());   // 쓰러진 적은 잠시 뒤 사라짐(파티원 시체는 남김)
             world.SystemManager.AddUnique(new LifetimeSystem());
 
             world.SystemManager.AddUnique(new KinematicPlannerSystem());
@@ -233,16 +243,8 @@ namespace IntoTheDungeon.Unity
 
         BattleConfig BuildBattleConfig()
         {
-            var cfg = new BattleConfig { StartingAllies = partyAllies };
-            foreach (var w in waves)
-            {
-                var list = new System.Collections.Generic.List<WaveSpawn>();
-                if (w.spawns != null)
-                    foreach (var s in w.spawns)
-                        if (!string.IsNullOrEmpty(s.recipe) && s.count > 0) list.Add(new WaveSpawn(s.recipe, s.count));
-                if (list.Count > 0) cfg.Waves.Add(list.ToArray());
-            }
-            return cfg;
+            // 방마다 몹 구성은 Encounters, 파티 구성(동료 수)은 RunState가 정한다
+            return new BattleConfig();
         }
     }
 }

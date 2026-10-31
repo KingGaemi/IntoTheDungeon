@@ -15,7 +15,7 @@ namespace IntoTheDungeon.Features.Input
 {
     /// <summary>
     /// 플레이어 입력: 이 게임은 파티 전원이 자동전투하고, 플레이어는 파티원별 필살기만 누른다(버튼 또는 숫자키 1~4).
-    /// 테스트용으로 R(오크 소환, Orc1→2→3 순환)·T(동료 소환)도 받는다. 소환 위치는 파티 중심 기준.
+    /// 테스트용으로 R(오크 소환, Orc1→2→3 순환)·T(동료 소환, 케서린↔궁수 번갈아)도 받는다. 소환 위치는 파티 중심 기준.
     /// </summary>
     public sealed class PlayerInputSystem : GameSystem, ITick
     {
@@ -26,8 +26,9 @@ namespace IntoTheDungeon.Features.Input
         static readonly string[] OrcRecipeNames = { "Orc1", "Orc2", "Orc3" };
         RecipeId[] _orcRecipeIds; // R키 스폰용 - Initialize에서 한 번만 캐싱
         int _nextOrc;
-        RecipeId _allyRecipeId;   // T키 동료 소환용
-        const string AllyRecipeName = "Catherine";   // 동료로 소환할 레시피(팀만 Player로 바꿔 스폰)
+        static readonly string[] AllyRecipeNames = { "Catherine", "Archer" };   // T키 동료 소환(팀만 Player로 바꿔 스폰)
+        RecipeId[] _allyRecipeIds;
+        int _nextAlly;
         readonly List<Party.Member> _party = new(8);
 
         public override void Initialize(IWorld world)
@@ -43,7 +44,9 @@ namespace IntoTheDungeon.Features.Input
             _orcRecipeIds = new RecipeId[OrcRecipeNames.Length];
             for (int k = 0; k < OrcRecipeNames.Length; k++)
                 _orcRecipeIds[k] = recipeTable.GetId(OrcRecipeNames[k]);
-            _allyRecipeId = recipeTable.GetId(AllyRecipeName);
+            _allyRecipeIds = new RecipeId[AllyRecipeNames.Length];
+            for (int k = 0; k < AllyRecipeNames.Length; k++)
+                _allyRecipeIds[k] = recipeTable.GetId(AllyRecipeNames[k]);
         }
 
         public void Tick(float dt)
@@ -69,7 +72,11 @@ namespace IntoTheDungeon.Features.Input
                     Spawn(_orcRecipeIds[orc], OrcRecipeNames[orc], new Vec2(center.X + 5f, center.Y), TeamFlag.Enemy);
                 }
                 if (_input.AllySpawnDown)
-                    Spawn(_allyRecipeId, "Ally", new Vec2(center.X - 1.5f, center.Y), Party.Team);
+                {
+                    int ally = _nextAlly;
+                    _nextAlly = (_nextAlly + 1) % _allyRecipeIds.Length;
+                    Spawn(_allyRecipeIds[ally], AllyRecipeNames[ally], new Vec2(center.X - 1.5f, center.Y), Party.Team);
+                }
             }
 
             _input.ConsumeFrame();
