@@ -19,6 +19,8 @@ namespace IntoTheDungeon.Core.Runtime.Services
         public bool JumpDown { get; private set; }
         public bool AutoToggleDown { get; private set; }
         public bool AllySpawnDown { get; private set; }
+        public bool SkillDown => _skillPressed || Q_Down;
+        bool _skillPressed;   // 버튼 클릭은 프레임 어디서든 올 수 있어 SetSnapshot이 덮어쓰지 않고 ConsumeFrame에서만 끈다
 
         // State Flags
         public bool AxisChanged { get; private set; }
@@ -53,8 +55,15 @@ namespace IntoTheDungeon.Core.Runtime.Services
             HeldChanged = heldChanged;
         }
 
+        public void PressSkill()
+        {
+            _skillPressed = true;
+            _seq++;
+        }
+
         public void ConsumeFrame()
         {
+            _skillPressed = false;
             // Edge 플래그 리셋
             AttackDown = false;
             AttackUp = false;

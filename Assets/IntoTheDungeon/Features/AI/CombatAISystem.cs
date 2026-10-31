@@ -61,6 +61,7 @@ namespace IntoTheDungeon.Features.AI
                     ref var buf = ref buffers[i];
                     var cur = states[i].Current;
                     if (cur.Control == ControlState.Dead) continue;
+                    if (cur.Action == ActionState.Skill) continue;   // 필살기 시전 중
 
                     // 공격 한 사이클이 끝나는 순간부터 쿨다운
                     bool attacking = cur.Action == ActionState.Attack;

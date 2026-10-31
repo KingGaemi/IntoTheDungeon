@@ -30,6 +30,7 @@ namespace IntoTheDungeon.Features.Character
             {
                 em.AddComponent(e, new PlayerTag());
                 em.AddComponent(e, CombatAIComponent.AutoBattle);   // 자동전투 켜면 AI가 대신 조작(처음엔 꺼짐)
+                em.AddComponent(e, SpecialSkillComponent.SwordWave); // 필살기(버튼으로 직접 발동)
             }
             else
                 em.AddComponent(e, CombatAIComponent.Default);      // 몹·동료: 항상 AI가 의도를 만든다

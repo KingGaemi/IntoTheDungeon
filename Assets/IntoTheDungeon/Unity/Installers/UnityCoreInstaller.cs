@@ -143,10 +143,12 @@ namespace IntoTheDungeon.Unity
             world.SystemManager.AddUnique(new SpawnSystem());
             world.SystemManager.AddUnique(new CharacterIntentApplySystem());
             world.SystemManager.AddUnique(new PhaseControlSystem());
+            world.SystemManager.AddUnique(new SpecialSkillSystem());   // 필살기: 평타 끊고 시전·검기 발사·종료
 
             // 전투: 히트박스 생성 → 위치 갱신 → 판정 → HP 적용 → 사망 상태 → 수명 정리
             world.SystemManager.AddUnique(new AttackSystem());
             world.SystemManager.AddUnique(new FollowOwnerSystem());
+            world.SystemManager.AddUnique(new ProjectileMotionSystem());   // 검기 등 날아가는 히트박스
             world.SystemManager.AddUnique(new HitDetectSystem());
             world.SystemManager.AddUnique(new DamageProcessingSystem());
             world.SystemManager.AddUnique(new DeathStateSystem());

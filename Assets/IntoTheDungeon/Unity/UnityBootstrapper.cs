@@ -79,6 +79,9 @@ namespace IntoTheDungeon.Unity
             Debug.Log("[Bootstrapper] Calling BakeScene()");
             World.BakeScene();
 
+            // 전투 화면 UI(필살기 버튼)와 검기 그림: 씬 배치 없이 코드로 만든다(주입 전에 만들어야 Init을 받음)
+            new GameObject("BattleHud", typeof(Hud.SkillButtonHud), typeof(Hud.SwordWaveRenderer));
+
             Debug.Log("[Bootstrapper] Calling ReinjectScene()");
             _bootstrap.ReinjectScene();
 

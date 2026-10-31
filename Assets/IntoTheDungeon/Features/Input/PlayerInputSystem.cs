@@ -11,6 +11,7 @@ using IntoTheDungeon.Core.ECS.Systems;
 using IntoTheDungeon.Core.Util;
 using IntoTheDungeon.Features.Command;
 using IntoTheDungeon.Features.AI;
+using IntoTheDungeon.Features.Attack;
 
 namespace IntoTheDungeon.Features.Input
 {
@@ -59,7 +60,7 @@ namespace IntoTheDungeon.Features.Input
 
             bool noChange = !_input.AttackDown && !_input.AttackUp &&
                             !_input.AxisChanged && !_input.AttackHeld && !_input.JumpDown &&
-                            !_input.AutoToggleDown && !_input.AllySpawnDown;
+                            !_input.AutoToggleDown && !_input.AllySpawnDown && !_input.SkillDown;
 
             // 자동전투 중이라도 방향키를 누르고 있는 동안은 직접 조작이 우선
             if (_input.Move != Vec2.Zero || _input.AttackHeld || _input.JumpDown)
@@ -81,13 +82,15 @@ namespace IntoTheDungeon.Features.Input
                 typeof(CharacterIntentBuffer),
                 typeof(TransformComponent),
                 typeof(SpawnOutbox),
-                typeof(CombatAIComponent)))
+                typeof(CombatAIComponent),
+                typeof(SpecialSkillComponent)))
             {
                 // var ents = chunk.GetEntities();
                 var buffers = chunk.GetComponentArray<CharacterIntentBuffer>();
                 var outBoxes = chunk.GetComponentArray<SpawnOutbox>();
                 var transforms = chunk.GetComponentArray<TransformComponent>();
                 var ais = chunk.GetComponentArray<CombatAIComponent>();
+                var skills = chunk.GetComponentArray<SpecialSkillComponent>();
                 var entities = chunk.GetEntities();
                 for (int i = 0; i < chunk.Count; i++)
                 {
@@ -109,6 +112,10 @@ namespace IntoTheDungeon.Features.Input
 
                     if (_input.JumpDown)
                         buf.Add(CharacterIntent.Jump());
+
+                    // 필살기는 자동전투 중에도 직접 누르는 것(타이밍이 재미). 실제 시작은 SpecialSkillSystem
+                    if (_input.SkillDown)
+                        skills[i].Request();
 
                     if (_input.AutoToggleDown)
                     {

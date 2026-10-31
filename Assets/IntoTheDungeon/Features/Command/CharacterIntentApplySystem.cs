@@ -151,6 +151,12 @@ namespace IntoTheDungeon.Features.Command
             }
 
             // 2. Action State 검증
+            // 필살기 시전 중엔 아무 행동도 받지 않는다(끝내는 건 SpecialSkillSystem)
+            if (current.Action == ActionState.Skill && intent.Kind is not IntentKind.None)
+            {
+                reason = DenyReason.InRecovery;
+                return false;
+            }
             if (current.Action == ActionState.Attack)
             {
                 // 공격 중에는 다른 행동 불가

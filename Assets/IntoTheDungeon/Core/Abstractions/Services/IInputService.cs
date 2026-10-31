@@ -9,6 +9,7 @@ namespace IntoTheDungeon.Core.Abstractions.Services
                         bool autoToggleDown, bool allySpawnDown);
         void SetChanged(bool axisChanged, bool heldChanged);
         void ConsumeFrame();
+        void PressSkill();   // 화면 필살기 버튼: 다음 입력 처리 때 SkillDown으로 들어간다
 
         // Movement & Attack
         Vec2 Move { get; }
@@ -24,6 +25,7 @@ namespace IntoTheDungeon.Core.Abstractions.Services
         bool JumpDown { get; }
         bool AutoToggleDown { get; }   // 자동전투 켜기/끄기
         bool AllySpawnDown { get; }    // 동료 소환(테스트용)
+        bool SkillDown { get; }        // 필살기(화면 버튼 또는 Q키)
 
         // State Flags
         bool AxisChanged { get; }

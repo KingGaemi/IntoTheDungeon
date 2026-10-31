@@ -49,6 +49,10 @@ namespace IntoTheDungeon.Features.Character
         float _lenWindup;
         float _lenRecovery;
 
+        // 필살기 모션: 컨트롤러의 대시 공격 상태를 그대로 쓴다(Attacking이 꺼지면 Idle로 빠짐)
+        static readonly int HashSkillState = Animator.StringToHash("Dash_Attack");
+        bool _inSkill;
+
         // State Tracking
         MovementState _lastMovement;
         Facing2D _lastFacing;
@@ -96,6 +100,12 @@ namespace IntoTheDungeon.Features.Character
                 HandleFacing(evt.Snapshot.Facing);
             }
 
+            if (evt.HasAction)
+            {
+                if (evt.ActionState == ActionState.Skill) HandleSkillStart();
+                else if (_inSkill) HandleSkillEnd();
+            }
+
             // Control 변경 (Death)
             if (evt.HasControl && evt.ControlState == ControlState.Dead)
             {
@@ -131,6 +141,7 @@ namespace IntoTheDungeon.Features.Character
             // 치명타면 Death 트리거(StateChanged)가 따로 오므로 Hurt는 건너뛴다
             LogEvt($"Damaged amount={evt.Amount} hp={evt.RemainingHp} animatorOk={(_animator && _animator.isActiveAndEnabled)} ctrl={(_animator && _animator.runtimeAnimatorController ? _animator.runtimeAnimatorController.name : "null")}");
             if (evt.RemainingHp <= 0) return;
+            if (_inSkill) return;   // 필살기 모션은 맞아도 끊지 않는다
             _animator.SetTrigger(HashHurt);
         }
 
@@ -138,6 +149,7 @@ namespace IntoTheDungeon.Features.Character
         public void OnAnimationPhaseChanged(in AnimationPhaseChangedEvent evt)
         {
             if (!_animator || !_animator.isActiveAndEnabled) return;
+            if (_inSkill) return;   // 필살기가 평타를 끊은 같은 프레임의 평타 단계 이벤트는 무시
 
             float duration = Mathf.Max(0.001f, evt.PhaseDuration);
 
@@ -201,8 +213,27 @@ namespace IntoTheDungeon.Features.Character
             _sprite.flipX = facing == Facing2D.Left;
         }
 
+        void HandleSkillStart()
+        {
+            _inSkill = true;
+            // 평타를 끊고 들어올 수 있으므로 공격 트리거·속도를 정리하고 바로 재생
+            _animator.ResetTrigger(HashAttack);
+            _animator.ResetTrigger(HashHurt);
+            _animator.SetBool(HashWindupDone, false);
+            _animator.SetBool(HashAttacking, true);
+            _animator.speed = 1f;
+            _animator.Play(HashSkillState, 0, 0f);
+        }
+
+        void HandleSkillEnd()
+        {
+            _inSkill = false;
+            _animator.SetBool(HashAttacking, false);
+        }
+
         void HandleDeath()
         {
+            _inSkill = false;
             _animator.SetTrigger(HashDeath);
         }
 
