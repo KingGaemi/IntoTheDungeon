@@ -10,6 +10,7 @@ using IntoTheDungeon.Core.ECS.Spawning;
 using IntoTheDungeon.Core.ECS.Systems;
 using IntoTheDungeon.Core.Util;
 using IntoTheDungeon.Features.Command;
+using IntoTheDungeon.Features.AI;
 
 namespace IntoTheDungeon.Features.Input
 {
@@ -23,6 +24,9 @@ namespace IntoTheDungeon.Features.Input
         IInputService _input;
         uint _lastSeq;
         RecipeId _orc1RecipeId; // R키 스폰용 - 매 프레임 재해석하지 않도록 Initialize에서 한 번만 캐싱
+        RecipeId _allyRecipeId; // T키 동료 소환용
+        const string AllyRecipeName = "Catherine";   // 동료로 소환할 레시피(팀만 Player로 바꿔 스폰)
+        const float ManualPause = 1.5f;              // 자동전투 중 직접 조작하면 이 시간 동안 AI를 쉰다
         public override void Initialize(IWorld world)
         {
             base.Initialize(world);
@@ -42,6 +46,7 @@ namespace IntoTheDungeon.Features.Input
                 return;
             }
             _orc1RecipeId = recipeTable.GetId("Orc1");
+            _allyRecipeId = recipeTable.GetId(AllyRecipeName);
         }
         public void Tick(float dt)
         {
@@ -49,7 +54,12 @@ namespace IntoTheDungeon.Features.Input
             if (_input == null) return;
 
             bool noChange = !_input.AttackDown && !_input.AttackUp &&
-                            !_input.AxisChanged && !_input.AttackHeld && !_input.JumpDown;
+                            !_input.AxisChanged && !_input.AttackHeld && !_input.JumpDown &&
+                            !_input.AutoToggleDown && !_input.AllySpawnDown;
+
+            // 자동전투 중이라도 방향키를 누르고 있는 동안은 직접 조작이 우선
+            if (_input.Move != Vec2.Zero || _input.AttackHeld || _input.JumpDown)
+                PauseAutoBattle();
 
             if (_input.Seq == _lastSeq && noChange)
             {
@@ -66,12 +76,14 @@ namespace IntoTheDungeon.Features.Input
                 typeof(PlayerTag),
                 typeof(CharacterIntentBuffer),
                 typeof(TransformComponent),
-                typeof(SpawnOutbox)))
+                typeof(SpawnOutbox),
+                typeof(CombatAIComponent)))
             {
                 // var ents = chunk.GetEntities();
                 var buffers = chunk.GetComponentArray<CharacterIntentBuffer>();
                 var outBoxes = chunk.GetComponentArray<SpawnOutbox>();
                 var transforms = chunk.GetComponentArray<TransformComponent>();
+                var ais = chunk.GetComponentArray<CombatAIComponent>();
                 var entities = chunk.GetEntities();
                 for (int i = 0; i < chunk.Count; i++)
                 {
@@ -93,6 +105,17 @@ namespace IntoTheDungeon.Features.Input
 
                     if (_input.JumpDown)
                         buf.Add(CharacterIntent.Jump());
+
+                    if (_input.AutoToggleDown)
+                    {
+                        ref var ai = ref ais[i];
+                        ai.Enabled = !ai.Enabled;
+                        ai.State = CombatAIState.Idle;
+                        ai.PauseTimer = 0f;
+                        if (!ai.Enabled && axis == Vec2.Zero)
+                            buf.Add(CharacterIntent.Stop());   // AI가 걷게 해 둔 채로 꺼지지 않게
+                        _logger?.Log($"[자동전투] {(ai.Enabled ? "켜짐" : "꺼짐")}");
+                    }
 
                     if (_input.AttackDown || _input.AttackHeld)
                     {
@@ -116,6 +139,24 @@ namespace IntoTheDungeon.Features.Input
                         // );
                         // // _logger.Log($"position {trans.Position}, direction{trans.Direction}");
                         // outBoxes[i].Set(in order);
+                    }
+                    if (_input.AllySpawnDown)
+                    {
+                        ref var trans = ref transforms[i];
+                        var order = new SpawnOrder(
+                            _allyRecipeId,
+                            new SpawnSpec
+                            {
+                                PhysHandle = new(-1, 0),
+                                Pos = new Vec2(trans.Position.X - 1.5f, trans.Position.Y),   // 플레이어 뒤쪽
+                                Dir = trans.Direction,
+                                Name = "Ally",
+                                TeamFlag = TeamFlag.Player   // 같은 팀 → 적을 공격하고 적이 없으면 플레이어를 따라온다
+                            },
+                            SpawnSource.Entity,
+                            e
+                        );
+                        outBoxes[i].Set(in order);
                     }
                     if (_input.R_Down)
                     {
@@ -148,6 +189,16 @@ namespace IntoTheDungeon.Features.Input
 
 
             if (!processed && noChange) _logger?.Warn("Input frame passed without consumers.");
+        }
+
+        void PauseAutoBattle()
+        {
+            foreach (var chunk in _world.EntityManager.GetChunks(typeof(PlayerTag), typeof(CombatAIComponent)))
+            {
+                var ais = chunk.GetComponentArray<CombatAIComponent>();
+                for (int i = 0; i < chunk.Count; i++)
+                    if (ais[i].Enabled) ais[i].PauseTimer = ManualPause;
+            }
         }
 
     }

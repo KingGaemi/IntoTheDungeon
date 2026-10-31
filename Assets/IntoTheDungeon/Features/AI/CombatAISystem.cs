@@ -13,10 +13,11 @@ using IntoTheDungeon.Features.Status;
 namespace IntoTheDungeon.Features.AI
 {
     /// <summary>
-    /// EnemyAIComponent를 가진 엔티티가 가장 가까운 적(다른 팀, 생존)을 바닥 평면에서 쫓아가, 같은 줄에 서면 공격하도록 의도를 쌓는다.
+    /// CombatAIComponent를 가진 엔티티가 가장 가까운 적(다른 팀, 생존)을 바닥 평면에서 쫓아가, 같은 줄에 서면 공격하도록 의도를 쌓는다.
+    /// 적이 없으면 같은 팀 플레이어(리더) 곁으로 돌아간다.
     /// 상태가 바뀔 때만 의도를 넣는다(플레이어 입력과 같은 방식). CharacterIntentApplySystem보다 먼저 돌아야 한다.
     /// </summary>
-    public sealed class EnemyAISystem : GameSystem, ITick
+    public sealed class CombatAISystem : GameSystem, ITick
     {
         struct Target
         {
@@ -28,19 +29,23 @@ namespace IntoTheDungeon.Features.AI
         readonly List<Target> _targets = new(32);
         float _time;
 
+        bool _hasLeader;
+        Target _leader;
+
         public void Tick(float dt)
         {
             _time += dt;
             var em = _world.EntityManager;
             CollectTargets(em);
+            FindLeader(em);
 
-            foreach (var chunk in em.GetChunks(typeof(EnemyAIComponent),
+            foreach (var chunk in em.GetChunks(typeof(CombatAIComponent),
                                                typeof(CharacterIntentBuffer),
                                                typeof(StateComponent),
                                                typeof(TransformComponent),
                                                typeof(TeamComponent)))
             {
-                var ais = chunk.GetComponentArray<EnemyAIComponent>();
+                var ais = chunk.GetComponentArray<CombatAIComponent>();
                 var buffers = chunk.GetComponentArray<CharacterIntentBuffer>();
                 var states = chunk.GetComponentArray<StateComponent>();
                 var transforms = chunk.GetComponentArray<TransformComponent>();
@@ -50,6 +55,9 @@ namespace IntoTheDungeon.Features.AI
                 for (int i = 0; i < chunk.Count; i++)
                 {
                     ref var ai = ref ais[i];
+                    if (!ai.Enabled) continue;
+                    if (ai.PauseTimer > 0f) { ai.PauseTimer -= dt; continue; }
+
                     ref var buf = ref buffers[i];
                     var cur = states[i].Current;
                     if (cur.Control == ControlState.Dead) continue;
@@ -61,10 +69,14 @@ namespace IntoTheDungeon.Features.AI
                     if (attacking) continue;   // 휘두르는 중엔 건드리지 않는다
 
                     var self = transforms[i].Position;
-                    if (!TryFindNearest(entities[i], teams[i].TeamFlag, self, out var target, out float dist))
+                    bool hasTarget = TryFindNearest(entities[i], teams[i].TeamFlag, self, out var target, out float dist);
+                    if (!hasTarget || dist > ai.AggroRange)
                     {
-                        StopIfMoving(ref buf, cur);
-                        ai.State = EnemyAIState.Idle;
+                        if (!TryFollowLeader(ref ai, ref buf, entities[i], teams[i].TeamFlag, self, states[i]))
+                        {
+                            StopIfMoving(ref buf, cur);
+                            ai.State = CombatAIState.Idle;
+                        }
                         continue;
                     }
 
@@ -73,27 +85,20 @@ namespace IntoTheDungeon.Features.AI
                     var facing = System.MathF.Abs(dx) > 0.05f ? Facing2DExt.FromX(dx) : cur.Facing;
 
                     // 공격 중이던 상태면 조금 더 벗어나야 다시 쫓는다(경계에서 떨지 않게)
-                    float slack = ai.State == EnemyAIState.Attack ? ai.ChaseResume : 0f;
+                    float slack = ai.State == CombatAIState.Attack ? ai.ChaseResume : 0f;
                     bool inX = System.MathF.Abs(dx) <= ai.AttackRange + slack;
                     bool inZ = System.MathF.Abs(dz) <= ai.DepthTolerance + slack * 0.5f;
 
-                    if (dist > ai.AggroRange)
-                    {
-                        StopIfMoving(ref buf, cur);
-                        ai.State = EnemyAIState.Idle;
-                    }
-                    else if (!(inX && inZ))
+                    if (!(inX && inZ))
                     {
                         // 가로가 멀면 가로로, 줄이 어긋나 있으면 깊이로(둘 다면 대각선)
                         var want = new Vec2(inX ? 0f : System.MathF.Sign(dx), inZ ? 0f : System.MathF.Sign(dz)).Normalized;
-                        bool moving = cur.Movement != MovementState.Idle;
-                        if (!moving || !states[i].MoveDir.ApproximatelyEquals(want, 0.01f))
-                            buf.Add(CharacterIntent.Move(want));
-                        ai.State = EnemyAIState.Chase;
+                        MoveIfChanged(ref buf, states[i], want);
+                        ai.State = CombatAIState.Chase;
                     }
                     else
                     {
-                        ai.State = EnemyAIState.Attack;
+                        ai.State = CombatAIState.Attack;
                         bool moving = cur.Movement != MovementState.Idle;
                         if (cur.Facing != facing)
                         {
@@ -110,6 +115,30 @@ namespace IntoTheDungeon.Features.AI
                     }
                 }
             }
+        }
+
+        // 같은 팀 리더(플레이어)와 멀어졌으면 따라간다. 따라가는 중이면 true
+        bool TryFollowLeader(ref CombatAIComponent ai, ref CharacterIntentBuffer buf, Entity self, TeamFlag myTeam, Vec2 selfPos, in StateComponent state)
+        {
+            if (!ai.FollowLeader || !_hasLeader || _leader.E == self || _leader.Team != myTeam) return false;
+
+            var to = _leader.Pos - selfPos;
+            float d = to.Magnitude;
+            // 따라가는 중이면 FollowStop까지, 서 있으면 FollowDistance를 넘어야 출발(떨림 방지)
+            float limit = ai.State == CombatAIState.Follow ? ai.FollowStop : ai.FollowDistance;
+            if (d <= limit) return false;
+
+            MoveIfChanged(ref buf, state, to.Normalized);
+            ai.State = CombatAIState.Follow;
+            return true;
+        }
+
+        static void MoveIfChanged(ref CharacterIntentBuffer buf, in StateComponent state, Vec2 want)
+        {
+            bool moving = state.Current.Movement != MovementState.Idle;
+            // 리더 쪽 방향은 연속값이라 조금씩 바뀔 때마다 의도를 넣지 않게 허용 오차를 둔다
+            if (!moving || !state.MoveDir.ApproximatelyEquals(want, 0.05f))
+                buf.Add(CharacterIntent.Move(want));
         }
 
         static void StopIfMoving(ref CharacterIntentBuffer buf, in StateSnapshot cur)
@@ -134,6 +163,25 @@ namespace IntoTheDungeon.Features.AI
                 {
                     if (!statuses[i].IsAlive) continue;
                     _targets.Add(new Target { E = entities[i], Team = teams[i].TeamFlag, Pos = transforms[i].Position });
+                }
+            }
+        }
+
+        void FindLeader(IEntityManager em)
+        {
+            _hasLeader = false;
+            foreach (var chunk in em.GetChunks(typeof(PlayerTag), typeof(TransformComponent), typeof(TeamComponent), typeof(StatusComponent)))
+            {
+                var transforms = chunk.GetComponentArray<TransformComponent>();
+                var teams = chunk.GetComponentArray<TeamComponent>();
+                var statuses = chunk.GetComponentArray<StatusComponent>();
+                var entities = chunk.GetEntities();
+                for (int i = 0; i < chunk.Count; i++)
+                {
+                    if (!statuses[i].IsAlive) continue;
+                    _leader = new Target { E = entities[i], Team = teams[i].TeamFlag, Pos = transforms[i].Position };
+                    _hasLeader = true;
+                    return;
                 }
             }
         }

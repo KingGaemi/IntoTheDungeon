@@ -5,7 +5,8 @@ namespace IntoTheDungeon.Core.Abstractions.Services
     public interface IInputService
     {
         void SetSnapshot(Vec2 move, bool attackHeld, bool attackDown, bool attackUp,
-                        bool qDown, bool wDown, bool eDown, bool rDown, bool jumpDown);
+                        bool qDown, bool wDown, bool eDown, bool rDown, bool jumpDown,
+                        bool autoToggleDown, bool allySpawnDown);
         void SetChanged(bool axisChanged, bool heldChanged);
         void ConsumeFrame();
 
@@ -21,6 +22,8 @@ namespace IntoTheDungeon.Core.Abstractions.Services
         bool E_Down { get; }
         bool R_Down { get; }
         bool JumpDown { get; }
+        bool AutoToggleDown { get; }   // 자동전투 켜기/끄기
+        bool AllySpawnDown { get; }    // 동료 소환(테스트용)
 
         // State Flags
         bool AxisChanged { get; }

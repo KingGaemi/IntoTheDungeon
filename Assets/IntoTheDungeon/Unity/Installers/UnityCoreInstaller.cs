@@ -135,7 +135,7 @@ namespace IntoTheDungeon.Unity
 
             Debug.Log("[Installer] E");
             world.SystemManager.AddUnique(new PlayerInputSystem());
-            world.SystemManager.AddUnique(new EnemyAISystem());   // 의도 생성: CharacterIntentApplySystem보다 먼저
+            world.SystemManager.AddUnique(new CombatAISystem());  // 의도 생성(몹·동료·자동전투): CharacterIntentApplySystem보다 먼저
             world.SystemManager.AddUnique(new SpawnSystem());
             world.SystemManager.AddUnique(new CharacterIntentApplySystem());
             world.SystemManager.AddUnique(new PhaseControlSystem());

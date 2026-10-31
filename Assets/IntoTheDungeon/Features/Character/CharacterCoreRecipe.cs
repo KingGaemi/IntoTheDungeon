@@ -27,9 +27,12 @@ namespace IntoTheDungeon.Features.Character
         public void Apply(IEntityManager em, Entity e)
         {
             if (_isPlayer)
+            {
                 em.AddComponent(e, new PlayerTag());
+                em.AddComponent(e, CombatAIComponent.AutoBattle);   // 자동전투 켜면 AI가 대신 조작(처음엔 꺼짐)
+            }
             else
-                em.AddComponent(e, EnemyAIComponent.Default);   // 플레이어가 아니면 AI가 의도를 만든다
+                em.AddComponent(e, CombatAIComponent.Default);      // 몹·동료: 항상 AI가 의도를 만든다
             em.AddComponent(e, new StateComponent(ActionState.Idle));
             em.AddComponent(e, new StatusComponent
             {
