@@ -29,7 +29,7 @@ namespace IntoTheDungeon.Core.Physics.Implementation
             OpPriority[(int)PhysicsOpKind.Teleport] = 6;
             OpPriority[(int)PhysicsOpKind.SyncEcsToPhys] = 7;
             OpPriority[(int)PhysicsOpKind.SyncPhysToEcs] = 8;
-            OpPriority[(int)PhysicsOpKind.SetSimulated] = 9;
+            OpPriority[(int)PhysicsOpKind.SetSolid] = 9;
         }
 
         public PhysicsOpResolveSystem(IPhysicsOpQueue queue, PhysicsOpStore store)

@@ -42,9 +42,9 @@ namespace IntoTheDungeon.Features.State
                 _hub.Publish(StateChangedEvent.FromSnapshot(evt.Victim, next,
                     ChangeMask.Control | ChangeMask.Action | ChangeMask.Movement));
 
-                // 시체가 길을 막지 않도록 물리 바디를 끈다(그림은 그대로 남음)
+                // 시체가 길을 막지 않도록 제자리 고정 + 트리거로(물리는 계속 돌아 위치·발 맞춤 유지)
                 if (_physOps != null && em.TryGetComponent<PhysicsBodyRef>(evt.Victim, out var body) && body.Handle.IsValid)
-                    _physOps.Enqueue(body.Handle, PhysicsOpKind.SetSimulated, new Vec2(0f, 0f));
+                    _physOps.Enqueue(body.Handle, PhysicsOpKind.SetSolid, new Vec2(0f, 0f));
             }
 
             // 이 두 이벤트는 다른 소비자가 없어 여기서 비운다.

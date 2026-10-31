@@ -56,7 +56,7 @@ namespace IntoTheDungeon.Core.Physics.Abstractions
         SetTransform,
         SetLinearVelocity,
         SetAngularVelocity,
-        SetSimulated        // Vec.X != 0 이면 켜고, 0이면 끈다(충돌·중력 모두 정지)
+        SetSolid            // Vec.X != 0 이면 평소처럼, 0이면 제자리 고정 + 트리거(길을 막지 않음, 물리 동기화는 유지)
     }
 
     public struct PhysicsOp

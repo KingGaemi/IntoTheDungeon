@@ -147,9 +147,16 @@ namespace IntoTheDungeon.Unity.Bridge.Physics
                     rb.angularVelocity = angle * Mathf.Rad2Deg;
                     break;
 
-                case PhysicsOpKind.SetSimulated:
-                    rb.simulated = vec.X != 0f;
+                case PhysicsOpKind.SetSolid:
+                {
+                    bool solid = vec.X != 0f;
+                    // simulated는 끄지 않는다: 끄면 물리→ECS 위치 동기화가 멈춰 뷰가 엉뚱한 위치로 튄다
+                    rb.constraints = solid ? RigidbodyConstraints2D.FreezeRotation : RigidbodyConstraints2D.FreezeAll;
+                    if (!solid) rb.linearVelocity = Vector2.zero;
+                    foreach (var c in rb.GetComponents<Collider2D>())
+                        c.isTrigger = !solid;
                     break;
+                }
 
                 case PhysicsOpKind.SyncEcsToPhys:
                     // 구현 필요

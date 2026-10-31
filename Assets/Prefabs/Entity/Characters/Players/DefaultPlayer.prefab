@@ -56,6 +56,10 @@ PrefabInstance:
       propertyPath: teamFlag
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 2958463413227293243, guid: 389c3f98adf364646bbecf7bdbaa6d68, type: 3}
+      propertyPath: feetPixelFromBottom
+      value: 11
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
