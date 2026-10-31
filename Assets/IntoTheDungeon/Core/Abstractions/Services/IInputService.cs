@@ -5,7 +5,7 @@ namespace IntoTheDungeon.Core.Abstractions.Services
     public interface IInputService
     {
         void SetSnapshot(Vec2 move, bool attackHeld, bool attackDown, bool attackUp,
-                        bool qDown, bool wDown, bool eDown, bool rDown);
+                        bool qDown, bool wDown, bool eDown, bool rDown, bool jumpDown);
         void SetChanged(bool axisChanged, bool heldChanged);
         void ConsumeFrame();
 
@@ -20,6 +20,7 @@ namespace IntoTheDungeon.Core.Abstractions.Services
         bool W_Down { get; }
         bool E_Down { get; }
         bool R_Down { get; }
+        bool JumpDown { get; }
 
         // State Flags
         bool AxisChanged { get; }

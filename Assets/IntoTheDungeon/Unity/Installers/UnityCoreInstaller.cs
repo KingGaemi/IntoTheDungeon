@@ -10,6 +10,7 @@ using IntoTheDungeon.Features.Status;
 using IntoTheDungeon.Features.Command;
 using IntoTheDungeon.Features.State;
 using IntoTheDungeon.Features.Attack;
+using IntoTheDungeon.Features.AI;
 using IntoTheDungeon.Features.Physics.Systems;
 using IntoTheDungeon.Features.Input;
 using IntoTheDungeon.Core.ECS.Systems;
@@ -37,6 +38,11 @@ namespace IntoTheDungeon.Unity
         [SerializeField] string playerCharacterName = "Character";
         [Tooltip("몹으로 등록할 이름들 (예: Catherine, Orc1, Slime). PlayerTag가 붙지 않는다.")]
         [SerializeField] string[] monsterNames = { "Catherine", "Orc1" };
+
+        [Header("2.5D 걸을 수 있는 영역 (X 가로, Y 깊이)")]
+        [Tooltip("맵 작업 전까지는 넓게 열어 둔다")]
+        [SerializeField] Vector2 walkAreaX = new(-100f, 100f);
+        [SerializeField] Vector2 walkAreaDepth = new(-100f, 100f);
         public override void Install(GameWorld world)
         {
             Debug.Log("[Installer] EventHub");
@@ -129,6 +135,7 @@ namespace IntoTheDungeon.Unity
 
             Debug.Log("[Installer] E");
             world.SystemManager.AddUnique(new PlayerInputSystem());
+            world.SystemManager.AddUnique(new EnemyAISystem());   // 의도 생성: CharacterIntentApplySystem보다 먼저
             world.SystemManager.AddUnique(new SpawnSystem());
             world.SystemManager.AddUnique(new CharacterIntentApplySystem());
             world.SystemManager.AddUnique(new PhaseControlSystem());
@@ -144,7 +151,10 @@ namespace IntoTheDungeon.Unity
             world.SystemManager.AddUnique(new KinematicPlannerSystem());
 
             Debug.Log("[Installer] F");
-            world.SystemManager.AddUnique(new KinematicSystem());
+            world.SystemManager.AddUnique(new KinematicSystem());       // 물리 바디가 있는 엔티티용
+            world.SetOnce<IWalkArea>(new RectWalkArea(walkAreaX.x, walkAreaX.y, walkAreaDepth.x, walkAreaDepth.y));
+            world.SystemManager.AddUnique(new MotionSystem());          // 2.5D 캐릭터 이동(TransformProjection보다 먼저)
+            world.SystemManager.AddUnique(new HeightMotionSystem());    // 2.5D 높이: 중력·착지
 
 
 

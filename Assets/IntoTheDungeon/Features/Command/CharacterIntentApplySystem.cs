@@ -7,6 +7,8 @@ using IntoTheDungeon.Core.Abstractions.World;
 using IntoTheDungeon.Core.ECS.Abstractions;
 using IntoTheDungeon.Core.Abstractions.Messages.Combat;
 using IntoTheDungeon.Core.Abstractions.Messages;
+using IntoTheDungeon.Core.Util;
+using IntoTheDungeon.Core.ECS.Components;
 using IntoTheDungeon.Core.Runtime.Event;
 
 namespace IntoTheDungeon.Features.Command
@@ -66,6 +68,17 @@ namespace IntoTheDungeon.Features.Command
                             continue;
                         }
 
+                        // 이동 방향은 스냅샷 밖에 둔다(방향만 바뀌면 이벤트 없음)
+                        if (intent.Kind == IntentKind.Move) state.MoveDir = intent.Dir.Normalized;
+                        else if (intent.Kind is IntentKind.Stop or IntentKind.None) state.MoveDir = Vec2.Zero;
+
+                        // 점프: 땅에 있을 때만 높이 속도를 준다(상태 스냅샷은 바뀌지 않음)
+                        if (intent.Kind == IntentKind.Jump)
+                        {
+                            TryJump(e);
+                            continue;
+                        }
+
                         var mask = Apply(ref state, next);
                         if (mask == ChangeMask.None) continue;
 
@@ -87,6 +100,15 @@ namespace IntoTheDungeon.Features.Command
             // _logger.Log($"[IntentApply] Processed {processedCount} intents this frame");
 
         }
+        void TryJump(Entity e)
+        {
+            var em = _world.EntityManager;
+            if (!em.HasComponent<HeightMotionComponent>(e) || !em.TryGetComponent<TransformComponent>(e, out var t)) return;
+            ref var m = ref em.GetComponent<HeightMotionComponent>(e);
+            if (m.IsAirborne(t.Height)) return;   // 공중 점프 없음
+            m.VelocityZ = m.JumpSpeed;
+        }
+
         // ============================================
         // Try: Intent → Next State 검증
         // ============================================
@@ -112,7 +134,7 @@ namespace IntoTheDungeon.Features.Command
                     return false;
 
                 case ControlState.Rooted:
-                    if (intent.Kind == IntentKind.Move)
+                    if (intent.Kind is IntentKind.Move or IntentKind.Jump)
                     {
                         reason = DenyReason.Rooted;
                         return false;
@@ -132,7 +154,7 @@ namespace IntoTheDungeon.Features.Command
             if (current.Action == ActionState.Attack)
             {
                 // 공격 중에는 다른 행동 불가
-                if (intent.Kind is IntentKind.Attack)
+                if (intent.Kind is IntentKind.Attack or IntentKind.Jump)
                 {
                     reason = DenyReason.InRecovery;
                     return false;
@@ -144,7 +166,8 @@ namespace IntoTheDungeon.Features.Command
             {
                 case IntentKind.Move:
                     next.Movement = MovementState.Move;
-                    next.Facing = intent.Facing;
+                    // 위/아래로만 움직이면(가로 성분 0) 바라보는 방향은 그대로
+                    if (intent.Dir.X != 0f) next.Facing = intent.Facing;
                     break;
 
                 case IntentKind.Attack:

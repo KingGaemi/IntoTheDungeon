@@ -28,18 +28,17 @@ namespace IntoTheDungeon.Core.Runtime.ECS
                     var entity = entities[i];
 
                     ref var transform = ref transforms[i];
-                    if (transform.Moved)
+                    // 2.5D: 위치는 ECS가 직접 정하므로 매 프레임 View에 보낸다
+                    // (스폰 직후 첫 배치가 Spawn 처리 순서에 따라 빠지는 일이 없도록 Moved로 거르지 않음)
+                    var transData = new TransformData
                     {
-                        var transData = new TransformData
-                        {
-                            X = transform.Position.X,
-                            Y = transform.Position.Y,
-                            RotDeg = transform.Rotation * Mathx.Rad2Deg
-                        };
-                        _viewOpQueue.Enqueue(entity, transData);
-                        // _log.Log($"[Projection] Entity{entity.Index}, x = {transform.Position.X}, y = {transform.Position.Y}");
-
-                    }
+                        X = transform.Position.X,
+                        Y = transform.Position.Y,
+                        Height = transform.Height,
+                        RotDeg = transform.Rotation * Mathx.Rad2Deg
+                    };
+                    _viewOpQueue.Enqueue(entity, transData);
+                    transform.Moved = false;
                 }
             }
         }

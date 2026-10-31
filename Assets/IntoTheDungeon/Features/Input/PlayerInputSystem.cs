@@ -49,7 +49,7 @@ namespace IntoTheDungeon.Features.Input
             if (_input == null) return;
 
             bool noChange = !_input.AttackDown && !_input.AttackUp &&
-                            !_input.AxisChanged && !_input.AttackHeld;
+                            !_input.AxisChanged && !_input.AttackHeld && !_input.JumpDown;
 
             if (_input.Seq == _lastSeq && noChange)
             {
@@ -83,13 +83,16 @@ namespace IntoTheDungeon.Features.Input
 
                     if (_input.AxisChanged && axis != Vec2.Zero)
                     {
-                        buf.Add(CharacterIntent.Move(Facing2DExt.FromX(axis.X)));
+                        buf.Add(CharacterIntent.Move(axis));   // 8방향: 가로·깊이 축 그대로
                         // _logger.Log("Vertical");
                     }
                     else if (_input.AxisChanged && axis == Vec2.Zero) // ← 0으로 "변한" 프레임에만
                     {
                         buf.Add(CharacterIntent.Stop()); // 또는 CharacterIntent.None()
                     }
+
+                    if (_input.JumpDown)
+                        buf.Add(CharacterIntent.Jump());
 
                     if (_input.AttackDown || _input.AttackHeld)
                     {

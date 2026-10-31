@@ -31,12 +31,11 @@ namespace IntoTheDungeon.Unity.Bridge.View
         {
             var spawned = new List<Entity>(256);
             var removeMarker = new List<Entity>(256);
-            foreach (var chunk in _world.EntityManager.GetChunks(typeof(InformationComponent), typeof(ViewMarker), typeof(PhysicsBodyRef), typeof(TransformComponent)))
+            foreach (var chunk in _world.EntityManager.GetChunks(typeof(InformationComponent), typeof(ViewMarker), typeof(TransformComponent)))
             {
                 var entities = chunk.GetEntities();
                 var informs = chunk.GetComponentArray<InformationComponent>();
                 var markers = chunk.GetComponentArray<ViewMarker>();
-                var bodyRefs = chunk.GetComponentArray<PhysicsBodyRef>();
                 var transforms = chunk.GetComponentArray<TransformComponent>();
 
                 for (int i = 0; i < chunk.Count; i++)
@@ -47,7 +46,8 @@ namespace IntoTheDungeon.Unity.Bridge.View
 
                     ref var info = ref informs[i];
                     ref var marker = ref markers[i];
-                    ref var bodyRef = ref bodyRefs[i];
+                    // 2.5D 캐릭터는 물리 바디가 없다. 있으면 넘기고 없으면 Invalid
+                    var physHandle = _world.EntityManager.TryGetComponent<PhysicsBodyRef>(entity, out var bodyRef) ? bodyRef.Handle : PhysicsHandle.Invalid;
                     ref var trans = ref transforms[i];
 
                     var recipeId = info.RecipeId;
@@ -56,7 +56,7 @@ namespace IntoTheDungeon.Unity.Bridge.View
                     var data = new ViewSpawnData
                     {
                         RecipeId = recipeId,
-                        PhysicsHandle = bodyRef.Handle,
+                        PhysicsHandle = physHandle,
                         SceneLinkId = info.SceneLinkId,
                         SortingLayerId = marker.SortingLayerId,
                         OrderInLayer = marker.OrderInLayer,
@@ -65,7 +65,7 @@ namespace IntoTheDungeon.Unity.Bridge.View
 
                     _viewOpQueue.Enqueue(entity, data);
 
-                    var transData = new TransformData { X = trans.Position.X, Y = trans.Position.Y, RotDeg = trans.Rotation };
+                    var transData = new TransformData { X = trans.Position.X, Y = trans.Position.Y, Height = trans.Height, RotDeg = trans.Rotation };
 
                     _viewOpQueue.Enqueue(entity, transData);
                     // _log.Log("ViewOpsEnqueued");

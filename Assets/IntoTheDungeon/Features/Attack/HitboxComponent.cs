@@ -13,7 +13,8 @@ namespace IntoTheDungeon.Features.Attack
         public Entity Owner;
         public TeamFlag Team;
         public int Damage;      // 생성 시점 공격자 스탯으로 고정
-        public Vec2 Center;     // 월드 좌표. FollowOwnerSystem 등이 갱신
+        public Vec2 Center;     // 바닥 평면 좌표(X 가로, Y 깊이). FollowOwnerSystem 등이 갱신
         public Vec2 HalfExtents;
+        public float Height;    // 히트박스 높이(공격자 발 높이). 높이 차이가 크면 안 맞는다
     }
 }

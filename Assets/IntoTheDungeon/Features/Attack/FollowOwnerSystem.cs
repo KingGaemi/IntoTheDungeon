@@ -40,6 +40,7 @@ namespace IntoTheDungeon.Features.Attack
 
                     float sign = em.TryGetComponent<StateComponent>(hb.Owner, out var st) ? st.FacingToSign() : 1f;
                     hb.Center = ComputeCenter(ownerTr.Position, follows[i].Offset, sign);
+                    hb.Height = ownerTr.Height;
                 }
             }
 

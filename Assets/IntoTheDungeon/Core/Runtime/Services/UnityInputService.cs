@@ -16,6 +16,7 @@ namespace IntoTheDungeon.Core.Runtime.Services
         public bool W_Down { get; private set; }
         public bool E_Down { get; private set; }
         public bool R_Down { get; private set; }
+        public bool JumpDown { get; private set; }
 
         // State Flags
         public bool AxisChanged { get; private set; }
@@ -25,7 +26,7 @@ namespace IntoTheDungeon.Core.Runtime.Services
         public uint Seq => _seq;
 
         public void SetSnapshot(Vec2 move, bool held, bool down, bool up,
-                                bool qDown, bool wDown, bool eDown, bool rDown)
+                                bool qDown, bool wDown, bool eDown, bool rDown, bool jumpDown)
         {
             Move = move;
             AttackHeld = held;
@@ -36,6 +37,7 @@ namespace IntoTheDungeon.Core.Runtime.Services
             W_Down = wDown;
             E_Down = eDown;
             R_Down = rDown;
+            JumpDown = jumpDown;
 
             _seq++;
         }
@@ -55,6 +57,7 @@ namespace IntoTheDungeon.Core.Runtime.Services
             W_Down = false;
             E_Down = false;
             R_Down = false;
+            JumpDown = false;
             AxisChanged = false;
             HeldChanged = false;
         }

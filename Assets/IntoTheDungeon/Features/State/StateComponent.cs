@@ -11,8 +11,12 @@ namespace IntoTheDungeon.Features.State
     {
         public StateSnapshot Current;
 
+        // 이동 중일 때 바닥 평면 방향(단위벡터). 방향만 바뀌는 건 상태 변화 이벤트를 내지 않는다.
+        public Vec2 MoveDir;
+
         public StateComponent(ActionState actionState = ActionState.Idle)
         {
+            MoveDir = Vec2.Zero;
             Current.Action = actionState;
             Current.Movement = MovementState.Idle;
             Current.Control = ControlState.Normal;

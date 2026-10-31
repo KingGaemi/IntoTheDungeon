@@ -46,7 +46,8 @@ namespace IntoTheDungeon.Core.ECS.Abstractions
 
     public struct TransformData
     {
-        public float X, Y, RotDeg;
+        public float X, Y, RotDeg;   // X = 가로, Y = 깊이(바닥 평면)
+        public float Height;         // 바닥에서의 높이
     }
 
 

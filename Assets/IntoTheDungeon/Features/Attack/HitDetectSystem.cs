@@ -20,9 +20,13 @@ namespace IntoTheDungeon.Features.Attack
             public Entity E;
             public TeamFlag Team;
             public Vec2 Min, Max;
+            public float Height;
         }
 
         readonly List<Target> _targets = new(64);
+
+        // 이 높이 차이 안이면 맞는다(점프로 머리 위를 넘거나, 공중 공격이 땅의 적을 맞히는 범위)
+        const float HeightReach = 0.8f;
 
         public void Tick(float dt)
         {
@@ -42,7 +46,7 @@ namespace IntoTheDungeon.Features.Attack
                     var min = hb.Center - hb.HalfExtents;
                     var max = hb.Center + hb.HalfExtents;
 #if UNITY_EDITOR
-                    DrawBox(min, max, UnityEngine.Color.red);
+                    DrawBox(min, max, hb.Height, UnityEngine.Color.red);
 #endif
                     foreach (var t in _targets)
                     {
@@ -50,6 +54,7 @@ namespace IntoTheDungeon.Features.Attack
                         if (t.E == hb.Owner || t.Team == hb.Team) continue;
                         if (hits.AlreadyHit(t.E.Index)) continue;
                         if (!Overlap(min, max, t.Min, t.Max)) continue;
+                        if (System.MathF.Abs(hb.Height - t.Height) > HeightReach) continue;   // 높이가 너무 다르면 안 맞음
 
                         hits.AddHit(t.E.Index);
                         ref var q = ref em.GetComponent<HpModificationQueue>(t.E);
@@ -83,11 +88,12 @@ namespace IntoTheDungeon.Features.Attack
                         E = entities[i],
                         Team = teams[i].TeamFlag,
                         Min = center - hurtboxes[i].HalfExtents,
-                        Max = center + hurtboxes[i].HalfExtents
+                        Max = center + hurtboxes[i].HalfExtents,
+                        Height = transforms[i].Height
                     };
                     _targets.Add(t);
 #if UNITY_EDITOR
-                    DrawBox(t.Min, t.Max, UnityEngine.Color.green);
+                    DrawBox(t.Min, t.Max, t.Height, UnityEngine.Color.green);
 #endif
                 }
             }
@@ -98,12 +104,13 @@ namespace IntoTheDungeon.Features.Attack
 
 #if UNITY_EDITOR
         // Scene 뷰(또는 Gizmos 켠 Game 뷰)에서 판정 영역 확인용
-        static void DrawBox(Vec2 min, Vec2 max, UnityEngine.Color c)
+        // 바닥 평면 박스를 화면 투영(화면 y = 깊이 + 높이)해서 그린다
+        static void DrawBox(Vec2 min, Vec2 max, float height, UnityEngine.Color c)
         {
-            var a = new UnityEngine.Vector3(min.X, min.Y);
-            var b = new UnityEngine.Vector3(max.X, min.Y);
-            var d = new UnityEngine.Vector3(max.X, max.Y);
-            var e = new UnityEngine.Vector3(min.X, max.Y);
+            var a = new UnityEngine.Vector3(min.X, min.Y + height);
+            var b = new UnityEngine.Vector3(max.X, min.Y + height);
+            var d = new UnityEngine.Vector3(max.X, max.Y + height);
+            var e = new UnityEngine.Vector3(min.X, max.Y + height);
             UnityEngine.Debug.DrawLine(a, b, c);
             UnityEngine.Debug.DrawLine(b, d, c);
             UnityEngine.Debug.DrawLine(d, e, c);

@@ -310,6 +310,10 @@ namespace IntoTheDungeon.Unity.Bridge.View
             _entityToGO[entity] = go;
             _goToEntity[go] = entity;
 
+            // 2.5D 바닥 그림자: Visual 아래 "Shadow" 오브젝트에 붙인다(없으면 그림자 없음)
+            var shadowTr = root.Visual ? root.Visual.transform.Find("Shadow") : null;
+            if (shadowTr) _shadowCache[entity] = Ensure<GroundShadow>(shadowTr.gameObject);
+
             // --- [여기에 디버거 바인딩 코드 추가] ---
 #if UNITY_EDITOR
             var viewer = Ensure<IntoTheDungeon.Unity.DebugTools.EntityStatusViewer>(go);
@@ -329,6 +333,8 @@ namespace IntoTheDungeon.Unity.Bridge.View
             _statusListeners.Remove(entity);
             _animListeners.Remove(entity);
             _damageListeners.Remove(entity);
+            _sortCache.Remove(entity);
+            _shadowCache.Remove(entity);
             _entityToGO.Remove(entity);
             _goToEntity.Remove(go);
 
@@ -362,11 +368,33 @@ namespace IntoTheDungeon.Unity.Bridge.View
 
             var t = visual.gameObject.transform;
 
+            // 2.5D 투영: 화면 y = 깊이 + 높이. 깊이가 작을수록(화면 아래) 앞에 그린다.
+            t.SetPositionAndRotation(new Vector3(d.X, d.Y * DepthToScreenY + d.Height, t.position.z), Quaternion.Euler(0, 0, d.RotDeg));
 
-            t.SetPositionAndRotation(new Vector3(d.X, d.Y, t.position.z), Quaternion.Euler(0, 0, d.RotDeg));
+            if (!_sortCache.TryGetValue(entity, out var renderers))
+            {
+                // 그림자는 따로 정렬하므로 제외
+                var all = visual.GetComponentsInChildren<SpriteRenderer>(true);
+                renderers = System.Array.FindAll(all, r => !r.GetComponent<GroundShadow>());
+                _sortCache[entity] = renderers;
+            }
+            int order = Mathf.Clamp(Mathf.RoundToInt(-d.Y * SortingPerDepthUnit), short.MinValue + 2, short.MaxValue - 1);
+            int layer = 0;
+            foreach (var r in renderers)
+                if (r) { r.sortingOrder = order; layer = r.sortingLayerID; }
 
-
+            // 그림자는 몸이 떠도 바닥(높이 0)에 남고, 같은 깊이의 캐릭터보다 한 칸 뒤에 그린다
+            if (_shadowCache.TryGetValue(entity, out var shadow) && shadow)
+                shadow.Place(new Vector3(d.X, d.Y * DepthToScreenY, t.position.z), d.Height, layer, order - 1);
         }
+
+        readonly Dictionary<Entity, GroundShadow> _shadowCache = new();
+
+        // 깊이 1 유닛이 화면에서 차지하는 높이(1 = 화면 단위 그대로)
+        const float DepthToScreenY = 1f;
+        // 깊이 0.01 차이까지 앞뒤가 갈리도록
+        const float SortingPerDepthUnit = 100f;
+        readonly Dictionary<Entity, SpriteRenderer[]> _sortCache = new();
         #endregion
 
         #region Behaviours

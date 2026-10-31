@@ -21,6 +21,7 @@ namespace IntoTheDungeon.Features.Attack
             public TeamFlag Team;
             public int Damage;
             public Vec2 OwnerPos;
+            public float OwnerHeight;
             public float FacingSign;
             public MeleeAttackComponent Melee;
         }
@@ -62,6 +63,7 @@ namespace IntoTheDungeon.Features.Attack
                         Team = teams[i].TeamFlag,
                         Damage = statuses[i].Damage,
                         OwnerPos = transforms[i].Position,
+                        OwnerHeight = transforms[i].Height,
                         FacingSign = states[i].FacingToSign(),
                         Melee = melees[i]
                     });
@@ -82,7 +84,8 @@ namespace IntoTheDungeon.Features.Attack
                 Team = r.Team,
                 Damage = r.Damage,
                 Center = FollowOwnerSystem.ComputeCenter(r.OwnerPos, r.Melee.Offset, r.FacingSign),
-                HalfExtents = r.Melee.HalfExtents
+                HalfExtents = r.Melee.HalfExtents,
+                Height = r.OwnerHeight
             });
             em.AddComponent(e, new FollowOwnerComponent { Offset = r.Melee.Offset });
             em.AddComponent(e, new LifetimeComponent { Remaining = r.Melee.ActiveTime });

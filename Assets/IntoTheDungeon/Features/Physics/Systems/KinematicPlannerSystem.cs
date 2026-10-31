@@ -9,11 +9,14 @@ using IntoTheDungeon.Features.State;
 using IntoTheDungeon.Features.Status;
 
 
-// KinematicComponent의 Velocity를 이용해 Tick당 Velocity를 IPhysicsBody에 부여
+// 상태(이동 방향·속도 스탯)로 KinematicComponent의 속도를 정한다. 실제 이동은 MotionSystem.
 namespace IntoTheDungeon.Features.Physics.Systems
 {
     public sealed class KinematicPlannerSystem : GameSystem, IFixedTick
     {
+        // 깊이(위/아래) 이동은 가로보다 느리게: 던파식 2.5D 감각
+        public const float DepthSpeedScale = 0.7f;
+
         ILogger _log;
         public KinematicPlannerSystem(int priority = 0) : base(priority) { }
 
@@ -35,15 +38,12 @@ namespace IntoTheDungeon.Features.Physics.Systems
                     var status = statusArr[i];
                     ref var kineComp = ref kineCompArr[i];
 
-                    if (state.IsMoving)
+                    if (state.IsMoving && state.CanMove)
                     {
-                        float s = status.MovementSpeed;
-                        float sx = state.FacingToSign();   // -1 or +1
-                        kineComp.Direction = new Vec2(sx, 0f);
-                        kineComp.Magnitude = s;
+                        // MoveDir가 비어 있으면(가로 전용 의도 등) 바라보는 방향으로
+                        var dir = state.MoveDir == Vec2.Zero ? new Vec2(state.FacingToSign(), 0f) : state.MoveDir;
+                        kineComp.Direction = new Vec2(dir.X, dir.Y * DepthSpeedScale);
                         kineComp.Magnitude = status.MovementSpeed;
-                        kineComp.Direction.X = state.FacingToSign();
-
                     }
                     else
                     {

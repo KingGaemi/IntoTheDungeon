@@ -8,7 +8,7 @@ namespace IntoTheDungeon.Features.Character
     public sealed class CharacterCoreFactory : IEntityRecipeFactory
     {
         public bool HasView => true;
-        public bool HasPhys => true;
+        public bool HasPhys => false;   // 2.5D: 캐릭터는 물리 엔진 대신 MotionSystem으로 이동
 
         [SerializeField] int defaultMaxHp = 100;
         [SerializeField] float defaultMoveSpd = 5f;

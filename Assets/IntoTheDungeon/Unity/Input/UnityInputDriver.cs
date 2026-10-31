@@ -49,15 +49,16 @@ public sealed class UnityInputDriver : MonoBehaviour, IWorldInjectable
         bool wDown = Input.GetKeyDown(KeyCode.W);
         bool eDown = Input.GetKeyDown(KeyCode.E);
         bool rDown = Input.GetKeyDown(KeyCode.R);
+        bool jumpDown = Input.GetKeyDown(KeyCode.C);   // 던파와 같은 점프 키
 
         // State Changes
         bool axisChanged = !axis.Equals(_lastAxis);
         bool heldChanged = held != _lastHeld;
 
         // 변경사항이 있거나 트리거 입력이 있으면 브로드캐스트
-        if (axisChanged || heldChanged || down || up || qDown || wDown || eDown || rDown)
+        if (axisChanged || heldChanged || down || up || qDown || wDown || eDown || rDown || jumpDown)
         {
-            _svc.SetSnapshot(axis, held, down, up, qDown, wDown, eDown, rDown);
+            _svc.SetSnapshot(axis, held, down, up, qDown, wDown, eDown, rDown, jumpDown);
             _svc.SetChanged(axisChanged, heldChanged);
             _lastAxis = axis;
             _lastHeld = held;
