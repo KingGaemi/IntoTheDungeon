@@ -11,6 +11,7 @@ using IntoTheDungeon.Features.Command;
 using IntoTheDungeon.Features.State;
 using IntoTheDungeon.Features.Attack;
 using IntoTheDungeon.Features.AI;
+using IntoTheDungeon.Features.Battle;
 using IntoTheDungeon.Features.Physics.Systems;
 using IntoTheDungeon.Features.Input;
 using IntoTheDungeon.Core.ECS.Systems;
@@ -34,15 +35,52 @@ namespace IntoTheDungeon.Unity
         [SerializeField] EntityViewMappingTable mappingTable;
 
         [Header("Entity Data")]
-        [Tooltip("플레이어 입력을 받는 RecipeId 이름. PlayerInputSystem 쿼리에 걸려야 하는 유일한 이름.")]
+        [Tooltip("씬에 놓인 파티원 프리팹의 레시피 이름")]
         [SerializeField] string playerCharacterName = "Character";
-        [Tooltip("매핑 테이블(EntityViewMappingTable)에 없는데 몹으로 등록할 이름. 매핑 테이블에 있는 레시피는 플레이어 외 전부 자동으로 몹 등록된다.")]
+        [Tooltip("매핑 테이블(EntityViewMappingTable)에 없는데 캐릭터로 등록할 이름. 매핑 테이블에 있는 레시피는 자동 등록된다.")]
         [SerializeField] string[] monsterNames = { };
 
         [Header("2.5D 걸을 수 있는 영역 (X 가로, Y 깊이)")]
         [Tooltip("씬에 WalkAreaAuthoring이 없을 때만 쓰는 기본값")]
         [SerializeField] Vector2 walkAreaX = new(-100f, 100f);
         [SerializeField] Vector2 walkAreaDepth = new(-100f, 100f);
+
+        [System.Serializable]
+        public struct CharacterDefEntry
+        {
+            public string recipe;
+            [Tooltip("몸 충돌 가로 반지름(깊이는 이 절반). 아이템 등 보정은 BodyComponent에서 따로 더해진다")]
+            public float bodyRadius;
+            [Tooltip("무거울수록 덜 밀린다")]
+            public float bodyMass;
+            [Tooltip("남을 밀기만 하고 자기는 안 밀림(보스 등)")]
+            public bool immovable;
+        }
+
+        [Header("캐릭터 종류별 정의(없는 이름은 반지름 0.3·무게 1)")]
+        [SerializeField] CharacterDefEntry[] characterDefs =
+        {
+            new() { recipe = "Character", bodyRadius = 0.3f, bodyMass = 1f },
+            new() { recipe = "Catherine", bodyRadius = 0.3f, bodyMass = 1f },
+            new() { recipe = "Orc1", bodyRadius = 0.35f, bodyMass = 1.2f },
+            new() { recipe = "Orc2", bodyRadius = 0.4f, bodyMass = 1.5f },
+            new() { recipe = "Orc3", bodyRadius = 0.45f, bodyMass = 2f },
+        };
+
+        [System.Serializable]
+        public struct WaveSpawnEntry { public string recipe; public int count; }
+        [System.Serializable]
+        public struct WaveEntry { public WaveSpawnEntry[] spawns; }
+
+        [Header("전투 한 판(웨이브)")]
+        [SerializeField] WaveEntry[] waves =
+        {
+            new() { spawns = new[] { new WaveSpawnEntry { recipe = "Orc1", count = 3 } } },
+            new() { spawns = new[] { new WaveSpawnEntry { recipe = "Orc1", count = 2 }, new WaveSpawnEntry { recipe = "Orc2", count = 2 } } },
+            new() { spawns = new[] { new WaveSpawnEntry { recipe = "Orc2", count = 2 }, new WaveSpawnEntry { recipe = "Orc3", count = 2 } } },
+        };
+        [Tooltip("전투 시작 때 씬에 놓인 파티원 곁에 더 붙는 동료 수")]
+        [SerializeField] int partyAllies = 2;
         public override void Install(GameWorld world)
         {
             Debug.Log("[Installer] EventHub");
@@ -62,23 +100,19 @@ namespace IntoTheDungeon.Unity
             var entityRecipeRegistry = new EntityRecipeRegistry();
             world.SetOnce<IEntityRecipeRegistry>(entityRecipeRegistry);
 
-            // 1. 플레이어 전용 팩토리 / 몹 전용 팩토리를 분리 생성 (PlayerTag는 플레이어만 받는다)
-            var characterFactory = new CharacterCoreFactory(isPlayer: true);
-            var monsterFactory = new CharacterCoreFactory(isPlayer: false);
-
-            var playerRecipeId = recipeTable.GetId(playerCharacterName);
-            entityRecipeRegistry.Register(playerRecipeId, characterFactory);
-            Debug.Log($"[Installer] Registered RecipeId: {playerCharacterName} → {playerRecipeId.Value} (player)");
-
-            // 몹 = 매핑 테이블의 모든 레시피(플레이어 제외) + 추가 이름. 새 몹은 매핑 테이블에만 넣으면 된다
-            var monsters = new System.Collections.Generic.HashSet<string>(monsterNames);
-            if (mappingTable) monsters.UnionWith(mappingTable.RecipeNames);
-            monsters.Remove(playerCharacterName);
-            foreach (var name in monsters)
+            // 캐릭터는 모두 같은 팩토리(메인 캐릭터 없음). 편은 스폰 때 팀으로 정해진다
+            var definitions = new System.Collections.Generic.Dictionary<RecipeId, CharacterDefinition>();
+            foreach (var d in characterDefs)
+                if (!string.IsNullOrEmpty(d.recipe))
+                    definitions[recipeTable.GetId(d.recipe)] = new CharacterDefinition { BodyRadius = d.bodyRadius, BodyMass = d.bodyMass, Immovable = d.immovable };
+            var characterFactory = new CharacterCoreFactory(definitions);
+            var characters = new System.Collections.Generic.HashSet<string>(monsterNames) { playerCharacterName };
+            if (mappingTable) characters.UnionWith(mappingTable.RecipeNames);
+            foreach (var name in characters)
             {
                 var recipeId = recipeTable.GetId(name);
-                entityRecipeRegistry.Register(recipeId, monsterFactory);
-                Debug.Log($"[Installer] Registered RecipeId: {name} → {recipeId.Value} (monster)");
+                entityRecipeRegistry.Register(recipeId, characterFactory);
+                Debug.Log($"[Installer] Registered RecipeId: {name} → {recipeId.Value}");
             }
 
             // ... (기존 ViewRegistry 등록 및 시스템 추가 코드 유지)
@@ -137,9 +171,18 @@ namespace IntoTheDungeon.Unity
 
 
 
+            // 방(맵)에 WalkAreaAuthoring이 있으면 그 영역, 없으면 설치기 기본값(시스템들이 Initialize에서 가져가므로 먼저 등록)
+            var authoring = FindFirstObjectByType<WalkAreaAuthoring>();
+            world.SetOnce<IWalkArea>(authoring ? authoring.ToWalkArea()
+                                               : new RectWalkArea(walkAreaX.x, walkAreaX.y, walkAreaDepth.x, walkAreaDepth.y));
+
+            world.SetOnce(BuildBattleConfig());
+            world.SetOnce(new BattleProgress());
+
             Debug.Log("[Installer] E");
             world.SystemManager.AddUnique(new PlayerInputSystem());
-            world.SystemManager.AddUnique(new CombatAISystem());  // 의도 생성(몹·동료·자동전투): CharacterIntentApplySystem보다 먼저
+            world.SystemManager.AddUnique(new CombatAISystem());  // 의도 생성(파티·몹 전원 자동전투): CharacterIntentApplySystem보다 먼저
+            world.SystemManager.AddUnique(new BattleFlowSystem());   // 웨이브 진행·승패(스폰 요청은 SpawnSystem이 같은 프레임에 처리)
             world.SystemManager.AddUnique(new SpawnSystem());
             world.SystemManager.AddUnique(new CharacterIntentApplySystem());
             world.SystemManager.AddUnique(new PhaseControlSystem());
@@ -158,13 +201,10 @@ namespace IntoTheDungeon.Unity
 
             Debug.Log("[Installer] F");
             world.SystemManager.AddUnique(new KinematicSystem());       // 물리 바디가 있는 엔티티용
-            // 방(맵)에 WalkAreaAuthoring이 있으면 그 영역, 없으면 설치기 기본값
-            var authoring = FindFirstObjectByType<WalkAreaAuthoring>();
-            world.SetOnce<IWalkArea>(authoring ? authoring.ToWalkArea()
-                                               : new RectWalkArea(walkAreaX.x, walkAreaX.y, walkAreaDepth.x, walkAreaDepth.y));
             world.SystemManager.AddUnique(new MotionSystem());          // 2.5D 캐릭터 이동(TransformProjection보다 먼저)
             world.SystemManager.AddUnique(new HeightMotionSystem());    // 2.5D 높이: 중력·착지
             world.SystemManager.AddUnique(new KnockbackSystem());       // 피격 밀림
+            world.SystemManager.AddUnique(new BodySeparationSystem());  // 몸 충돌: 이동이 다 끝난 뒤 겹친 캐릭터를 밀어냄
 
 
 
@@ -189,6 +229,20 @@ namespace IntoTheDungeon.Unity
 
 
             Debug.Log("[Installer] OK");
+        }
+
+        BattleConfig BuildBattleConfig()
+        {
+            var cfg = new BattleConfig { StartingAllies = partyAllies };
+            foreach (var w in waves)
+            {
+                var list = new System.Collections.Generic.List<WaveSpawn>();
+                if (w.spawns != null)
+                    foreach (var s in w.spawns)
+                        if (!string.IsNullOrEmpty(s.recipe) && s.count > 0) list.Add(new WaveSpawn(s.recipe, s.count));
+                if (list.Count > 0) cfg.Waves.Add(list.ToArray());
+            }
+            return cfg;
         }
     }
 }

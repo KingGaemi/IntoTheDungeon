@@ -1,11 +1,11 @@
 using UnityEngine;
 using IntoTheDungeon.Core.Abstractions.World;
 using IntoTheDungeon.Core.Abstractions.Gameplay;
-using IntoTheDungeon.Core.ECS.Components;
 using IntoTheDungeon.Unity.World;
+using IntoTheDungeon.Features.Battle;
 
 /// <summary>
-/// 2.5D 카메라: 플레이어 엔티티의 바닥 위치(ECS)를 가로로 따라간다.
+/// 2.5D 카메라: 살아 있는 파티원의 평균 바닥 위치(ECS)를 가로로 따라간다.
 /// 세로는 방(WalkAreaAuthoring) 기준 높이에 고정해 던파처럼 바닥 띠가 화면 아래쪽에 오게 한다.
 /// 그림이 아니라 로직 위치를 따라가므로 점프·피격 흔들림에 카메라가 흔들리지 않는다.
 /// </summary>
@@ -20,6 +20,8 @@ public class CameraController : MonoBehaviour, IWorldInjectable
     WalkAreaAuthoring _area;
     Camera _cam;
     bool _snapped;
+    bool _hasGround;
+    Vector2 _lastGround;
 
     public void Init(IWorld world)
     {
@@ -31,7 +33,11 @@ public class CameraController : MonoBehaviour, IWorldInjectable
 
     void LateUpdate()
     {
-        if (_world == null || !TryGetPlayerGround(out var ground)) return;
+        if (_world == null) return;
+        if (Party.TryGetCenter(_world.EntityManager, out var c, out _)) _lastGround = new Vector2(c.X, c.Y);   // 파티 전멸이면 마지막 위치에 머문다
+        else if (!_hasGround) return;
+        _hasGround = true;
+        var ground = _lastGround;
 
         float targetX = ground.x;
         float targetY = _area ? _area.CameraY : ground.y + fallbackHeight;
@@ -55,16 +61,4 @@ public class CameraController : MonoBehaviour, IWorldInjectable
         transform.position = p;
     }
 
-    bool TryGetPlayerGround(out Vector2 ground)
-    {
-        foreach (var chunk in _world.EntityManager.GetChunks(typeof(PlayerTag), typeof(TransformComponent)))
-        {
-            if (chunk.Count == 0) continue;
-            var t = chunk.GetComponentArray<TransformComponent>()[0];
-            ground = new Vector2(t.Position.X, t.Position.Y);   // 화면 y = 깊이(높이는 무시)
-            return true;
-        }
-        ground = default;
-        return false;
-    }
 }

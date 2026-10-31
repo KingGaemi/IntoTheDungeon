@@ -20,20 +20,15 @@ namespace IntoTheDungeon.Features.Character
     {
         public RecipeId Id { get; }
         readonly int _maxHp, _damage; readonly float _movSpd, _atkSpd;
-        readonly bool _isPlayer;
+        readonly BodyComponent _body;
         public CharacterCoreRecipe(RecipeId id,
-            int maxHp, float movSpd, float atkSpd, int damage, bool isPlayer = false)
-        { Id = id; _maxHp = maxHp; _movSpd = movSpd; _atkSpd = atkSpd; _damage = damage; _isPlayer = isPlayer; }
+            int maxHp, float movSpd, float atkSpd, int damage, BodyComponent body)
+        { Id = id; _maxHp = maxHp; _movSpd = movSpd; _atkSpd = atkSpd; _damage = damage; _body = body; }
         public void Apply(IEntityManager em, Entity e)
         {
-            if (_isPlayer)
-            {
-                em.AddComponent(e, new PlayerTag());
-                em.AddComponent(e, CombatAIComponent.AutoBattle);   // 자동전투 켜면 AI가 대신 조작(처음엔 꺼짐)
-                em.AddComponent(e, SpecialSkillComponent.SwordWave); // 필살기(버튼으로 직접 발동)
-            }
-            else
-                em.AddComponent(e, CombatAIComponent.Default);      // 몹·동료: 항상 AI가 의도를 만든다
+            // 메인 캐릭터 없이 모두 자동전투(편은 TeamComponent로 갈림). 필살기는 파티원만 버튼으로 발동
+            em.AddComponent(e, CombatAIComponent.Default);
+            em.AddComponent(e, SpecialSkillComponent.SwordWave);
             em.AddComponent(e, new StateComponent(ActionState.Idle));
             em.AddComponent(e, new StatusComponent
             {
@@ -47,6 +42,7 @@ namespace IntoTheDungeon.Features.Character
             em.AddComponent(e, new KinematicComponent());
             em.AddComponent(e, HeightMotionComponent.Default);   // 2.5D 높이(점프·띄우기)
             em.AddComponent(e, KnockbackComponent.Default);      // 피격 밀림
+            em.AddComponent(e, _body);                           // 몸 충돌(캐릭터끼리 겹치지 않게)
             em.AddComponent(e, new CharacterIntentBuffer());
             em.AddComponent(e, new ActionPhaseComponent { WindupDuration = 0.5f, RecoveryDuration = 0.7f });
             em.AddComponent(e, new StatusModificationQueue());

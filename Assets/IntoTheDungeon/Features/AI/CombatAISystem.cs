@@ -9,12 +9,13 @@ using IntoTheDungeon.Core.Util;
 using IntoTheDungeon.Features.Command;
 using IntoTheDungeon.Features.State;
 using IntoTheDungeon.Features.Status;
+using IntoTheDungeon.Features.Battle;
 
 namespace IntoTheDungeon.Features.AI
 {
     /// <summary>
     /// CombatAIComponent를 가진 엔티티가 가장 가까운 적(다른 팀, 생존)을 바닥 평면에서 쫓아가, 같은 줄에 서면 공격하도록 의도를 쌓는다.
-    /// 적이 없으면 같은 팀 플레이어(리더) 곁으로 돌아간다.
+    /// 적이 없으면 파티원은 파티 중심으로 모인다.
     /// 상태가 바뀔 때만 의도를 넣는다(플레이어 입력과 같은 방식). CharacterIntentApplySystem보다 먼저 돌아야 한다.
     /// </summary>
     public sealed class CombatAISystem : GameSystem, ITick
@@ -29,15 +30,15 @@ namespace IntoTheDungeon.Features.AI
         readonly List<Target> _targets = new(32);
         float _time;
 
-        bool _hasLeader;
-        Target _leader;
+        bool _hasPartyCenter;
+        Vec2 _partyCenter;
 
         public void Tick(float dt)
         {
             _time += dt;
             var em = _world.EntityManager;
             CollectTargets(em);
-            FindLeader(em);
+            _hasPartyCenter = Party.TryGetCenter(em, out _partyCenter, out _);
 
             foreach (var chunk in em.GetChunks(typeof(CombatAIComponent),
                                                typeof(CharacterIntentBuffer),
@@ -56,7 +57,6 @@ namespace IntoTheDungeon.Features.AI
                 {
                     ref var ai = ref ais[i];
                     if (!ai.Enabled) continue;
-                    if (ai.PauseTimer > 0f) { ai.PauseTimer -= dt; continue; }
 
                     ref var buf = ref buffers[i];
                     var cur = states[i].Current;
@@ -118,12 +118,12 @@ namespace IntoTheDungeon.Features.AI
             }
         }
 
-        // 같은 팀 리더(플레이어)와 멀어졌으면 따라간다. 따라가는 중이면 true
+        // 파티 중심에서 멀어졌으면 모이러 간다. 가는 중이면 true
         bool TryFollowLeader(ref CombatAIComponent ai, ref CharacterIntentBuffer buf, Entity self, TeamFlag myTeam, Vec2 selfPos, in StateComponent state)
         {
-            if (!ai.FollowLeader || !_hasLeader || _leader.E == self || _leader.Team != myTeam) return false;
+            if (!ai.FollowLeader || !_hasPartyCenter || myTeam != Party.Team) return false;
 
-            var to = _leader.Pos - selfPos;
+            var to = _partyCenter - selfPos;
             float d = to.Magnitude;
             // 따라가는 중이면 FollowStop까지, 서 있으면 FollowDistance를 넘어야 출발(떨림 방지)
             float limit = ai.State == CombatAIState.Follow ? ai.FollowStop : ai.FollowDistance;
@@ -164,25 +164,6 @@ namespace IntoTheDungeon.Features.AI
                 {
                     if (!statuses[i].IsAlive) continue;
                     _targets.Add(new Target { E = entities[i], Team = teams[i].TeamFlag, Pos = transforms[i].Position });
-                }
-            }
-        }
-
-        void FindLeader(IEntityManager em)
-        {
-            _hasLeader = false;
-            foreach (var chunk in em.GetChunks(typeof(PlayerTag), typeof(TransformComponent), typeof(TeamComponent), typeof(StatusComponent)))
-            {
-                var transforms = chunk.GetComponentArray<TransformComponent>();
-                var teams = chunk.GetComponentArray<TeamComponent>();
-                var statuses = chunk.GetComponentArray<StatusComponent>();
-                var entities = chunk.GetEntities();
-                for (int i = 0; i < chunk.Count; i++)
-                {
-                    if (!statuses[i].IsAlive) continue;
-                    _leader = new Target { E = entities[i], Team = teams[i].TeamFlag, Pos = transforms[i].Position };
-                    _hasLeader = true;
-                    return;
                 }
             }
         }

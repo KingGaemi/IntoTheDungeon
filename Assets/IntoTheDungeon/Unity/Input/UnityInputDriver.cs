@@ -1,69 +1,31 @@
 using IntoTheDungeon.Core.Abstractions.Services;
-using IntoTheDungeon.Core.Util;
 using IntoTheDungeon.Core.Abstractions.World;
 using UnityEngine;
 
+/// <summary>
+/// 키보드 → IInputService. 숫자키 1~4 = 파티원 필살기, R = 오크 소환, T = 동료 소환(둘 다 테스트용).
+/// </summary>
 [DefaultExecutionOrder(-10001)]
 public sealed class UnityInputDriver : MonoBehaviour, IWorldInjectable
 {
-    private IInputService _svc;
-    private Vec2 _lastAxis;
-    private bool _lastHeld;
+    static readonly KeyCode[] SkillKeys = { KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3, KeyCode.Alpha4 };
 
-    public void Init(IWorld w)
-    {
-        if (w.TryGet(out _svc))
-        {
-            _lastAxis = default;
-            _lastHeld = false;
-        }
-    }
+    private IInputService _svc;
+
+    public void Init(IWorld w) => w.TryGet(out _svc);
 
     void Update()
     {
         if (_svc == null) return;
 
-        // Movement Input
-        int x = 0;
-        int y = 0;
+        int slot = -1;
+        for (int i = 0; i < SkillKeys.Length; i++)
+            if (Input.GetKeyDown(SkillKeys[i])) { slot = i; break; }
 
-        if (Input.GetKey(KeyCode.LeftArrow))
-            x = -1;
-        else if (Input.GetKey(KeyCode.RightArrow))
-            x = 1;
-
-        if (Input.GetKey(KeyCode.DownArrow))
-            y = -1;
-        else if (Input.GetKey(KeyCode.UpArrow))
-            y = 1;
-
-        var axis = new Vec2(x, y);
-
-        // Attack Input
-        bool held = Input.GetKey(KeyCode.Space);
-        bool down = Input.GetKeyDown(KeyCode.Space);
-        bool up = Input.GetKeyUp(KeyCode.Space);
-
-        // Skill Triggers
-        bool qDown = Input.GetKeyDown(KeyCode.Q);
-        bool wDown = Input.GetKeyDown(KeyCode.W);
-        bool eDown = Input.GetKeyDown(KeyCode.E);
         bool rDown = Input.GetKeyDown(KeyCode.R);
-        bool jumpDown = Input.GetKeyDown(KeyCode.C);   // 던파와 같은 점프 키
-        bool autoDown = Input.GetKeyDown(KeyCode.F);   // 자동전투 켜기/끄기
-        bool allyDown = Input.GetKeyDown(KeyCode.T);   // 동료 소환(테스트용)
+        bool allyDown = Input.GetKeyDown(KeyCode.T);
 
-        // State Changes
-        bool axisChanged = !axis.Equals(_lastAxis);
-        bool heldChanged = held != _lastHeld;
-
-        // 변경사항이 있거나 트리거 입력이 있으면 브로드캐스트
-        if (axisChanged || heldChanged || down || up || qDown || wDown || eDown || rDown || jumpDown || autoDown || allyDown)
-        {
-            _svc.SetSnapshot(axis, held, down, up, qDown, wDown, eDown, rDown, jumpDown, autoDown, allyDown);
-            _svc.SetChanged(axisChanged, heldChanged);
-            _lastAxis = axis;
-            _lastHeld = held;
-        }
+        if (slot >= 0 || rDown || allyDown)
+            _svc.SetKeys(slot, rDown, allyDown);
     }
 }
