@@ -19,7 +19,7 @@ namespace IntoTheDungeon.Unity.Hud
 
         BattleProgress _progress;
         Text _status, _banner, _retryLabel;
-        GameObject _retry;
+        GameObject _retry, _toTitle;
 
         public void Init(IWorld world)
         {
@@ -53,6 +53,14 @@ namespace IntoTheDungeon.Unity.Hud
             _banner.text = banner;
             _banner.color = color;
             if (_retry.activeSelf != p.IsOver) _retry.SetActive(p.IsOver);
+            bool runOver = p.IsOver && run.Phase is RunPhase.Cleared or RunPhase.Failed;   // 판이 끝났을 때만 타이틀로
+            if (_toTitle.activeSelf != runOver) _toTitle.SetActive(runOver);
+        }
+
+        void ToTitle()
+        {
+            RunState.StartNew();
+            SceneManager.LoadScene(IntoTheDungeon.Unity.Title.TitleMenu.SceneName);
         }
 
         void Retry()
@@ -96,6 +104,21 @@ namespace IntoTheDungeon.Unity.Hud
             label.text = "다음 방으로";
             _retryLabel = label;
             _retry.SetActive(false);
+
+            // 타이틀로(판이 끝났을 때만, 다시 하기 아래)
+            _toTitle = new GameObject("ToTitle", typeof(RectTransform), typeof(Image), typeof(Button));
+            _toTitle.transform.SetParent(canvasGo.transform, false);
+            var timg = _toTitle.GetComponent<Image>();
+            timg.color = new Color(0.12f, 0.12f, 0.18f, 0.95f);
+            Place((RectTransform)_toTitle.transform, new Vector2(0.5f, 0.5f), new Vector2(0f, -120f), new Vector2(320f, 90f));
+            var tbtn = _toTitle.GetComponent<Button>();
+            tbtn.targetGraphic = timg;
+            tbtn.onClick.AddListener(ToTitle);
+            var tlabel = NewText("Label", _toTitle.transform, font, 40);
+            var trt = tlabel.rectTransform;
+            trt.anchorMin = Vector2.zero; trt.anchorMax = Vector2.one; trt.offsetMin = trt.offsetMax = Vector2.zero;
+            tlabel.text = "타이틀로";
+            _toTitle.SetActive(false);
         }
 
         static Text NewText(string name, Transform parent, Font font, int fontSize)

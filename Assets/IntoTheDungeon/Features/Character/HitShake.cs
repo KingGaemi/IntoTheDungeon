@@ -46,7 +46,9 @@ namespace IntoTheDungeon.Features.Character
             if (evt.Amount <= 0) return;
 
             float t = Weight(evt.Ratio, sensitivity);
-            float amp = Mathf.Lerp(minAmplitude, maxAmplitude, t);
+            float scale = IntoTheDungeon.Features.Settings.GameSettings.ShakeScale;   // 설정 화면의 흔들림 세기
+            if (scale <= 0f) return;
+            float amp = Mathf.Lerp(minAmplitude, maxAmplitude, t) * scale;
             float dur = Mathf.Lerp(minDuration, maxDuration, t);
 
             // 흔들리는 중에 또 맞으면 남은 세기보다 셀 때만 새로 시작

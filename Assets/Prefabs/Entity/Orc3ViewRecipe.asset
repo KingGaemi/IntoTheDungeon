@@ -22,11 +22,11 @@ MonoBehaviour:
     PublicKeyToken=null
   - IntoTheDungeon.Features.Character.CharacterAnimator, Assembly-CSharp, Version=0.0.0.0,
     Culture=neutral, PublicKeyToken=null
-  - IntoTheDungeon.Features.Character.HitShake, Assembly-CSharp, Version=0.0.0.0,
-    Culture=neutral, PublicKeyToken=null
   - UnityEngine.U2D.Animation.SpriteResolver, Unity.2D.Animation.Runtime, Version=0.0.0.0,
     Culture=neutral, PublicKeyToken=null
   - UnityEngine.U2D.Animation.SpriteLibrary, Unity.2D.Animation.Runtime, Version=0.0.0.0,
+    Culture=neutral, PublicKeyToken=null
+  - IntoTheDungeon.Features.Character.HitShake, Assembly-CSharp, Version=0.0.0.0,
     Culture=neutral, PublicKeyToken=null
   scriptBehaviourTypeNames:
   - IntoTheDungeon.Unity.Behaviour.CharacterCoreBehaviour, Assembly-CSharp, Version=0.0.0.0,
