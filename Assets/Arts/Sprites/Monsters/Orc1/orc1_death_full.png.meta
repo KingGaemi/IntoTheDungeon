@@ -209,10 +209,10 @@ TextureImporter:
       name: orc1_death_full_0
       rect:
         serializedVersion: 2
-        x: 10
-        y: 210
-        width: 34
-        height: 32
+        x: 0
+        y: 192
+        width: 64
+        height: 64
       alignment: 9
       pivot: {x: 0.5, y: 0.4}
       border: {x: 0, y: 0, z: 0, w: 0}
