@@ -52,6 +52,7 @@ namespace IntoTheDungeon.Features.Character
         // 필살기 모션: 컨트롤러의 대시 공격 상태를 그대로 쓴다(Attacking이 꺼지면 Idle로 빠짐)
         static readonly int HashSkillState = Animator.StringToHash("Dash_Attack");
         bool _inSkill;
+        bool _stunned;   // 경직 중: 끊긴 평타의 단계 이벤트가 늦게 와도 공격 모션을 다시 켜지 않게
 
         // State Tracking
         MovementState _lastMovement;
@@ -106,6 +107,12 @@ namespace IntoTheDungeon.Features.Character
                 else if (_inSkill) HandleSkillEnd();
             }
 
+            if (evt.HasControl)
+            {
+                if (evt.ControlState == ControlState.Stunned) HandleStun();
+                else if (_stunned) _stunned = false;
+            }
+
             // Control 변경 (Death)
             if (evt.HasControl && evt.ControlState == ControlState.Dead)
             {
@@ -149,7 +156,7 @@ namespace IntoTheDungeon.Features.Character
         public void OnAnimationPhaseChanged(in AnimationPhaseChangedEvent evt)
         {
             if (!_animator || !_animator.isActiveAndEnabled) return;
-            if (_inSkill) return;   // 필살기가 평타를 끊은 같은 프레임의 평타 단계 이벤트는 무시
+            if (_inSkill || _stunned) return;   // 필살기·경직이 평타를 끊은 같은 프레임의 평타 단계 이벤트는 무시
 
             float duration = Mathf.Max(0.001f, evt.PhaseDuration);
 
@@ -223,6 +230,16 @@ namespace IntoTheDungeon.Features.Character
             _animator.SetBool(HashAttacking, true);
             _animator.speed = 1f;
             _animator.Play(HashSkillState, 0, 0f);
+        }
+
+        void HandleStun()
+        {
+            _stunned = true;
+            // 휘두르던 공격 모션을 접는다(피격 모션은 DamagedEvent의 Hurt 트리거가 튼다)
+            _animator.ResetTrigger(HashAttack);
+            _animator.SetBool(HashAttacking, false);
+            _animator.SetBool(HashWindupDone, false);
+            _animator.speed = 1f;
         }
 
         void HandleSkillEnd()

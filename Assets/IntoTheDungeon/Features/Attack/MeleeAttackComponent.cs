@@ -13,6 +13,7 @@ namespace IntoTheDungeon.Features.Attack
         public float ActiveTime;  // 히트박스 유지 시간(초)
         public float KnockbackSpeed;  // 맞은 쪽을 공격 방향으로 밀어내는 초기 속도
         public float LaunchSpeed;     // 맞은 쪽을 위로 띄우는 초기 속도(0이면 안 띄움)
+        public float HitStun;         // 맞은 쪽 경직(초). 0이면 경직 없음
 
         public static readonly MeleeAttackComponent Default = new()
         {
@@ -20,7 +21,8 @@ namespace IntoTheDungeon.Features.Attack
             HalfExtents = new Vec2(0.4f, 0.25f),   // Y = 깊이 반두께
             ActiveTime = 0.1f,
             KnockbackSpeed = 3f,   // 약 0.3 유닛 밀림
-            LaunchSpeed = 2f       // 평타: 약 0.07 유닛 들썩(0.13초). 띄우기 전용 공격은 따로 크게
+            LaunchSpeed = 2f,      // 평타: 약 0.07 유닛 들썩(0.13초). 띄우기 전용 공격은 따로 크게
+            HitStun = 0f           // 평타는 경직 없음(경직은 경직을 주는 공격에만)
         };
     }
 }

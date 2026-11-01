@@ -98,7 +98,8 @@ namespace IntoTheDungeon.Features.Attack
                 Height = r.OwnerHeight,
                 FacingSign = r.FacingSign,
                 KnockbackSpeed = d.KnockbackSpeed,
-                LaunchSpeed = 0f
+                LaunchSpeed = 0f,
+                HitStun = d.HitStun
             });
             em.AddComponent(e, new ProjectileComponent { Velocity = new Vec2(r.FacingSign * d.Speed, 0f), DestroyOnHit = !d.Pierce });
             em.AddComponent(e, new LifetimeComponent { Remaining = d.Lifetime });
@@ -119,7 +120,8 @@ namespace IntoTheDungeon.Features.Attack
                 Height = r.OwnerHeight,
                 FacingSign = r.FacingSign,
                 KnockbackSpeed = r.Melee.KnockbackSpeed,
-                LaunchSpeed = r.Melee.LaunchSpeed
+                LaunchSpeed = r.Melee.LaunchSpeed,
+                HitStun = r.Melee.HitStun
             });
             em.AddComponent(e, new FollowOwnerComponent { Offset = r.Melee.Offset });
             em.AddComponent(e, new LifetimeComponent { Remaining = r.Melee.ActiveTime });

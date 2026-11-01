@@ -19,5 +19,6 @@ namespace IntoTheDungeon.Features.Attack
         public float FacingSign;     // 공격 방향(+1 오른쪽, -1 왼쪽): 넉백 방향
         public float KnockbackSpeed;
         public float LaunchSpeed;
+        public float HitStun;        // 맞은 쪽 경직(초). 0이면 안 굳음
     }
 }

@@ -21,6 +21,7 @@ namespace IntoTheDungeon.Features.Attack
         public Vec2 WaveHalfExtents;    // 투사체 판정(X 가로 반폭, Y 깊이 반두께)
         public float WaveKnockback;
         public float WaveLaunch;
+        public float WaveHitStun;       // 맞은 쪽 경직(초). 필살기는 크게
         public ProjectileVisual Visual; // 투사체 그림
 
         // 시전 상태
@@ -49,6 +50,7 @@ namespace IntoTheDungeon.Features.Attack
             WaveHalfExtents = new Vec2(0.6f, 0.5f),
             WaveKnockback = 7f,
             WaveLaunch = 4f,
+            WaveHitStun = 0.8f,
             Visual = ProjectileVisual.SwordWave
         };
 
@@ -65,6 +67,7 @@ namespace IntoTheDungeon.Features.Attack
             WaveHalfExtents = new Vec2(0.5f, 0.3f),
             WaveKnockback = 5f,
             WaveLaunch = 0f,
+            WaveHitStun = 0.6f,
             Visual = ProjectileVisual.PowerArrow
         };
     }

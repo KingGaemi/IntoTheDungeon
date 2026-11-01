@@ -123,6 +123,12 @@ namespace IntoTheDungeon.Features.Attack
                 ref var m = ref em.GetComponent<HeightMotionComponent>(victim);
                 if (m.VelocityZ < hb.LaunchSpeed) m.VelocityZ = hb.LaunchSpeed;
             }
+            // 경직은 HitStunSystem이 적용(같은 프레임 여러 번 맞으면 가장 긴 것)
+            if (hb.HitStun > 0f && em.HasComponent<HitStunComponent>(victim))
+            {
+                ref var s = ref em.GetComponent<HitStunComponent>(victim);
+                if (s.Pending < hb.HitStun) s.Pending = hb.HitStun;
+            }
         }
 
         static bool Overlap(Vec2 aMin, Vec2 aMax, Vec2 bMin, Vec2 bMax)

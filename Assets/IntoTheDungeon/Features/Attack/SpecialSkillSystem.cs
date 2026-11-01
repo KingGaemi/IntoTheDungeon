@@ -173,7 +173,8 @@ namespace IntoTheDungeon.Features.Attack
                 Height = r.Height,
                 FacingSign = r.FacingSign,
                 KnockbackSpeed = sk.WaveKnockback,
-                LaunchSpeed = sk.WaveLaunch
+                LaunchSpeed = sk.WaveLaunch,
+                HitStun = sk.WaveHitStun
             });
             em.AddComponent(e, new ProjectileComponent { Velocity = new Vec2(r.FacingSign * sk.WaveSpeed, 0f), DestroyOnHit = false });
             em.AddComponent(e, new LifetimeComponent { Remaining = sk.WaveLifetime });

@@ -204,6 +204,7 @@ namespace IntoTheDungeon.Unity
             world.SystemManager.AddUnique(new HitDetectSystem());
             world.SystemManager.AddUnique(new DamageProcessingSystem());
             world.SystemManager.AddUnique(new DeathStateSystem());
+            world.SystemManager.AddUnique(new HitStunSystem());   // 경직: 맞으면 잠깐 굳고 평타가 끊김(같은 프레임에 죽은 건 건드리지 않게 사망 처리 다음)
             world.SystemManager.AddUnique(new CorpseCleanupSystem());   // 쓰러진 적은 잠시 뒤 사라짐(파티원 시체는 남김)
             world.SystemManager.AddUnique(new LifetimeSystem());
 

@@ -14,6 +14,7 @@ namespace IntoTheDungeon.Features.Attack
         public Vec2 HalfExtents;        // 판정(X 가로 반폭, Y 깊이 반두께)
         public float KnockbackSpeed;
         public bool Pierce;             // true면 관통, false면 첫 대상에 맞고 사라짐
+        public float HitStun;           // 맞은 쪽 경직(초). 0이면 경직 없음
 
         public static readonly RangedAttackComponent Arrow = new()
         {
@@ -22,7 +23,8 @@ namespace IntoTheDungeon.Features.Attack
             Lifetime = 0.7f,                // 사거리 약 8
             HalfExtents = new Vec2(0.25f, 0.2f),
             KnockbackSpeed = 1.5f,
-            Pierce = false
+            Pierce = false,
+            HitStun = 0f                    // 평타 화살은 경직 없음
         };
     }
 }
