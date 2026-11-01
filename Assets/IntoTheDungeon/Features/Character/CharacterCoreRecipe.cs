@@ -46,7 +46,7 @@ namespace IntoTheDungeon.Features.Character
             em.AddComponent(e, HeightMotionComponent.Default);   // 2.5D 높이(점프·띄우기)
             em.AddComponent(e, KnockbackComponent.Default);      // 피격 밀림
             em.AddComponent(e, HitStunComponent.Default);        // 피격 경직
-            em.AddComponent(e, BodyComponent.Create(_def.BodyRadius, _def.BodyMass, _def.Immovable));   // 몸 충돌(캐릭터끼리 겹치지 않게)
+            em.AddComponent(e, BodyComponent.Create(_def.BodyRadius, _def.BodyMass, _def.Immovable, _def.HeadHeight));   // 몸 충돌(캐릭터끼리 겹치지 않게)
             em.AddComponent(e, new CharacterIntentBuffer());
             em.AddComponent(e, new ActionPhaseComponent { WindupDuration = _def.WindupDuration, RecoveryDuration = _def.RecoveryDuration });
             em.AddComponent(e, new StatusModificationQueue());

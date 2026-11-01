@@ -75,7 +75,9 @@ namespace IntoTheDungeon.Features.AI
 
                     // 공격 한 사이클이 끝나는 순간부터 쿨다운
                     bool attacking = cur.Action == ActionState.Attack;
-                    if (ai.WasAttacking && !attacking) ai.NextAttackAt = _time + ai.AttackCooldown;
+                    if (ai.WasAttacking && !attacking)
+                        ai.NextAttackAt = ai.AttackInterrupted ? _time : _time + ai.AttackCooldown;   // 끊겼으면 쉬지 않고 바로
+                    if (!attacking) ai.AttackInterrupted = false;
                     ai.WasAttacking = attacking;
                     if (attacking) continue;   // 휘두르는 중엔 건드리지 않는다
 

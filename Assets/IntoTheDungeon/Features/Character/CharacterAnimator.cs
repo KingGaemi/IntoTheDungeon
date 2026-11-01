@@ -149,6 +149,8 @@ namespace IntoTheDungeon.Features.Character
             LogEvt($"Damaged amount={evt.Amount} hp={evt.RemainingHp} animatorOk={(_animator && _animator.isActiveAndEnabled)} ctrl={(_animator && _animator.runtimeAnimatorController ? _animator.runtimeAnimatorController.name : "null")}");
             if (evt.RemainingHp <= 0) return;
             if (_inSkill) return;   // 필살기 모션은 맞아도 끊지 않는다
+            // 공격 중에 경직 없는 공격을 맞으면 공격은 계속되므로 모션도 끊지 않는다(흔들림만). 경직이면 HandleStun이 피격 모션을 튼다
+            if (_animator.GetBool(HashAttacking) && !_stunned) return;
             _animator.SetTrigger(HashHurt);
         }
 
@@ -240,6 +242,7 @@ namespace IntoTheDungeon.Features.Character
             _animator.SetBool(HashAttacking, false);
             _animator.SetBool(HashWindupDone, false);
             _animator.speed = 1f;
+            _animator.SetTrigger(HashHurt);   // 피격 이벤트가 경직 전에 처리돼 건너뛰었어도 경직 모션은 보이게
         }
 
         void HandleSkillEnd()

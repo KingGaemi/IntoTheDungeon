@@ -1,4 +1,5 @@
 using IntoTheDungeon.Core.ECS.Systems;
+using IntoTheDungeon.Core.ECS.Abstractions;
 using IntoTheDungeon.Core.ECS.Abstractions.Scheduling;
 using IntoTheDungeon.Core.ECS.Components;
 using IntoTheDungeon.Core.Abstractions.World;
@@ -22,7 +23,8 @@ namespace IntoTheDungeon.Features.Battle
     /// </summary>
     public sealed class BattleFlowSystem : GameSystem, ITick
     {
-        const float SpawnSettleTime = 1f;   // 스폰 직후엔 아직 엔티티가 없을 수 있어 이 시간 뒤부터 전멸 판정
+        const float SpawnSettleTime = 1f;
+        const float PartyStartInset = 4f;   // 파티는 방 왼쪽 끝에서 이만큼 안쪽에서 시작(몹은 오른쪽에서 옴)   // 스폰 직후엔 아직 엔티티가 없을 수 있어 이 시간 뒤부터 전멸 판정
 
         BattleProgress _progress;
         BattleConfig _config;
@@ -30,7 +32,8 @@ namespace IntoTheDungeon.Features.Battle
         IRecipeTable _recipes;
         IWalkArea _area;
         readonly System.Random _rng = new(7);
-        bool _alliesSpawned, _hpApplied;
+        bool _partySpawned, _hpApplied;
+        readonly System.Collections.Generic.List<int> _expectedSlots = new(4);   // 이번 방에 나오는 파티원 슬롯(스폰 순서)
         readonly System.Collections.Generic.List<Party.Member> _party = new(8);
 
         public override void Initialize(IWorld world)
@@ -55,6 +58,9 @@ namespace IntoTheDungeon.Features.Battle
                 return;
             }
 
+            // 방에 들어온 첫 프레임: 판 기록대로 파티 전원 스폰(쓰러진 슬롯은 아예 안 나옴)
+            if (p.Phase == BattlePhase.Intro && !_partySpawned) { SpawnParty(run); _partySpawned = true; return; }
+
             bool partyFound = HasPartyMember();
             Party.TryGetCenter(_world.EntityManager, out var partyPos, out int partyAlive);
             if (!partyFound || p.IsOver) return;   // 파티가 아직 스폰 전이면 기다린다
@@ -64,8 +70,7 @@ namespace IntoTheDungeon.Features.Battle
             switch (p.Phase)
             {
                 case BattlePhase.Intro:
-                    if (!_alliesSpawned) { SpawnAllies(run, partyPos); _alliesSpawned = true; }
-                    else if (!_hpApplied) { ApplyRunToParty(run); _hpApplied = true; }   // 동료가 스폰된 다음 프레임
+                    if (!_hpApplied) { ApplyRunToParty(run); _hpApplied = true; }   // 파티가 스폰된 다음 프레임
                     if (_hpApplied && p.PhaseTime >= _config.IntroTime) StartWave(1, partyPos);
                     break;
 
@@ -97,10 +102,21 @@ namespace IntoTheDungeon.Features.Battle
         {
             var em = _world.EntityManager;
             var mods = run.BuildModifiers();
+
+            // 슬롯 붙이기: 스폰된 파티원(생긴 순서 = 스폰 순서)에 살아 있는 슬롯 번호를 차례로
             Party.Collect(em, _party);
+            int next = 0;
+            foreach (var m in _party)
+            {
+                if (m.Slot < Party.NoSlot || next >= _expectedSlots.Count) continue;
+                em.AddComponent(m.Entity, new PartySlotComponent { Slot = _expectedSlots[next++] });
+            }
+            Party.Collect(em, _party);
+
             for (int i = 0; i < _party.Count; i++)
             {
                 var e = _party[i].Entity;
+                int slot = _party[i].Slot;
                 ref var st = ref em.GetComponent<StatusComponent>(e);
 
                 st.Damage = (int)System.MathF.Round(st.Damage * mods.DamageMul);
@@ -117,21 +133,21 @@ namespace IntoTheDungeon.Features.Battle
                     body.MassMul *= mods.BodyMassMul;
                 }
 
-                if (i >= run.PartyHp.Count) continue;   // 기록이 없는 슬롯(새로 영입 등)은 체력 가득
-                float ratio = run.PartyHp[i];
-                if (ratio <= 0f)
-                    em.GetComponent<HpModificationQueue>(e).Enqueue(HpModification.Damage(st.MaxHp * 10, e));
-                else
-                    st.CurrentHp = System.Math.Max(1, (int)System.MathF.Round(st.MaxHp * ratio));
+                if (slot >= run.PartyHp.Count) continue;   // 기록이 없는 슬롯(새로 영입·테스트 소환)은 체력 가득
+                st.CurrentHp = System.Math.Max(1, (int)System.MathF.Round(st.MaxHp * run.PartyHp[slot]));
             }
         }
 
+        static bool IsFallen(RunData run, int slot) => slot < run.PartyHp.Count && run.PartyHp[slot] <= 0f;
+
+        // 슬롯별 체력 비율. 이번 방에 안 나온(쓰러져 있던) 슬롯은 0 그대로
         System.Collections.Generic.List<float> CollectPartyHp()
         {
+            var run = RunState.Current;
             Party.Collect(_world.EntityManager, _party);
-            var hp = new System.Collections.Generic.List<float>(_party.Count);
-            foreach (var m in _party)
-                hp.Add(m.Alive && m.MaxHp > 0 ? (float)m.Hp / m.MaxHp : 0f);
+            var hp = new System.Collections.Generic.List<float>(run.PartySize);
+            for (int s = 0; s < run.PartySize; s++)
+                hp.Add(Party.TryGetSlot(_party, s, out var m) && m.Alive && m.MaxHp > 0 ? (float)m.Hp / m.MaxHp : 0f);
             return hp;
         }
 
@@ -164,14 +180,26 @@ namespace IntoTheDungeon.Features.Battle
         }
 
         // 씬에 놓인 첫 파티원 뒤로, 판에 기록된 동료들을 슬롯 순서대로 스폰한다
-        void SpawnAllies(RunData run, Vec2 partyPos)
+        // 판 기록대로 파티 전원(슬롯 0번부터)을 방 왼쪽 시작 위치에 줄지어 스폰. 쓰러진 슬롯은 스폰하지 않는다
+        void SpawnParty(RunData run)
         {
-            for (int k = 0; k < run.Allies.Count; k++)
+            _expectedSlots.Clear();
+            var start = StartPosition();
+            int row = 0;
+            for (int slot = 0; slot < run.Members.Count; slot++)
             {
-                if (!_recipes.TryGetId(run.Allies[k], out var id)) continue;
-                var pos = new Vec2(partyPos.X - 1.2f - k * 0.8f, RandomDepth(partyPos.Y));   // 뒤쪽에 줄지어
-                Enqueue(id, "Ally", pos, 1f, Party.Team);
+                if (IsFallen(run, slot) || !_recipes.TryGetId(run.Members[slot], out var id)) continue;
+                var pos = new Vec2(start.X - row++ * 0.9f, RandomDepth(start.Y));
+                Enqueue(id, "Party", pos, 1f, Party.Team);
+                _expectedSlots.Add(slot);
             }
+        }
+
+        // 파티 시작 위치: 걷는 영역 왼쪽에서 조금 안쪽, 깊이 가운데
+        Vec2 StartPosition()
+        {
+            if (_area is RectWalkArea r) return new Vec2(r.MinX + PartyStartInset, (r.MinDepth + r.MaxDepth) * 0.5f);
+            return Vec2.Zero;
         }
 
         float RandomDepth(float fallback)

@@ -47,7 +47,9 @@ namespace IntoTheDungeon.Unity.Hud
             if (_root.activeSelf != show) _root.SetActive(show);
             if (!show) return;
 
-            _header.text = run.Current != null ? $"{run.CurrentLayer + 1}층 {Encounters.Label(run.Current.Type)} 클리어" : "";
+            _header.text = run.Current != null
+                ? $"{run.CurrentLayer + 1}층 {Encounters.Label(run.Current.Type)} 클리어   ·   전투 후 회복 +{Mathf.RoundToInt(run.LastHeal * 100f)}%"
+                : "";
 
             var sb = new System.Text.StringBuilder();
             for (int i = 0; i < run.PartyHp.Count; i++)

@@ -6,6 +6,7 @@ using IntoTheDungeon.Core.Abstractions.Services;
 using IntoTheDungeon.Core.Abstractions.World;
 using IntoTheDungeon.Core.Abstractions.Messages.Combat;
 using IntoTheDungeon.Features.State;
+using IntoTheDungeon.Features.AI;
 
 namespace IntoTheDungeon.Features.Attack
 {
@@ -39,7 +40,8 @@ namespace IntoTheDungeon.Features.Attack
 
         public void Tick(float dt)
         {
-            foreach (var chunk in _world.EntityManager.GetChunks(typeof(HitStunComponent), typeof(StateComponent), typeof(ActionPhaseComponent)))
+            var em = _world.EntityManager;
+            foreach (var chunk in em.GetChunks(typeof(HitStunComponent), typeof(StateComponent), typeof(ActionPhaseComponent)))
             {
                 var stuns = chunk.GetComponentArray<HitStunComponent>();
                 var states = chunk.GetComponentArray<StateComponent>();
@@ -62,7 +64,9 @@ namespace IntoTheDungeon.Features.Attack
                         if (incoming > stun.Remaining) stun.Remaining = incoming;
                         if (cur.Control != ControlState.Stunned)
                         {
-                            // 휘두르던 평타는 끊는다(히트박스도 안 나가게)
+                            // 휘두르던 평타는 끊는다(히트박스도 안 나가게). AI는 풀리면 쉬지 않고 바로 다시 공격
+                            if (cur.Action == ActionState.Attack && em.HasComponent<CombatAIComponent>(entities[i]))
+                                em.GetComponent<CombatAIComponent>(entities[i]).AttackInterrupted = true;
                             ref var phase = ref phases[i];
                             phase.ActionPhase = ActionPhase.None;
                             phase.PhaseTimer = 0f;

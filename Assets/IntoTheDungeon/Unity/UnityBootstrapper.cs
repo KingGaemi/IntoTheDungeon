@@ -79,8 +79,8 @@ namespace IntoTheDungeon.Unity
             Debug.Log("[Bootstrapper] Calling BakeScene()");
             World.BakeScene();
 
-            // 전투 화면 UI(필살기 버튼·웨이브 진행·던전 지도·정비)와 투사체(검기·화살) 그림: 씬 배치 없이 코드로 만든다(주입 전에 만들어야 Init을 받음)
-            new GameObject("BattleHud", typeof(Hud.SkillButtonHud), typeof(Hud.ProjectileRenderer), typeof(Hud.BattleStatusHud), typeof(Hud.DungeonMapHud), typeof(Hud.CampHud));
+            // 전투 화면 UI(필살기 버튼·웨이브 진행·던전 지도·정비)와 투사체(검기·화살)·체력바 그림: 씬 배치 없이 코드로 만든다(주입 전에 만들어야 Init을 받음)
+            new GameObject("BattleHud", typeof(Hud.SkillButtonHud), typeof(Hud.ProjectileRenderer), typeof(Hud.HealthBarRenderer), typeof(Hud.BattleStatusHud), typeof(Hud.DungeonMapHud), typeof(Hud.CampHud));
 
             Debug.Log("[Bootstrapper] Calling ReinjectScene()");
             _bootstrap.ReinjectScene();

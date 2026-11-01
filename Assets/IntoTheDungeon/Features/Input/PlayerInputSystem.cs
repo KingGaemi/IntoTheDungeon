@@ -58,8 +58,8 @@ namespace IntoTheDungeon.Features.Input
             if (slot >= 0)
             {
                 Party.Collect(em, _party);
-                if (slot < _party.Count && _party[slot].Alive && em.HasComponent<SpecialSkillComponent>(_party[slot].Entity))
-                    em.GetComponent<SpecialSkillComponent>(_party[slot].Entity).Request();
+                if (Party.TryGetSlot(_party, slot, out var m) && m.Alive && em.HasComponent<SpecialSkillComponent>(m.Entity))
+                    em.GetComponent<SpecialSkillComponent>(m.Entity).Request();
             }
 
             if (_input.R_Down || _input.AllySpawnDown)

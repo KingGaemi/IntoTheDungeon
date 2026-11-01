@@ -30,6 +30,7 @@ namespace IntoTheDungeon.Features.AI
         public CombatAIState State;
         public bool WasAttacking;
         public float NextAttackAt;
+        public bool AttackInterrupted;   // 경직·필살기 등으로 공격이 끝까지 못 가고 끊김 → 쉬는 시간 없이 바로 다시 공격
 
         public static readonly CombatAIComponent Default = new()
         {

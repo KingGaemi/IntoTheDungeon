@@ -17,6 +17,7 @@ namespace IntoTheDungeon.Features.Run
         public float SkillCooldownMul = 1f;
         public float BodyRadiusAdd = 0f;
         public float BodyMassMul = 1f;
+        public float PostBattleHealAdd = 0f;   // 전투 후 회복(최대 체력 비율)에 더해짐
     }
 
     public sealed class CardDef
@@ -54,6 +55,7 @@ namespace IntoTheDungeon.Features.Run
             CardDef.Passive("stride", "가벼운 발걸음", "파티 이동 속도 +15%", m => m.MoveSpeedMul *= 1.15f),
             CardDef.Passive("focus", "집중", "필살기 재사용 대기 -20%", m => m.SkillCooldownMul *= 0.8f),
             CardDef.Passive("bulk", "묵직한 갑옷", "몸이 커지고 무거워짐(덜 밀림)", m => { m.BodyRadiusAdd += 0.05f; m.BodyMassMul *= 1.5f; }),
+            CardDef.Passive("firstaid", "응급 처치", "전투 후 회복 +10%p", m => m.PostBattleHealAdd += 0.1f),
         };
 
         public static readonly CardDef[] Recruits =

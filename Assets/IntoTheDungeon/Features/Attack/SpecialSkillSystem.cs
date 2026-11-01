@@ -10,6 +10,7 @@ using IntoTheDungeon.Core.Abstractions.World;
 using IntoTheDungeon.Core.Abstractions.Messages.Combat;
 using IntoTheDungeon.Core.Util;
 using IntoTheDungeon.Features.State;
+using IntoTheDungeon.Features.AI;
 using IntoTheDungeon.Features.Status;
 using IntoTheDungeon.Features.Physics.Components;
 
@@ -115,7 +116,9 @@ namespace IntoTheDungeon.Features.Attack
                         continue;
                     }
 
-                    // 평타 중이면 끊는다(평타 히트박스도 안 나가게)
+                    // 평타 중이면 끊는다(평타 히트박스도 안 나가게). 필살기가 끝나면 쉬지 않고 바로 평타
+                    if (state.Current.Action == ActionState.Attack && em.HasComponent<CombatAIComponent>(e))
+                        em.GetComponent<CombatAIComponent>(e).AttackInterrupted = true;
                     ref var phase = ref phases[i];
                     phase.ActionPhase = ActionPhase.None;
                     phase.PhaseTimer = 0f;

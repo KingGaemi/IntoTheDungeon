@@ -13,6 +13,7 @@ namespace IntoTheDungeon.Features.Character
         public float BodyRadius;
         public float BodyMass;
         public bool Immovable;
+        public float HeadHeight;        // 발에서 머리 꼭대기까지(체력바 위치)
 
         public bool Ranged;             // true면 화살(RangedAttackComponent), false면 근접(MeleeAttackComponent)
         public float AttackRange;       // AI가 이 가로 거리 안이면 공격
@@ -23,7 +24,7 @@ namespace IntoTheDungeon.Features.Character
 
         public static readonly CharacterDefinition Default = new()
         {
-            BodyRadius = 0.3f, BodyMass = 1f,
+            BodyRadius = 0.3f, BodyMass = 1f, HeadHeight = 1.2f,
             Ranged = false, AttackRange = 1f, MinRange = 0f,
             WindupDuration = 0.5f, RecoveryDuration = 0.7f,
             Skill = SkillPreset.SwordWave

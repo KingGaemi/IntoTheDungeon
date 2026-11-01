@@ -55,6 +55,8 @@ namespace IntoTheDungeon.Unity
             public float bodyMass;
             [Tooltip("남을 밀기만 하고 자기는 안 밀림(보스 등)")]
             public bool immovable;
+            [Tooltip("발에서 머리 꼭대기까지 높이(체력바 위치). 0이면 기본 1.2")]
+            public float headHeight;
             [Tooltip("원거리(화살) 공격")]
             public bool ranged;
             [Tooltip("이 가로 거리 안이면 공격(0이면 기본 1)")]
@@ -69,12 +71,12 @@ namespace IntoTheDungeon.Unity
         [Header("캐릭터 종류별 정의(없는 이름은 반지름 0.3·무게 1)")]
         [SerializeField] CharacterDefEntry[] characterDefs =
         {
-            new() { recipe = "Character", bodyRadius = 0.3f, bodyMass = 1f },
-            new() { recipe = "Catherine", bodyRadius = 0.3f, bodyMass = 1f },
-            new() { recipe = "Orc1", bodyRadius = 0.35f, bodyMass = 1.2f },
-            new() { recipe = "Orc2", bodyRadius = 0.4f, bodyMass = 1.5f },
-            new() { recipe = "Orc3", bodyRadius = 0.45f, bodyMass = 2f },
-            new() { recipe = "Archer", bodyRadius = 0.28f, bodyMass = 0.9f, ranged = true, attackRange = 5.5f, minRange = 2f,
+            new() { recipe = "Character", bodyRadius = 0.3f, bodyMass = 1f, headHeight = 1.0f },
+            new() { recipe = "Catherine", bodyRadius = 0.3f, bodyMass = 1f, headHeight = 1.0f },
+            new() { recipe = "Orc1", bodyRadius = 0.35f, bodyMass = 1.2f, headHeight = 1.27f },
+            new() { recipe = "Orc2", bodyRadius = 0.4f, bodyMass = 1.5f, headHeight = 1.36f },
+            new() { recipe = "Orc3", bodyRadius = 0.45f, bodyMass = 2f, headHeight = 1.59f },
+            new() { recipe = "Archer", bodyRadius = 0.28f, bodyMass = 0.9f, headHeight = 1.05f, ranged = true, attackRange = 5.5f, minRange = 2f,
                     windup = 0.6f, recovery = 0.3f, skill = SkillPreset.PowerShot },
         };
 
@@ -106,6 +108,7 @@ namespace IntoTheDungeon.Unity
                     def.BodyRadius = d.bodyRadius;
                     def.BodyMass = d.bodyMass;
                     def.Immovable = d.immovable;
+                    if (d.headHeight > 0f) def.HeadHeight = d.headHeight;
                     def.Ranged = d.ranged;
                     if (d.attackRange > 0f) def.AttackRange = d.attackRange;
                     def.MinRange = d.minRange;

@@ -23,7 +23,7 @@ namespace IntoTheDungeon.Features.Settings
         /// <summary>캐릭터 머리 위 디버그 글자(HP·상태·클립) 표시.</summary>
         public static bool DebugOverlay
         {
-            get => PlayerPrefs.GetInt(OverlayKey, 1) != 0;
+            get => PlayerPrefs.GetInt(OverlayKey, 0) != 0;   // 기본은 끔(머리 위엔 체력바만)
             set { PlayerPrefs.SetInt(OverlayKey, value ? 1 : 0); PlayerPrefs.Save(); }
         }
     }

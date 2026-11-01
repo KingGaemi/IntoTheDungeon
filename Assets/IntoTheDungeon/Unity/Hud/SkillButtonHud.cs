@@ -6,12 +6,13 @@ using IntoTheDungeon.Core.Abstractions.World;
 using IntoTheDungeon.Core.Abstractions.Services;
 using IntoTheDungeon.Features.Attack;
 using IntoTheDungeon.Features.Battle;
+using IntoTheDungeon.Features.Run;
 
 namespace IntoTheDungeon.Unity.Hud
 {
     /// <summary>
     /// 화면 아래 가운데에 파티원별 필살기 버튼을 한 줄로 놓는다(임시 UI, 코드로 만든다).
-    /// 슬롯 순서 = Party.Collect 순서, 숫자키 1~4와 같다. 누르면 IInputService.PressSkill(슬롯).
+    /// 버튼 번호 = 파티 슬롯 번호(PartySlotComponent) = 숫자키 1~4. 누르면 IInputService.PressSkill(슬롯).
     /// 버튼마다 재사용 대기 막(아래에서부터 줄어듦)·남은 초·체력 바를 보여주고, 쓰러진 파티원은 어둡게 막는다.
     /// </summary>
     public sealed class SkillButtonHud : MonoBehaviour, IWorldInjectable
@@ -59,19 +60,20 @@ namespace IntoTheDungeon.Unity.Hud
             var em = _world.EntityManager;
             Party.Collect(em, _party);
 
+            int partySize = RunState.Current.PartySize;
             for (int i = 0; i < MaxSlots; i++)
             {
                 var s = _slots[i];
-                bool exists = i < _party.Count && em.HasComponent<SpecialSkillComponent>(_party[i].Entity);
+                // 이 슬롯 파티원이 이번 방에 있으면 그 상태, 쓰러져 안 나왔으면(판엔 있음) "쓰러짐", 빈 슬롯이면 숨김
+                bool present = Party.TryGetSlot(_party, i, out var m) && em.HasComponent<SpecialSkillComponent>(m.Entity);
+                bool exists = present || i < partySize;
                 if (s.Root.activeSelf != exists) s.Root.SetActive(exists);
                 if (!exists) continue;
 
-                var m = _party[i];
-                var sk = em.GetComponent<SpecialSkillComponent>(m.Entity);
-                float hp = m.MaxHp > 0 ? Mathf.Clamp01((float)m.Hp / m.MaxHp) : 0f;
+                float hp = present && m.MaxHp > 0 ? Mathf.Clamp01((float)m.Hp / m.MaxHp) : 0f;
                 s.HpFill.anchorMax = new Vector2(hp, 1f);
 
-                if (!m.Alive)
+                if (!present || !m.Alive)
                 {
                     s.CooldownMask.anchorMax = Vector2.one;
                     s.CooldownText.text = "";
@@ -82,6 +84,7 @@ namespace IntoTheDungeon.Unity.Hud
                     continue;
                 }
 
+                var sk = em.GetComponent<SpecialSkillComponent>(m.Entity);
                 bool ready = sk.CooldownRemaining <= 0f && !sk.Casting;
                 s.Button.interactable = true;
                 s.CooldownMask.anchorMax = new Vector2(1f, sk.CooldownRatio);

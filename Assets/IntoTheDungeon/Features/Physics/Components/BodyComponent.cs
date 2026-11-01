@@ -15,6 +15,7 @@ namespace IntoTheDungeon.Features.Physics.Components
         public float BaseRadius;
         public float BaseMass;      // 무거울수록 덜 밀린다
         public bool Immovable;      // 보스·구조물: 남을 밀기만 하고 자기는 안 밀림
+        public float HeadHeight;    // 발에서 머리 꼭대기까지 높이(체력바 등 머리 위 표시 위치)
 
         // 보정(아이템·버프 등이 쓴다). 기본은 Add 0, Mul 1
         public float RadiusAdd;
@@ -26,11 +27,12 @@ namespace IntoTheDungeon.Features.Physics.Components
 
         public const float DepthRatio = 0.5f;
 
-        public static BodyComponent Create(float radius, float mass, bool immovable = false) => new()
+        public static BodyComponent Create(float radius, float mass, bool immovable = false, float headHeight = 1.2f) => new()
         {
             BaseRadius = radius,
             BaseMass = mass,
             Immovable = immovable,
+            HeadHeight = headHeight,
             RadiusAdd = 0f,
             RadiusMul = 1f,
             MassMul = 1f
