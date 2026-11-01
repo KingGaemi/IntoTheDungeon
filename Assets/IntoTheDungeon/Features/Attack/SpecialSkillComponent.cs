@@ -40,7 +40,7 @@ namespace IntoTheDungeon.Features.Attack
         // 케서린: 대시 공격 + 큰 검기 한 방
         public static readonly SpecialSkillComponent SwordWave = new()
         {
-            Cooldown = 6f,
+            Cooldown = 12f,                  // 평타 비중을 높이려고 길게(필살기는 노리는 순간에)
             CastTime = 0.3f,
             Duration = 0.7f,                 // Catherine Dash_Attack.anim 길이
             DashSpeed = 6f,
@@ -57,7 +57,7 @@ namespace IntoTheDungeon.Features.Attack
         // 궁수: 제자리에서 빠르게 시위를 당겨 한 줄을 꿰뚫는 강화 화살(검기보다 가늘고 멀리)
         public static readonly SpecialSkillComponent PowerShot = new()
         {
-            Cooldown = 6f,
+            Cooldown = 12f,                  // 평타 비중을 높이려고 길게(필살기는 노리는 순간에)
             CastTime = 0.58f,                // Archer_Skill(24fps) 14번째 프레임 = 시위를 놓는 순간
             Duration = 0.71f,                // Archer_Skill 길이(17프레임/24fps)
             DashSpeed = 0f,

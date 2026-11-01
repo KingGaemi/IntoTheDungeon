@@ -12,6 +12,7 @@ using IntoTheDungeon.Features.Status;
 using IntoTheDungeon.Features.Run;
 using IntoTheDungeon.Features.Attack;
 using IntoTheDungeon.Features.Physics.Components;
+using IntoTheDungeon.Features.Stats;
 
 namespace IntoTheDungeon.Features.Battle
 {
@@ -118,6 +119,16 @@ namespace IntoTheDungeon.Features.Battle
                 var e = _party[i].Entity;
                 int slot = _party[i].Slot;
                 ref var st = ref em.GetComponent<StatusComponent>(e);
+
+                // 덱의 스탯 보너스를 더해 세부 능력치를 다시 계산(체력·공격력·공속·이속·방어·저항·회복)
+                if (em.HasComponent<PrimaryStatsComponent>(e) && em.HasComponent<DerivedStatsComponent>(e))
+                {
+                    ref var ps = ref em.GetComponent<PrimaryStatsComponent>(e);
+                    ps.Bonus = mods.StatBonus;
+                    ref var ds = ref em.GetComponent<DerivedStatsComponent>(e);
+                    StatFormula.Apply(ps.Total, ref st, ref ds);
+                    if (em.HasComponent<HitStunComponent>(e)) em.GetComponent<HitStunComponent>(e).Resistance = ds.CcResist;
+                }
 
                 st.Damage = (int)System.MathF.Round(st.Damage * mods.DamageMul);
                 st.MaxHp = (int)System.MathF.Round(st.MaxHp * mods.MaxHpMul);

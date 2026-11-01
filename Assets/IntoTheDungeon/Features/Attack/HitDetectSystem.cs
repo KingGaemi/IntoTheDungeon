@@ -7,6 +7,9 @@ using IntoTheDungeon.Core.Abstractions.Gameplay;
 using IntoTheDungeon.Core.Util;
 using IntoTheDungeon.Features.Status;
 using IntoTheDungeon.Features.Physics.Components;
+using IntoTheDungeon.Features.Stats;
+using IntoTheDungeon.Features.Run;
+using IntoTheDungeon.Features.Battle;
 
 namespace IntoTheDungeon.Features.Attack
 {
@@ -60,7 +63,7 @@ namespace IntoTheDungeon.Features.Attack
 
                         hits.AddHit(t.E.Index);
                         ref var q = ref em.GetComponent<HpModificationQueue>(t.E);
-                        q.Enqueue(HpModification.Damage(hb.Damage, hb.Owner));
+                        q.Enqueue(HpModification.Damage(Mitigated(em, t.E, hb), hb.Owner));
                         ApplyHitReaction(em, t.E, hb);
 
                         // 일반 화살: 첫 대상에 꽂히고 사라진다(수명을 0으로 → LifetimeSystem이 지움)
@@ -110,18 +113,32 @@ namespace IntoTheDungeon.Features.Attack
             }
         }
 
+        // 방어력(물리)·마법 저항(마법)으로 줄인 피해
+        static int Mitigated(IEntityManager em, Entity victim, in HitboxComponent hb)
+        {
+            int dmg = hb.Damage;
+            // 난이도: 파티가 받는 피해 배율
+            if (em.TryGetComponent<TeamComponent>(victim, out var team) && team.TeamFlag == Party.Team)
+                dmg = System.Math.Max(1, (int)System.MathF.Round(dmg * DifficultyTable.PartyDamageTaken(RunState.Current.Difficulty)));
+            if (!em.TryGetComponent<DerivedStatsComponent>(victim, out var d)) return dmg;
+            return StatFormula.Mitigate(dmg, hb.Type == DamageType.Magic ? d.MagicResist : d.Armor);
+        }
+
         // 맞은 쪽을 공격 방향으로 밀고 위로 띄운다(공중에서 또 맞으면 다시 띄워 공중 콤보)
         static void ApplyHitReaction(IEntityManager em, Entity victim, in HitboxComponent hb)
         {
+            // 정신력 → 넉백 저항: 밀리고 뜨는 세기를 줄인다
+            float keep = em.TryGetComponent<DerivedStatsComponent>(victim, out var d) ? 1f - d.KnockbackResist : 1f;
             if (hb.KnockbackSpeed > 0f && em.HasComponent<KnockbackComponent>(victim))
             {
                 ref var k = ref em.GetComponent<KnockbackComponent>(victim);
-                k.Velocity = new Vec2(hb.FacingSign * hb.KnockbackSpeed, 0f);
+                k.Velocity = new Vec2(hb.FacingSign * hb.KnockbackSpeed * keep, 0f);
             }
             if (hb.LaunchSpeed > 0f && em.HasComponent<HeightMotionComponent>(victim))
             {
                 ref var m = ref em.GetComponent<HeightMotionComponent>(victim);
-                if (m.VelocityZ < hb.LaunchSpeed) m.VelocityZ = hb.LaunchSpeed;
+                float launch = hb.LaunchSpeed * keep;
+                if (m.VelocityZ < launch) m.VelocityZ = launch;
             }
             // 경직은 HitStunSystem이 적용(같은 프레임 여러 번 맞으면 가장 긴 것)
             if (hb.HitStun > 0f && em.HasComponent<HitStunComponent>(victim))

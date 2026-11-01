@@ -22,7 +22,7 @@ namespace IntoTheDungeon.Features.Attack
             Speed = 12f,
             Lifetime = 0.7f,                // 사거리 약 8
             HalfExtents = new Vec2(0.25f, 0.2f),
-            KnockbackSpeed = 1.5f,
+            KnockbackSpeed = 0.5f,          // 평타 화살은 거의 안 밀림(약 0.05)
             Pierce = false,
             HitStun = 0f                    // 평타 화살은 경직 없음
         };

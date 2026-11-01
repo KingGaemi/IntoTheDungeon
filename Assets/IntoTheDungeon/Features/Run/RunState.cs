@@ -8,6 +8,14 @@ namespace IntoTheDungeon.Features.Run
     /// <summary>난이도별 기본값(임시값). 난이도 선택 화면이 생기면 RunState.StartNew에 넘긴다.</summary>
     public static class DifficultyTable
     {
+        /// <summary>파티가 받는 피해 배율(몹 공격력은 그대로 두고 난이도로 조절).</summary>
+        public static float PartyDamageTaken(Difficulty d) => d switch
+        {
+            Difficulty.Easy => 0.6f,
+            Difficulty.Hard => 1f,
+            _ => 0.8f
+        };
+
         /// <summary>전투에서 이긴 뒤 살아 있는 파티원이 회복하는 최대 체력 비율(덱 보정 전).</summary>
         public static float PostBattleHeal(Difficulty d) => d switch
         {

@@ -27,6 +27,7 @@ using IntoTheDungeon.Unity.Bridge.Core.Abstractions;
 using IntoTheDungeon.Unity.Bridge.Core;
 using IntoTheDungeon.Unity.Bridge.View;
 using IntoTheDungeon.Core.Abstractions.Types;
+using IntoTheDungeon.Features.Stats;
 namespace IntoTheDungeon.Unity
 {
     public class UnityCoreInstaller : MonoGameInstaller
@@ -66,18 +67,20 @@ namespace IntoTheDungeon.Unity
             [Tooltip("공격 준비·마무리 시간(0이면 기본 0.5·0.7)")]
             public float windup, recovery;
             public SkillPreset skill;
+            [Tooltip("기본 스탯(모두 0이면 5·5·5·5)")]
+            public int str, agi, intel, wil;
         }
 
         [Header("캐릭터 종류별 정의(없는 이름은 반지름 0.3·무게 1)")]
         [SerializeField] CharacterDefEntry[] characterDefs =
         {
-            new() { recipe = "Character", bodyRadius = 0.3f, bodyMass = 1f, headHeight = 1.0f },
-            new() { recipe = "Catherine", bodyRadius = 0.3f, bodyMass = 1f, headHeight = 1.0f },
-            new() { recipe = "Orc1", bodyRadius = 0.35f, bodyMass = 1.2f, headHeight = 1.27f },
-            new() { recipe = "Orc2", bodyRadius = 0.4f, bodyMass = 1.5f, headHeight = 1.36f },
-            new() { recipe = "Orc3", bodyRadius = 0.45f, bodyMass = 2f, headHeight = 1.59f },
+            new() { recipe = "Character", bodyRadius = 0.3f, bodyMass = 1f, headHeight = 1.0f, str = 8, agi = 5, intel = 2, wil = 4 },
+            new() { recipe = "Catherine", bodyRadius = 0.3f, bodyMass = 1f, headHeight = 1.0f, str = 8, agi = 5, intel = 2, wil = 4 },
+            new() { recipe = "Orc1", bodyRadius = 0.35f, bodyMass = 1.2f, headHeight = 1.27f, str = 5, agi = 3, intel = 0, wil = 2 },
+            new() { recipe = "Orc2", bodyRadius = 0.4f, bodyMass = 1.5f, headHeight = 1.36f, str = 7, agi = 4, intel = 0, wil = 3 },
+            new() { recipe = "Orc3", bodyRadius = 0.45f, bodyMass = 2f, headHeight = 1.59f, str = 10, agi = 3, intel = 1, wil = 6 },
             new() { recipe = "Archer", bodyRadius = 0.28f, bodyMass = 0.9f, headHeight = 1.05f, ranged = true, attackRange = 5.5f, minRange = 2f,
-                    windup = 0.6f, recovery = 0.3f, skill = SkillPreset.PowerShot },
+                    windup = 0.6f, recovery = 0.3f, skill = SkillPreset.PowerShot, str = 5, agi = 9, intel = 3, wil = 3 },
         };
 
         public override void Install(GameWorld world)
@@ -115,6 +118,8 @@ namespace IntoTheDungeon.Unity
                     if (d.windup > 0f) def.WindupDuration = d.windup;
                     if (d.recovery > 0f) def.RecoveryDuration = d.recovery;
                     def.Skill = d.skill;
+                    var stats = new PrimaryStats(d.str, d.agi, d.intel, d.wil);
+                    if (!stats.IsZero) def.Stats = stats;
                     definitions[recipeTable.GetId(d.recipe)] = def;
                 }
             var characterFactory = new CharacterCoreFactory(definitions);
@@ -207,6 +212,7 @@ namespace IntoTheDungeon.Unity
             world.SystemManager.AddUnique(new HitDetectSystem());
             world.SystemManager.AddUnique(new DamageProcessingSystem());
             world.SystemManager.AddUnique(new DeathStateSystem());
+            world.SystemManager.AddUnique(new StatRegenSystem());   // 초당 체력·마나 회복(힘·지능)
             world.SystemManager.AddUnique(new HitStunSystem());   // 경직: 맞으면 잠깐 굳고 평타가 끊김(같은 프레임에 죽은 건 건드리지 않게 사망 처리 다음)
             world.SystemManager.AddUnique(new CorpseCleanupSystem());   // 쓰러진 적은 잠시 뒤 사라짐(파티원 시체는 남김)
             world.SystemManager.AddUnique(new LifetimeSystem());

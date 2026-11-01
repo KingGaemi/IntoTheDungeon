@@ -521,6 +521,9 @@ namespace IntoTheDungeon.Unity.Bridge.View
             _hub.Clear<AnimationPhaseChangedEvent>();
         }
 
+        /// <summary>모든 피해 알림(캐릭터 그림과 상관없는 화면 연출용: 데미지 숫자 등). 씬이 바뀌면 받는 쪽이 해제해야 한다.</summary>
+        public static event System.Action<DamagedEvent> AnyDamaged;
+
         void BroadcastDamageEvents()
         {
             var events = _hub.Consume<DamagedEvent>();
@@ -532,6 +535,7 @@ namespace IntoTheDungeon.Unity.Bridge.View
                     foreach (var l in listeners)
                         l.OnDamaged(evt);
                 }
+                AnyDamaged?.Invoke(evt);
             }
 
             _hub.Clear<DamagedEvent>();

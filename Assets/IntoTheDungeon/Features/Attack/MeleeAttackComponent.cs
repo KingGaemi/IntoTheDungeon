@@ -17,10 +17,12 @@ namespace IntoTheDungeon.Features.Attack
 
         public static readonly MeleeAttackComponent Default = new()
         {
-            Offset = new Vec2(0.5f, 0f),
-            HalfExtents = new Vec2(0.4f, 0.25f),   // Y = 깊이 반두께
+            // 판정은 AI가 공격을 시작하는 거리(1.0)보다 넉넉하게: 몸 앞 0.05~1.25 + 상대 몸통 0.3 → 약 1.55까지 닿는다.
+            // 휘두르는 사이 다른 공격에 조금 밀려도 헛치지 않게 하는 여유(플레이어 눈엔 "잘 맞는다"로 보임)
+            Offset = new Vec2(0.65f, 0f),
+            HalfExtents = new Vec2(0.6f, 0.25f),   // Y = 깊이 반두께
             ActiveTime = 0.1f,
-            KnockbackSpeed = 3f,   // 약 0.3 유닛 밀림
+            KnockbackSpeed = 1f,   // 평타는 약 0.1 유닛만 살짝(큰 넉백은 넉백을 주는 공격에만, 경직과 같은 정책)
             LaunchSpeed = 2f,      // 평타: 약 0.07 유닛 들썩(0.13초). 띄우기 전용 공격은 따로 크게
             HitStun = 0f           // 평타는 경직 없음(경직은 경직을 주는 공격에만)
         };

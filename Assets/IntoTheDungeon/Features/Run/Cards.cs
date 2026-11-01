@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using IntoTheDungeon.Features.Stats;
 
 namespace IntoTheDungeon.Features.Run
 {
@@ -18,6 +19,7 @@ namespace IntoTheDungeon.Features.Run
         public float BodyRadiusAdd = 0f;
         public float BodyMassMul = 1f;
         public float PostBattleHealAdd = 0f;   // 전투 후 회복(최대 체력 비율)에 더해짐
+        public PrimaryStats StatBonus;          // 파티 전원 기본 스탯에 더해짐(세부 능력치는 다시 계산)
     }
 
     public sealed class CardDef
@@ -49,10 +51,10 @@ namespace IntoTheDungeon.Features.Run
 
         public static readonly CardDef[] Passives =
         {
-            CardDef.Passive("sharp", "날카로운 칼날", "파티 공격력 +20%", m => m.DamageMul *= 1.2f),
-            CardDef.Passive("vigor", "강인한 체력", "파티 최대 체력 +25%", m => m.MaxHpMul *= 1.25f),
-            CardDef.Passive("haste", "날랜 손놀림", "파티 공격 속도 +15%", m => m.AttackSpeedMul *= 1.15f),
-            CardDef.Passive("stride", "가벼운 발걸음", "파티 이동 속도 +15%", m => m.MoveSpeedMul *= 1.15f),
+            CardDef.Passive("str", "근력 단련", "파티 힘 +3 (공격력·체력·체력 회복)", m => m.StatBonus.Str += 3),
+            CardDef.Passive("agi", "몸놀림 단련", "파티 민첩 +3 (공격 속도·방어력·이동 속도)", m => m.StatBonus.Agi += 3),
+            CardDef.Passive("int", "지식의 서", "파티 지능 +3 (마나·마나 회복·마법 공격력)", m => m.StatBonus.Int += 3),
+            CardDef.Passive("wil", "정신 수양", "파티 정신력 +3 (마법 저항·넉백 저항·CC 저항)", m => m.StatBonus.Wil += 3),
             CardDef.Passive("focus", "집중", "필살기 재사용 대기 -20%", m => m.SkillCooldownMul *= 0.8f),
             CardDef.Passive("bulk", "묵직한 갑옷", "몸이 커지고 무거워짐(덜 밀림)", m => { m.BodyRadiusAdd += 0.05f; m.BodyMassMul *= 1.5f; }),
             CardDef.Passive("firstaid", "응급 처치", "전투 후 회복 +10%p", m => m.PostBattleHealAdd += 0.1f),
