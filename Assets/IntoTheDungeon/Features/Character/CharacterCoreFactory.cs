@@ -11,6 +11,7 @@ namespace IntoTheDungeon.Features.Character
     /// <summary>캐릭터 종류별 정의(레시피 이름 기준): 기본 스탯 4종, 몸 크기·무게, 공격 방식(근접/원거리)·사거리, 동작 시간, 필살기.</summary>
     public struct CharacterDefinition
     {
+        public string DisplayName;      // 화면에 보이는 이름(정비 화면 등)
         public float BodyRadius;
         public float BodyMass;
         public bool Immovable;
@@ -22,11 +23,13 @@ namespace IntoTheDungeon.Features.Character
         public float WindupDuration;    // 공격 준비(이 끝에 판정·화살이 나감)
         public float RecoveryDuration;  // 공격 마무리
         public SkillPreset Skill;
-        public PrimaryStats Stats;      // 힘·민첩·지능·정신력 → 체력·공격력·공속·이속 등은 StatFormula가 계산
+        public PrimaryStats Stats;      // 레벨 1의 힘·민첩·지능·정신력 → 체력·공격력·공속·이속 등은 StatFormula가 계산
+        public PrimaryStats Growth;     // 레벨당 오르는 스탯
 
         public static readonly CharacterDefinition Default = new()
         {
             Stats = PrimaryStats.Default,
+            Growth = PrimaryStats.DefaultGrowth,
             BodyRadius = 0.3f, BodyMass = 1f, HeadHeight = 1.2f,
             Ranged = false, AttackRange = 1f, MinRange = 0f,
             WindupDuration = 0.5f, RecoveryDuration = 0.7f,

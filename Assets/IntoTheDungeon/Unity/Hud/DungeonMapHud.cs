@@ -23,7 +23,7 @@ namespace IntoTheDungeon.Unity.Hud
         [SerializeField] Color highlight = new(1f, 0.82f, 0.3f, 1f);
 
         BattleProgress _progress;
-        GameObject _root;
+        GameObject _root, _backToCamp;
         RectTransform _mapArea;
         Text _info;
         Font _font;
@@ -47,6 +47,8 @@ namespace IntoTheDungeon.Unity.Hud
 
             var run = RunState.Current;
             if (_builtFor != run || _builtVersion != _version) Redraw(run);
+
+            if (_backToCamp.activeSelf != run.CanReturnToCamp) _backToCamp.SetActive(run.CanReturnToCamp);
 
             // 고를 수 있는 방은 테두리가 깜빡인다
             float pulse = 0.6f + 0.4f * Mathf.Sin(Time.unscaledTime * 5f);
@@ -184,6 +186,19 @@ namespace IntoTheDungeon.Unity.Hud
             area.transform.SetParent(_root.transform, false);
             _mapArea = (RectTransform)area.transform;
             Place(_mapArea, new Vector2(0.5f, 0.5f), new Vector2(0f, -60f), mapSize);
+
+            // 방을 고르기 전까지 정비 화면으로 돌아가기(잘못 눌러 지도로 왔을 때)
+            var back = NewImage("BackToCamp", _root.transform, new Color(0.16f, 0.22f, 0.45f, 1f));
+            back.raycastTarget = true;
+            Place(back.rectTransform, new Vector2(0f, 1f), new Vector2(40f, -40f), new Vector2(300f, 64f));
+            var btn = back.gameObject.AddComponent<Button>();
+            btn.targetGraphic = back;
+            btn.onClick.AddListener(() => RunState.Current.ReturnToCamp());
+            var label = NewText(back.transform, "← 정비로 돌아가기", 28);
+            label.rectTransform.anchorMin = Vector2.zero; label.rectTransform.anchorMax = Vector2.one;
+            label.rectTransform.offsetMin = label.rectTransform.offsetMax = Vector2.zero;
+            _backToCamp = back.gameObject;
+            _backToCamp.SetActive(false);
             _root.SetActive(false);
         }
 

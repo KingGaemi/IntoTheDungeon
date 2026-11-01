@@ -11,6 +11,7 @@ using IntoTheDungeon.Core.Abstractions.Messages.Combat;
 using IntoTheDungeon.Core.Util;
 using IntoTheDungeon.Features.State;
 using IntoTheDungeon.Features.AI;
+using IntoTheDungeon.Features.Stats;
 using IntoTheDungeon.Features.Status;
 using IntoTheDungeon.Features.Physics.Components;
 
@@ -110,6 +111,8 @@ namespace IntoTheDungeon.Features.Attack
                     sk.RequestAge += dt;
 
                     if (sk.CooldownRemaining > 0f) { sk.Requested = false; continue; }   // 아직 못 씀
+                    bool hasMana = em.HasComponent<DerivedStatsComponent>(e);
+                    if (hasMana && em.GetComponent<DerivedStatsComponent>(e).Mana < sk.ManaCost) { sk.Requested = false; continue; }   // 마나 부족
                     if (!state.CanAttack || transforms[i].Height > 0.01f)                  // 경직·공중이면 잠깐 기다림
                     {
                         if (sk.RequestAge > RequestTimeout) sk.Requested = false;
@@ -130,6 +133,7 @@ namespace IntoTheDungeon.Features.Attack
                     sk.Timer = 0f;
                     sk.Fired = false;
                     sk.CooldownRemaining = sk.Cooldown;
+                    if (hasMana) em.GetComponent<DerivedStatsComponent>(e).Mana -= sk.ManaCost;
 
                     state.MoveDir = Vec2.Zero;
                     SetAction(e, ref state, ActionState.Skill, stopMoving: true);

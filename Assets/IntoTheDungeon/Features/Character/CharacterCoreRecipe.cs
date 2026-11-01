@@ -35,7 +35,7 @@ namespace IntoTheDungeon.Features.Character
             var status = new StatusComponent { IsAlive = true };
             var derived = new DerivedStatsComponent();
             StatFormula.Apply(_def.Stats, ref status, ref derived);
-            em.AddComponent(e, new PrimaryStatsComponent { Base = _def.Stats });
+            em.AddComponent(e, new PrimaryStatsComponent { Base = _def.Stats, Growth = _def.Growth, Level = 1 });
             em.AddComponent(e, status);
             em.AddComponent(e, derived);
             em.AddComponent(e, new KinematicComponent());

@@ -7,11 +7,12 @@ using IntoTheDungeon.Core.ECS.Components;
 using IntoTheDungeon.Features.Battle;
 using IntoTheDungeon.Features.Physics.Components;
 using IntoTheDungeon.Features.Status;
+using IntoTheDungeon.Features.Stats;
 
 namespace IntoTheDungeon.Unity.Hud
 {
     /// <summary>
-    /// 살아 있는 캐릭터 머리 위 체력바(파티 초록, 적 빨강). 위치는 ECS 바닥 위치 + 높이 + 머리 높이(BodyComponent.HeadHeight).
+    /// 살아 있는 캐릭터 머리 위 체력바(파티 초록, 적 빨강), 바 왼쪽에 레벨. 파티원은 바로 아래 파란 마나바도. 위치는 ECS 바닥 위치 + 높이 + 머리 높이(BodyComponent.HeadHeight).
     /// 맞으면 바는 바로 줄고, 깎인 부분은 밝은 색으로 잠깐 남았다가 천천히 따라 내려온다(얼마나 맞았는지 잘 보이게).
     /// 맞는 순간 바가 잠깐 하얗게 번쩍인다. 지도·정비 화면에선 숨긴다.
     /// </summary>
@@ -29,6 +30,9 @@ namespace IntoTheDungeon.Unity.Hud
         [SerializeField] Color enemyColor = new(0.88f, 0.26f, 0.22f, 1f);
         [SerializeField] Color trailColor = new(1f, 0.93f, 0.6f, 1f);
         [SerializeField] Color backColor = new(0.08f, 0.08f, 0.1f, 0.85f);
+        [Tooltip("파티원 체력바 아래 마나바")]
+        [SerializeField] Color manaColor = new(0.3f, 0.55f, 1f, 1f);
+        [SerializeField] float manaHeight = 0.06f;
         [SerializeField] Color borderColor = new(0f, 0f, 0f, 0.9f);
 
         [Header("깎이는 연출")]
@@ -53,6 +57,10 @@ namespace IntoTheDungeon.Unity.Hud
         {
             public Transform Root;
             public SpriteRenderer Border, Back, Trail, Fill;
+            public SpriteRenderer ManaBorder, ManaBack, ManaFill;   // 파티원만 켬
+            public TextMesh Level, LevelShadow;                      // 바 왼쪽 "Lv.3"
+            public MeshRenderer LevelRenderer, LevelShadowRenderer;
+            public int ShownLevel = -1;
             public float Shown = -1f, Trail_ = 1f, HoldUntil, FlashUntil;
             public bool Used;
             public readonly List<SpriteRenderer> Ticks = new();
@@ -62,6 +70,7 @@ namespace IntoTheDungeon.Unity.Hud
         IWorld _world;
         BattleProgress _progress;
         Sprite _left, _center;
+        Font _font;
         int _layer;
         readonly Dictionary<Entity, Bar> _bars = new();
         readonly List<Entity> _stale = new();
@@ -120,6 +129,11 @@ namespace IntoTheDungeon.Unity.Hud
                         bar.Root.position = new Vector3(t.Position.X, t.Position.Y + t.Height + head + gapAboveHead, 0f);
 
                         bool party = teams[i].TeamFlag == Party.Team;
+                        // 마나바: 파티원만(몹은 마나를 안 씀)
+                        DerivedStatsComponent ds = default;
+                        bool showMana = party && _world.EntityManager.TryGetComponent(e, out ds) && ds.MaxMana > 0f;
+                        if (bar.ManaFill.enabled != showMana) bar.ManaBorder.enabled = bar.ManaBack.enabled = bar.ManaFill.enabled = showMana;
+                        if (showMana) SetWidth(bar.ManaFill, Mathf.Clamp01(ds.Mana / ds.MaxMana));
                         bar.Fill.color = now < bar.FlashUntil ? Color.white : party ? partyColor : enemyColor;
                         SetWidth(bar.Fill, ratio);
                         SetWidth(bar.Trail, bar.Trail_);
@@ -130,6 +144,19 @@ namespace IntoTheDungeon.Unity.Hud
                         bar.Back.sortingOrder = order + 1;
                         bar.Trail.sortingOrder = order + 2;
                         bar.Fill.sortingOrder = order + 3;
+                        bar.ManaBorder.sortingOrder = order;
+                        bar.ManaBack.sortingOrder = order + 1;
+                        bar.ManaFill.sortingOrder = order + 3;
+
+                        // 레벨(바 왼쪽)
+                        int level = _world.EntityManager.TryGetComponent<PrimaryStatsComponent>(e, out var ps) ? ps.Level : 0;
+                        if (bar.ShownLevel != level)
+                        {
+                            bar.ShownLevel = level;
+                            bar.Level.text = bar.LevelShadow.text = level > 0 ? $"Lv.{level}" : "";
+                        }
+                        bar.LevelShadowRenderer.sortingOrder = order + 3;
+                        bar.LevelRenderer.sortingOrder = order + 4;
                         if (bar.TickMaxHp != st.MaxHp) BuildTicks(bar, st.MaxHp);
                         foreach (var tick in bar.Ticks) tick.sortingOrder = order + 4;   // 채움 위
                     }
@@ -184,7 +211,37 @@ namespace IntoTheDungeon.Unity.Hud
             bar.Back = Part(root, "Back", _center, backColor, new Vector3(0f, 0f), new Vector2(width, height));
             bar.Trail = Part(root, "Trail", _left, trailColor, new Vector3(-width * 0.5f, 0f), new Vector2(width, height));
             bar.Fill = Part(root, "Fill", _left, partyColor, new Vector3(-width * 0.5f, 0f), new Vector2(width, height));
+
+            // 마나바: 체력바 바로 아래(테두리 한 줄 공유)
+            float my = -(height + manaHeight) * 0.5f - border;
+            bar.ManaBorder = Part(root, "ManaBorder", _center, borderColor, new Vector3(0f, my), new Vector2(width + border * 2f, manaHeight + border * 2f));
+            bar.ManaBack = Part(root, "ManaBack", _center, backColor, new Vector3(0f, my), new Vector2(width, manaHeight));
+            bar.ManaFill = Part(root, "ManaFill", _left, manaColor, new Vector3(-width * 0.5f, my), new Vector2(width, manaHeight));
+            bar.ManaBorder.enabled = bar.ManaBack.enabled = bar.ManaFill.enabled = false;
+
+            if (!_font) _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            var levelPos = new Vector3(-width * 0.5f - border - 0.04f, 0f, 0f);
+            bar.LevelShadow = LevelText(root, "LevelShadow", levelPos + new Vector3(0.015f, -0.015f, 0f), new Color(0f, 0f, 0f, 0.9f), out bar.LevelShadowRenderer);
+            bar.Level = LevelText(root, "Level", levelPos, new Color(1f, 0.92f, 0.6f, 1f), out bar.LevelRenderer);
             return bar;
+        }
+
+        TextMesh LevelText(Transform parent, string name, Vector3 local, Color color, out MeshRenderer renderer)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = local;
+            var tm = go.AddComponent<TextMesh>();
+            tm.font = _font;
+            tm.fontSize = 48;
+            tm.characterSize = 0.035f;   // 글자 높이 ≈ 바 두께 정도
+            tm.fontStyle = FontStyle.Bold;
+            tm.anchor = TextAnchor.MiddleRight;
+            tm.color = color;
+            renderer = go.GetComponent<MeshRenderer>();
+            renderer.sharedMaterial = _font.material;
+            renderer.sortingLayerID = _layer;
+            return tm;
         }
 
         SpriteRenderer Part(Transform parent, string name, Sprite sprite, Color color, Vector3 local, Vector2 size)

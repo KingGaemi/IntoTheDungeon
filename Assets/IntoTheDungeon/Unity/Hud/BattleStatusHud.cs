@@ -34,7 +34,7 @@ namespace IntoTheDungeon.Unity.Hud
 
             var run = RunState.Current;
             string room = run.Current != null ? $"{run.CurrentLayer + 1}층 {Encounters.Label(run.Current.Type)}   ·   " : "";
-            _status.text = p.Wave > 0 && p.Phase != BattlePhase.Map ? $"{room}웨이브 {p.Wave} / {p.TotalWaves}   ·   남은 적 {p.EnemiesAlive}" : "";
+            _status.text = p.Wave > 0 && p.Phase != BattlePhase.Map ? $"{room}웨이브 {p.Wave} / {p.TotalWaves}   ·   남은 적 {p.EnemiesAlive}   ·   골드 {run.Gold}" : "";
 
             string banner = "";
             Color color = Color.white;

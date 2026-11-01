@@ -22,6 +22,9 @@ namespace IntoTheDungeon.Features.Battle
     /// 파티 체력은 방과 방 사이에 이어진다. 몹은 파티 중심 앞쪽(벽에 막히면 반대쪽)에 나온다.
     /// SpawnSystem보다 먼저 돌아야 같은 프레임에 스폰된다.
     /// </summary>
+    /// <summary>레벨을 이미 입힌 적 표시.</summary>
+    public struct EnemyLeveledTag : IComponentData { }
+
     public sealed class BattleFlowSystem : GameSystem, ITick
     {
         const float SpawnSettleTime = 1f;
@@ -34,6 +37,7 @@ namespace IntoTheDungeon.Features.Battle
         IWalkArea _area;
         readonly System.Random _rng = new(7);
         bool _partySpawned, _hpApplied;
+        readonly System.Collections.Generic.List<Entity> _leveled = new(16);
         readonly System.Collections.Generic.List<int> _expectedSlots = new(4);   // 이번 방에 나오는 파티원 슬롯(스폰 순서)
         readonly System.Collections.Generic.List<Party.Member> _party = new(8);
 
@@ -76,10 +80,11 @@ namespace IntoTheDungeon.Features.Battle
                     break;
 
                 case BattlePhase.Fighting:
+                    ApplyEnemyLevels(run);
                     if (p.PhaseTime >= SpawnSettleTime && p.EnemiesAlive == 0)
                     {
                         if (p.Wave < p.TotalWaves) Enter(BattlePhase.Interlude);
-                        else { Enter(BattlePhase.Victory); run.WinRoom(CollectPartyHp()); }
+                        else { Enter(BattlePhase.Victory); CollectLoot(run); run.WinRoom(CollectPartyHp()); }
                     }
                     break;
 
@@ -102,7 +107,6 @@ namespace IntoTheDungeon.Features.Battle
         void ApplyRunToParty(RunData run)
         {
             var em = _world.EntityManager;
-            var mods = run.BuildModifiers();
 
             // 슬롯 붙이기: 스폰된 파티원(생긴 순서 = 스폰 순서)에 살아 있는 슬롯 번호를 차례로
             Party.Collect(em, _party);
@@ -118,23 +122,9 @@ namespace IntoTheDungeon.Features.Battle
             {
                 var e = _party[i].Entity;
                 int slot = _party[i].Slot;
+                var mods = RecalculatePartyStats(em, e, run, slot);
                 ref var st = ref em.GetComponent<StatusComponent>(e);
-
-                // 덱의 스탯 보너스를 더해 세부 능력치를 다시 계산(체력·공격력·공속·이속·방어·저항·회복)
-                if (em.HasComponent<PrimaryStatsComponent>(e) && em.HasComponent<DerivedStatsComponent>(e))
-                {
-                    ref var ps = ref em.GetComponent<PrimaryStatsComponent>(e);
-                    ps.Bonus = mods.StatBonus;
-                    ref var ds = ref em.GetComponent<DerivedStatsComponent>(e);
-                    StatFormula.Apply(ps.Total, ref st, ref ds);
-                    if (em.HasComponent<HitStunComponent>(e)) em.GetComponent<HitStunComponent>(e).Resistance = ds.CcResist;
-                }
-
-                st.Damage = (int)System.MathF.Round(st.Damage * mods.DamageMul);
-                st.MaxHp = (int)System.MathF.Round(st.MaxHp * mods.MaxHpMul);
                 st.CurrentHp = st.MaxHp;
-                st.AttackSpeed *= mods.AttackSpeedMul;
-                st.MovementSpeed *= mods.MoveSpeedMul;
                 if (em.HasComponent<SpecialSkillComponent>(e))
                     em.GetComponent<SpecialSkillComponent>(e).Cooldown *= mods.SkillCooldownMul;
                 if (em.HasComponent<BodyComponent>(e))
@@ -149,7 +139,83 @@ namespace IntoTheDungeon.Features.Battle
             }
         }
 
+        /// <summary>
+        /// 파티원 능력치를 판 기록(레벨·덱·그 파티원 장비)으로 다시 계산한다. 체력·마나는 가득으로 바뀌므로 필요하면 호출한 쪽이 되돌린다.
+        /// 방 시작과 전투 중 레벨 업에 쓴다.
+        /// </summary>
+        public static PartyModifiers RecalculatePartyStats(IEntityManager em, Entity e, RunData run, int slot)
+        {
+            var mods = run.BuildModifiers(slot < Party.NoSlot ? slot : -1);   // 덱 + 그 파티원 장비
+            ref var st = ref em.GetComponent<StatusComponent>(e);
+
+            // 스탯 보너스·레벨로 세부 능력치를 다시 계산(체력·공격력·공속·이속·방어·저항·회복)
+            if (em.HasComponent<PrimaryStatsComponent>(e) && em.HasComponent<DerivedStatsComponent>(e))
+            {
+                ref var ps = ref em.GetComponent<PrimaryStatsComponent>(e);
+                ps.Bonus = mods.StatBonus;
+                if (slot < Party.NoSlot) ps.Level = run.LevelOf(slot);
+                ref var ds = ref em.GetComponent<DerivedStatsComponent>(e);
+                StatFormula.Apply(ps.Total, ref st, ref ds);
+                if (em.HasComponent<HitStunComponent>(e)) em.GetComponent<HitStunComponent>(e).Resistance = ds.CcResist;
+            }
+
+            st.Damage = (int)System.MathF.Round(st.Damage * mods.DamageMul);
+            st.MaxHp = (int)System.MathF.Round(st.MaxHp * mods.MaxHpMul);
+            st.AttackSpeed *= mods.AttackSpeedMul;
+            st.MovementSpeed *= mods.MoveSpeedMul;
+            return mods;
+        }
+
         static bool IsFallen(RunData run, int slot) => slot < run.PartyHp.Count && run.PartyHp[slot] <= 0f;
+
+        /// <summary>적 레벨(임시값): 1 + 층/2, 정예 +1, 보스 +1. 파티가 평소엔 적보다 조금 높게.</summary>
+        static int EnemyLevel(RunData run)
+        {
+            int lv = 1 + System.Math.Max(0, run.CurrentLayer) / 2;
+            if (run.Current != null && run.Current.Type == RoomType.Elite) lv += 1;
+            if (run.Current != null && run.Current.Type == RoomType.Boss) lv += 1;
+            return lv;
+        }
+
+        // 새로 나온 적에게 이 방의 레벨을 입히고 스탯을 다시 계산
+        void ApplyEnemyLevels(RunData run)
+        {
+            var em = _world.EntityManager;
+            _leveled.Clear();
+            foreach (var chunk in em.GetChunks(typeof(PrimaryStatsComponent), typeof(TeamComponent)))
+            {
+                var teams = chunk.GetComponentArray<TeamComponent>();
+                var entities = chunk.GetEntities();
+                for (int i = 0; i < chunk.Count; i++)
+                    if (teams[i].TeamFlag == TeamFlag.Enemy && !em.HasComponent<EnemyLeveledTag>(entities[i])) _leveled.Add(entities[i]);
+            }
+            int level = EnemyLevel(run);
+            foreach (var e in _leveled)
+            {
+                em.AddComponent(e, new EnemyLeveledTag());
+                ref var ps = ref em.GetComponent<PrimaryStatsComponent>(e);
+                ps.Level = level;
+                if (!em.HasComponent<DerivedStatsComponent>(e)) continue;
+                StatFormula.Apply(ps.Total, ref em.GetComponent<StatusComponent>(e), ref em.GetComponent<DerivedStatsComponent>(e));
+                if (em.HasComponent<HitStunComponent>(e)) em.GetComponent<HitStunComponent>(e).Resistance = em.GetComponent<DerivedStatsComponent>(e).CcResist;
+            }
+        }
+
+        // 바닥에 떨어진 아이템을 모두 주워 판에 넣는다(정비 화면에서 가방에 배치)
+        void CollectLoot(RunData run)
+        {
+            foreach (var chunk in _world.EntityManager.GetChunks(typeof(LootDropComponent)))
+            {
+                var drops = chunk.GetComponentArray<LootDropComponent>();
+                for (int i = 0; i < chunk.Count; i++)
+                {
+                    if (drops[i].Collected) continue;
+                    drops[i].Collected = true;
+                    var item = ItemPool.Get(drops[i].ItemIndex);
+                    if (item != null) run.Loot.Add(item);
+                }
+            }
+        }
 
         // 슬롯별 체력 비율. 이번 방에 안 나온(쓰러져 있던) 슬롯은 0 그대로
         System.Collections.Generic.List<float> CollectPartyHp()

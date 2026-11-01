@@ -50,6 +50,8 @@ namespace IntoTheDungeon.Unity
         public struct CharacterDefEntry
         {
             public string recipe;
+            [Tooltip("화면에 보이는 이름")]
+            public string displayName;
             [Tooltip("몸 충돌 가로 반지름(깊이는 이 절반). 아이템 등 보정은 BodyComponent에서 따로 더해진다")]
             public float bodyRadius;
             [Tooltip("무거울수록 덜 밀린다")]
@@ -67,19 +69,21 @@ namespace IntoTheDungeon.Unity
             [Tooltip("공격 준비·마무리 시간(0이면 기본 0.5·0.7)")]
             public float windup, recovery;
             public SkillPreset skill;
-            [Tooltip("기본 스탯(모두 0이면 5·5·5·5)")]
+            [Tooltip("레벨 1 기본 스탯(모두 0이면 5·5·5·5)")]
             public int str, agi, intel, wil;
+            [Tooltip("레벨당 오르는 스탯(모두 0이면 1·1·1·1)")]
+            public int gStr, gAgi, gInt, gWil;
         }
 
         [Header("캐릭터 종류별 정의(없는 이름은 반지름 0.3·무게 1)")]
         [SerializeField] CharacterDefEntry[] characterDefs =
         {
-            new() { recipe = "Character", bodyRadius = 0.3f, bodyMass = 1f, headHeight = 1.0f, str = 8, agi = 5, intel = 2, wil = 4 },
-            new() { recipe = "Catherine", bodyRadius = 0.3f, bodyMass = 1f, headHeight = 1.0f, str = 8, agi = 5, intel = 2, wil = 4 },
-            new() { recipe = "Orc1", bodyRadius = 0.35f, bodyMass = 1.2f, headHeight = 1.27f, str = 5, agi = 3, intel = 0, wil = 2 },
-            new() { recipe = "Orc2", bodyRadius = 0.4f, bodyMass = 1.5f, headHeight = 1.36f, str = 7, agi = 4, intel = 0, wil = 3 },
-            new() { recipe = "Orc3", bodyRadius = 0.45f, bodyMass = 2f, headHeight = 1.59f, str = 10, agi = 3, intel = 1, wil = 6 },
-            new() { recipe = "Archer", bodyRadius = 0.28f, bodyMass = 0.9f, headHeight = 1.05f, ranged = true, attackRange = 5.5f, minRange = 2f,
+            new() { recipe = "Character", displayName = "케서린", gStr = 2, gAgi = 1, gInt = 0, gWil = 1, bodyRadius = 0.3f, bodyMass = 1f, headHeight = 1.0f, str = 8, agi = 5, intel = 2, wil = 4 },
+            new() { recipe = "Catherine", displayName = "케서린", gStr = 2, gAgi = 1, gInt = 0, gWil = 1, bodyRadius = 0.3f, bodyMass = 1f, headHeight = 1.0f, str = 8, agi = 5, intel = 2, wil = 4 },
+            new() { recipe = "Orc1", displayName = "오크", gStr = 1, gAgi = 1, gInt = 0, gWil = 1, bodyRadius = 0.35f, bodyMass = 1.2f, headHeight = 1.27f, str = 5, agi = 3, intel = 0, wil = 2 },
+            new() { recipe = "Orc2", displayName = "오크 전사", gStr = 2, gAgi = 1, gInt = 0, gWil = 1, bodyRadius = 0.4f, bodyMass = 1.5f, headHeight = 1.36f, str = 7, agi = 4, intel = 0, wil = 3 },
+            new() { recipe = "Orc3", displayName = "오크 대장", gStr = 2, gAgi = 1, gInt = 0, gWil = 2, bodyRadius = 0.45f, bodyMass = 2f, headHeight = 1.59f, str = 10, agi = 3, intel = 1, wil = 6 },
+            new() { recipe = "Archer", displayName = "궁수", gStr = 1, gAgi = 2, gInt = 1, gWil = 0, bodyRadius = 0.28f, bodyMass = 0.9f, headHeight = 1.05f, ranged = true, attackRange = 5.5f, minRange = 2f,
                     windup = 0.6f, recovery = 0.3f, skill = SkillPreset.PowerShot, str = 5, agi = 9, intel = 3, wil = 3 },
         };
 
@@ -104,10 +108,12 @@ namespace IntoTheDungeon.Unity
 
             // 캐릭터는 모두 같은 팩토리(메인 캐릭터 없음). 편은 스폰 때 팀으로 정해진다
             var definitions = new System.Collections.Generic.Dictionary<RecipeId, CharacterDefinition>();
+            var catalog = new CharacterCatalog();   // 이름 → 정의(정비 화면 등 캐릭터가 없을 때 정보 표시용)
             foreach (var d in characterDefs)
                 if (!string.IsNullOrEmpty(d.recipe))
                 {
                     var def = CharacterDefinition.Default;
+                    def.DisplayName = string.IsNullOrEmpty(d.displayName) ? d.recipe : d.displayName;
                     def.BodyRadius = d.bodyRadius;
                     def.BodyMass = d.bodyMass;
                     def.Immovable = d.immovable;
@@ -120,9 +126,13 @@ namespace IntoTheDungeon.Unity
                     def.Skill = d.skill;
                     var stats = new PrimaryStats(d.str, d.agi, d.intel, d.wil);
                     if (!stats.IsZero) def.Stats = stats;
+                    var growth = new PrimaryStats(d.gStr, d.gAgi, d.gInt, d.gWil);
+                    if (!growth.IsZero) def.Growth = growth;
                     definitions[recipeTable.GetId(d.recipe)] = def;
+                    catalog.Set(d.recipe, def);
                 }
             var characterFactory = new CharacterCoreFactory(definitions);
+            world.SetOnce(catalog);
             var characters = new System.Collections.Generic.HashSet<string>(monsterNames) { playerCharacterName };
             if (mappingTable) characters.UnionWith(mappingTable.RecipeNames);
             foreach (var name in characters)
@@ -212,6 +222,8 @@ namespace IntoTheDungeon.Unity
             world.SystemManager.AddUnique(new HitDetectSystem());
             world.SystemManager.AddUnique(new DamageProcessingSystem());
             world.SystemManager.AddUnique(new DeathStateSystem());
+            world.SystemManager.AddUnique(new LootDropSystem());    // 쓰러진 적이 확률로 아이템을 떨굼(시체가 지워지기 전에)
+            world.SystemManager.AddUnique(new KillRewardSystem());  // 처치마다 경험치·골드, 전투 중 레벨 업
             world.SystemManager.AddUnique(new StatRegenSystem());   // 초당 체력·마나 회복(힘·지능)
             world.SystemManager.AddUnique(new HitStunSystem());   // 경직: 맞으면 잠깐 굳고 평타가 끊김(같은 프레임에 죽은 건 건드리지 않게 사망 처리 다음)
             world.SystemManager.AddUnique(new CorpseCleanupSystem());   // 쓰러진 적은 잠시 뒤 사라짐(파티원 시체는 남김)

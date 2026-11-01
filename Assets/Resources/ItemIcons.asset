@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9059fd7c6de04520b5d37a2713b0f13e, type: 3}
+  m_Name: ItemIcons
+  m_EditorClassIdentifier:
+  entries:
+  - itemId: copper_dagger
+    icon: {fileID: 3891269495536304776, guid: 980006eba5f7c814b910647c56c216eb, type: 3}
+  - itemId: copper_greaves
+    icon: {fileID: 9074578508399552563, guid: 980006eba5f7c814b910647c56c216eb, type: 3}
+  - itemId: copper_rod
+    icon: {fileID: 7383399005715540284, guid: 980006eba5f7c814b910647c56c216eb, type: 3}
+  - itemId: copper_shield
+    icon: {fileID: -1873732928548946562, guid: 980006eba5f7c814b910647c56c216eb, type: 3}
+  - itemId: roast_meat
+    icon: {fileID: -5981871281472461154, guid: b2dcd7e5d194f9b45b0e61de2944c026, type: 3}
+  - itemId: iron_sword
+    icon: {fileID: 3068057118030450010, guid: 980006eba5f7c814b910647c56c216eb, type: 3}
+  - itemId: iron_bow
+    icon: {fileID: -3060964732454936986, guid: 980006eba5f7c814b910647c56c216eb, type: 3}
+  - itemId: iron_staff
+    icon: {fileID: -6835770446084224228, guid: 980006eba5f7c814b910647c56c216eb, type: 3}
+  - itemId: iron_helm
+    icon: {fileID: -6840328240525415162, guid: 980006eba5f7c814b910647c56c216eb, type: 3}
+  - itemId: herb_potion
+    icon: {fileID: 607249015233398715, guid: b2dcd7e5d194f9b45b0e61de2944c026, type: 3}
+  - itemId: gold_helm
+    icon: {fileID: -8950739253039231779, guid: 980006eba5f7c814b910647c56c216eb, type: 3}
+  - itemId: gold_bow
+    icon: {fileID: -1946595391113999335, guid: 980006eba5f7c814b910647c56c216eb, type: 3}
+  - itemId: gold_staff
+    icon: {fileID: -4893519520245952119, guid: 980006eba5f7c814b910647c56c216eb, type: 3}
+  - itemId: blue_sword
+    icon: {fileID: 1591093196751400417, guid: 980006eba5f7c814b910647c56c216eb, type: 3}
+  - itemId: red_shield
+    icon: {fileID: 8527674266779003243, guid: 980006eba5f7c814b910647c56c216eb, type: 3}
+  - itemId: red_greatsword
+    icon: {fileID: -5915245579181286694, guid: 980006eba5f7c814b910647c56c216eb, type: 3}

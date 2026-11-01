@@ -12,6 +12,7 @@ namespace IntoTheDungeon.Features.Attack
     {
         // 정의
         public float Cooldown;          // 재사용 대기(초)
+        public float ManaCost;          // 시전할 때 쓰는 마나(재사용 대기도 끝나 있어야 함)
         public float CastTime;          // 시전 시작부터 투사체가 나가는 시점(초)
         public float Duration;          // 시전 전체 길이(초). 필살기 클립 길이에 맞춘다
         public float DashSpeed;         // 시전 시작 때 앞으로 미는 속도(넉백 시스템으로 이동, 거리 ≈ 속도/10)
@@ -41,6 +42,7 @@ namespace IntoTheDungeon.Features.Attack
         public static readonly SpecialSkillComponent SwordWave = new()
         {
             Cooldown = 12f,                  // 평타 비중을 높이려고 길게(필살기는 노리는 순간에)
+            ManaCost = 45f,                  // 케서린 마나 70·초당 1.6 → 다시 찰 때까지 대략 재사용 대기만큼
             CastTime = 0.3f,
             Duration = 0.7f,                 // Catherine Dash_Attack.anim 길이
             DashSpeed = 6f,
@@ -58,6 +60,7 @@ namespace IntoTheDungeon.Features.Attack
         public static readonly SpecialSkillComponent PowerShot = new()
         {
             Cooldown = 12f,                  // 평타 비중을 높이려고 길게(필살기는 노리는 순간에)
+            ManaCost = 40f,                  // 궁수 마나 80·초당 1.9
             CastTime = 0.58f,                // Archer_Skill(24fps) 14번째 프레임 = 시위를 놓는 순간
             Duration = 0.71f,                // Archer_Skill 길이(17프레임/24fps)
             DashSpeed = 0f,

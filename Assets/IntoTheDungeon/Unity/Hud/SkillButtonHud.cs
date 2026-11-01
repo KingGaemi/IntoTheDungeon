@@ -7,6 +7,7 @@ using IntoTheDungeon.Core.Abstractions.Services;
 using IntoTheDungeon.Features.Attack;
 using IntoTheDungeon.Features.Battle;
 using IntoTheDungeon.Features.Run;
+using IntoTheDungeon.Features.Stats;
 
 namespace IntoTheDungeon.Unity.Hud
 {
@@ -85,11 +86,14 @@ namespace IntoTheDungeon.Unity.Hud
                 }
 
                 var sk = em.GetComponent<SpecialSkillComponent>(m.Entity);
-                bool ready = sk.CooldownRemaining <= 0f && !sk.Casting;
+                bool cooled = sk.CooldownRemaining <= 0f && !sk.Casting;
+                bool enoughMana = !em.TryGetComponent<DerivedStatsComponent>(m.Entity, out var ds) || ds.Mana >= sk.ManaCost;
+                bool ready = cooled && enoughMana;
                 s.Button.interactable = true;
                 s.CooldownMask.anchorMax = new Vector2(1f, sk.CooldownRatio);
                 s.CooldownText.text = sk.CooldownRemaining > 0f ? sk.CooldownRemaining.ToString(sk.CooldownRemaining < 1f ? "0.0" : "0") : "";
-                s.Label.text = "필살기";
+                // 재사용 대기는 끝났는데 마나가 모자라면 그걸 알려 준다
+                s.Label.text = cooled && !enoughMana ? $"마나 부족\n{ds.Mana:0}/{sk.ManaCost:0}" : $"필살기\n마나 {sk.ManaCost:0}";
                 s.Label.color = ready ? frameColor : new Color(1f, 1f, 1f, 0.5f);
                 s.Frame.color = ready ? frameColor : new Color(frameColor.r, frameColor.g, frameColor.b, 0.35f);
             }

@@ -41,11 +41,64 @@ namespace IntoTheDungeon.Features.Run
         /// <summary>파티 슬롯별 체력 비율(0~1, 0 = 쓰러짐). 비어 있으면 전원 가득.</summary>
         public readonly List<float> PartyHp = new();
         public string LastMessage = "";
-        public float LastHeal;   // 마지막 전투 후 회복 비율(정비 화면 표시용)
+        public float LastHeal;   // 마지막 전투 후 기본 회복 비율(정비 화면 표시용, 장비 보너스 제외)
 
         /// <summary>파티원 레시피(슬롯 0번부터). 전투 때 이 순서로 스폰하고, 쓰러진 슬롯은 스폰하지 않는다. 영입하면 늘어난다.</summary>
         public readonly List<string> Members = new() { "Catherine", "Catherine", "Archer" };
         public int PartySize => Members.Count;
+
+        /// <summary>파티원별 장비 칸(슬롯 순). 여기 놓인 아이템은 그 파티원에게만 효과가 있다.</summary>
+        public readonly List<Inventory> Gear = new();
+
+        /// <summary>파티원별 레벨·경험치(슬롯 순).</summary>
+        public readonly List<int> Levels = new();
+        public readonly List<int> Xp = new();
+        public readonly List<int> LastLevelUps = new();   // 이번 방에서 레벨이 오른 슬롯(정비 화면 표시용)
+
+        public int LevelOf(int slot) { Grow(slot); return Levels[slot]; }
+        public int XpOf(int slot) { Grow(slot); return Xp[slot]; }
+        public int LastXp, LastGold;   // 이번 방에서 처치로 얻은 경험치(살아 있는 파티원 기준)·골드(정비 화면 표시용)
+        public int Gold;
+        public static int XpToNext(int level) => 50 * level;   // 임시값: 50, 100, 150, ...
+
+        void Grow(int slot)
+        {
+            while (Levels.Count <= slot) { Levels.Add(1); Xp.Add(0); }
+        }
+
+        /// <summary>경험치를 더하고 넘치면 레벨 업(여러 번도). 오른 레벨 수를 돌려준다.</summary>
+        public int AddXp(int slot, int amount)
+        {
+            Grow(slot);
+            Xp[slot] += amount;
+            int ups = 0;
+            while (Xp[slot] >= XpToNext(Levels[slot])) { Xp[slot] -= XpToNext(Levels[slot]); Levels[slot]++; ups++; }
+            if (ups > 0 && !LastLevelUps.Contains(slot)) LastLevelUps.Add(slot);
+            return ups;
+        }
+
+        /// <summary>
+        /// 적 하나를 처치했을 때 경험치·골드(임시값). 최대 체력이 클수록(강한 몹·높은 레벨) 많이 준다.
+        /// 경험치 = 최대 체력/25 × (1 + 0.2×(레벨-1)), 골드 = 경험치의 절반 정도에 ±30% 흔들림.
+        /// </summary>
+        public static int KillXp(int maxHp, int level) => System.Math.Max(1, (int)System.MathF.Round(maxHp / 25f * (1f + 0.2f * System.Math.Max(0, level - 1))));
+        public int KillGold(int xp) => System.Math.Max(1, (int)System.MathF.Round(xp * 0.5f * (0.7f + 0.6f * (float)Rng.NextDouble())));
+
+        /// <summary>파티 공용 보관함. 효과 없이 보관만 한다.</summary>
+        public readonly Inventory Stash = new(Inventory.StashCols, Inventory.StashRows);
+
+        /// <summary>그 슬롯의 장비 칸(파티원 수만큼 늘려 둔다).</summary>
+        public Inventory GearOf(int slot)
+        {
+            while (Gear.Count <= slot) Gear.Add(new Inventory(Inventory.GearCols, Inventory.GearRows));
+            return Gear[slot];
+        }
+
+        /// <summary>이번 전투에서 주운 아이템(정비 화면에서 가방에 넣거나 버림). 정비를 마치면 남은 건 사라진다.</summary>
+        public readonly List<ItemDef> Loot = new();
+
+        /// <summary>드랍 뽑기 등 판 안의 무작위.</summary>
+        public System.Random Rng => _rng;
 
         /// <summary>얻은 카드들. 패시브는 전투 때 파티 전원에게 걸린다.</summary>
         public readonly List<CardDef> Deck = new();
@@ -63,12 +116,15 @@ namespace IntoTheDungeon.Features.Run
             _rng = new System.Random(seed ^ 0x5f3759df);
         }
 
-        /// <summary>덱의 패시브를 모두 합친 보정값.</summary>
-        public PartyModifiers BuildModifiers()
+        /// <summary>그 파티원의 보정값 = 덱 패시브(파티 전원) + 그 파티원 장비 칸의 아이템.</summary>
+        public PartyModifiers BuildModifiers(int slot)
         {
             var m = new PartyModifiers();
             foreach (var card in Deck)
                 card.Modify?.Invoke(m);
+            if (slot >= 0)
+                foreach (var item in GearOf(slot).Items)
+                    item.Def.Modify?.Invoke(m);
             return m;
         }
 
@@ -94,6 +150,11 @@ namespace IntoTheDungeon.Features.Run
         public void Enter(MapNode node)
         {
             if (!CanEnter(node)) return;
+            // 방을 고르면 정비는 끝: 돌아갈 수 없고, 가방에 못 넣은 아이템은 두고 간다
+            CanReturnToCamp = false;
+            Loot.Clear();
+            LastXp = LastGold = 0;
+            LastLevelUps.Clear();
             node.Visited = true;
             Current = node;
             if (node.Type == RoomType.Rest)
@@ -107,19 +168,19 @@ namespace IntoTheDungeon.Features.Run
             Phase = RunPhase.InRoom;
         }
 
-        /// <summary>전투 후 회복 비율 = 난이도 기본값 + 덱 보정(0~1).</summary>
-        public float PostBattleHealRatio
-            => System.Math.Clamp(DifficultyTable.PostBattleHeal(Difficulty) + BuildModifiers().PostBattleHealAdd, 0f, 1f);
+        /// <summary>그 파티원의 전투 후 회복 비율 = 난이도 기본값 + 덱·장비 보정(0~1).</summary>
+        public float PostBattleHealRatio(int slot)
+            => System.Math.Clamp(DifficultyTable.PostBattleHeal(Difficulty) + BuildModifiers(slot).PostBattleHealAdd, 0f, 1f);
 
         /// <summary>전투에서 이겼다. 파티 체력을 기억하고(살아 있는 파티원은 전투 후 회복) 정비로 간다(보스였으면 판 클리어).</summary>
         public void WinRoom(IReadOnlyList<float> partyHp)
         {
             PartyHp.Clear();
             PartyHp.AddRange(partyHp);
-            float heal = PostBattleHealRatio;
             for (int i = 0; i < PartyHp.Count; i++)
-                if (PartyHp[i] > 0f) PartyHp[i] = System.MathF.Min(1f, PartyHp[i] + heal);   // 쓰러진 파티원은 휴식 방에서만
-            LastHeal = heal;
+                if (PartyHp[i] > 0f) PartyHp[i] = System.MathF.Min(1f, PartyHp[i] + PostBattleHealRatio(i));   // 쓰러진 파티원은 휴식 방에서만
+
+            LastHeal = DifficultyTable.PostBattleHeal(Difficulty) + BuildModifiers(-1).PostBattleHealAdd;   // 표시용(덱까지, 장비는 파티원별)
             Phase = Current != null && Current.Type == RoomType.Boss ? RunPhase.Cleared : RunPhase.Camp;
 
             PendingRewards.Clear();
@@ -142,11 +203,22 @@ namespace IntoTheDungeon.Features.Run
             Deck.Add(card);
         }
 
-        /// <summary>정비를 마치고 지도로.</summary>
+        /// <summary>정비 화면에서 지도로. 방을 고르기 전까진 ReturnToCamp로 다시 정비할 수 있다.</summary>
         public void LeaveCamp()
         {
-            if (Phase == RunPhase.Camp) Phase = RunPhase.ChoosingRoom;
+            if (Phase != RunPhase.Camp) return;
+            Phase = RunPhase.ChoosingRoom;
+            CanReturnToCamp = true;
         }
+
+        /// <summary>지도에서 방을 고르기 전이면 정비 화면으로 돌아간다(보상·가방 다시 손보기).</summary>
+        public void ReturnToCamp()
+        {
+            if (!CanReturnToCamp || Phase != RunPhase.ChoosingRoom) return;
+            Phase = RunPhase.Camp;
+        }
+
+        public bool CanReturnToCamp { get; private set; }
 
         public void Lose() => Phase = RunPhase.Failed;
     }

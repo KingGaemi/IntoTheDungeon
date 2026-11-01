@@ -17,17 +17,27 @@ namespace IntoTheDungeon.Features.Stats
         public static PrimaryStats operator +(PrimaryStats a, PrimaryStats b)
             => new(a.Str + b.Str, a.Agi + b.Agi, a.Int + b.Int, a.Wil + b.Wil);
 
+        public static PrimaryStats operator *(PrimaryStats a, int k)
+            => new(a.Str * k, a.Agi * k, a.Int * k, a.Wil * k);
+
+        /// <summary>레벨 1의 기본값에 (레벨-1)만큼 성장치를 더한 값.</summary>
+        public static PrimaryStats AtLevel(PrimaryStats baseStats, PrimaryStats growth, int level)
+            => baseStats + growth * System.Math.Max(0, level - 1);
+
         public readonly bool IsZero => Str == 0 && Agi == 0 && Int == 0 && Wil == 0;
 
         public static readonly PrimaryStats Default = new(5, 5, 5, 5);
+        public static readonly PrimaryStats DefaultGrowth = new(1, 1, 1, 1);
     }
 
-    /// <summary>캐릭터의 기본 스탯(정의값 + 카드 보너스).</summary>
+    /// <summary>캐릭터의 기본 스탯: 정의값(레벨 1) + 레벨 성장치 × (레벨-1) + 카드·장비 보너스.</summary>
     public struct PrimaryStatsComponent : IComponentData
     {
-        public PrimaryStats Base;
-        public PrimaryStats Bonus;
-        public readonly PrimaryStats Total => Base + Bonus;
+        public PrimaryStats Base;     // 레벨 1 기준
+        public PrimaryStats Growth;   // 레벨이 하나 오를 때마다 더해지는 값
+        public int Level;
+        public PrimaryStats Bonus;    // 카드(덱)·장비
+        public readonly PrimaryStats Total => PrimaryStats.AtLevel(Base, Growth, Level) + Bonus;
     }
 
     /// <summary>기본 스탯에서 계산된 세부 능력치 중 StatusComponent에 없는 것들.</summary>
