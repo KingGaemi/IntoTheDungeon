@@ -145,5 +145,28 @@ namespace IntoTheDungeon.Features.Run
         }
 
         public void Remove(PlacedItem item) => Items.Remove(item);
+
+        /// <summary>그 자리에 놓으면 겹치는 아이템들(격자 밖이면 null).</summary>
+        public List<PlacedItem> Overlapping(ItemDef def, int x, int y, bool rotated, PlacedItem ignore = null)
+        {
+            int w = rotated ? def.H : def.W, h = rotated ? def.W : def.H;
+            if (x < 0 || y < 0 || x + w > Cols || y + h > Rows) return null;
+            var hits = new List<PlacedItem>();
+            foreach (var p in Items)
+                if (p != ignore && x < p.X + p.W && p.X < x + w && y < p.Y + p.H && p.Y < y + h) hits.Add(p);
+            return hits;
+        }
+
+        /// <summary>
+        /// 아이템을 놓는다: 먼저 (x, y)에 그 방향 → 반대 방향, 안 되면 왼쪽 위부터 빈자리(두 방향 모두). 놓은 칸, 못 놓으면 null.
+        /// </summary>
+        public PlacedItem PlaceNear(ItemDef def, int x, int y, bool rotated)
+        {
+            var p = Place(def, x, y, rotated) ?? Place(def, x, y, !rotated);
+            for (int yy = 0; p == null && yy < Rows; yy++)
+                for (int xx = 0; p == null && xx < Cols; xx++)
+                    p = Place(def, xx, yy, rotated) ?? Place(def, xx, yy, !rotated);
+            return p;
+        }
     }
 }

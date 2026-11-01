@@ -86,7 +86,7 @@ namespace IntoTheDungeon.Unity.Hud
             if (!_wasShown) { _wasShown = true; _selected = -1; RebuildItems(); ShowInfo(null); }
 
             var head = run.Current != null
-                ? $"{run.CurrentLayer + 1}층 {Encounters.Label(run.Current.Type)} 클리어   ·   경험치 +{run.LastXp}   ·   골드 +{run.LastGold}   ·   전투 후 회복 +{Mathf.RoundToInt(run.LastHeal * 100f)}%"
+                ? $"스테이지 {run.Stage} · {run.CurrentLayer + 1}층 {Encounters.Label(run.Current.Type)} 클리어   ·   경험치 +{run.LastXp}   ·   골드 +{run.LastGold}   ·   전투 후 회복 +{Mathf.RoundToInt(run.LastHeal * 100f)}%"
                 : "";
             if (run.LastLevelUps.Count > 0)
             {
@@ -100,7 +100,8 @@ namespace IntoTheDungeon.Unity.Hud
             }
             _header.text = head;
             _partyTitle.text = $"파티 ({run.PartySize} / {CardPool.MaxPartySize})   ·   골드 {run.Gold}";
-            _toMapLabel.text = run.Loot.Count > 0 ? $"지도로 (방을 고르면 못 넣은 아이템 {run.Loot.Count}개는 버려짐)" : "지도로";
+            string next = run.StageCleared ? $"스테이지 {run.Stage + 1}로" : "지도로";
+            _toMapLabel.text = run.Loot.Count > 0 ? $"{next} (방을 고르면 못 넣은 아이템 {run.Loot.Count}개는 버려짐)" : next;
 
             UpdateRewards(run);
             UpdateMembers(run);
@@ -340,13 +341,14 @@ namespace IntoTheDungeon.Unity.Hud
                 var inv = target.Inv;
                 int cx = Mathf.RoundToInt((local.x + inv.Cols * Cell * 0.5f) / Cell - w * 0.5f);
                 int cy = Mathf.RoundToInt((inv.Rows * Cell * 0.5f - local.y) / Cell - h * 0.5f);
-                if (v.Source == inv) inv.Move(v.Placed, cx, cy, v.Rotated);   // 같은 격자 안에서 옮기기
-                else if (inv.CanPlace(v.Def, cx, cy, v.Rotated))
+                if (v.Source == inv && inv.Move(v.Placed, cx, cy, v.Rotated)) { }   // 같은 격자 안에서 옮기기
+                else if (v.Source != inv && inv.CanPlace(v.Def, cx, cy, v.Rotated))
                 {
                     if (v.Source != null) v.Source.Remove(v.Placed);          // 다른 격자에서 옮겨 옴
                     else run.Loot.Remove(v.Def);                             // 주운 아이템에서
                     inv.Place(v.Def, cx, cy, v.Rotated);
                 }
+                else TrySwap(run, v, inv, cx, cy);                           // 아이템 하나와 겹치면 서로 자리 바꾸기
             }
             else if (RectTransformUtility.RectangleContainsScreenPoint(_discard, screen, cam))
             {
@@ -362,11 +364,39 @@ namespace IntoTheDungeon.Unity.Hud
             RebuildItems();
         }
 
+        /// <summary>
+        /// 놓을 자리에 아이템이 딱 하나 있으면 서로 바꾼다: 끌던 아이템은 그 자리로, 원래 있던 아이템은 끌던 아이템이 있던 자리로
+        /// (안 맞으면 반대 방향·그 격자의 빈자리 → 놓으려던 격자의 빈자리). 주운 아이템 칸에서 끌어 왔으면 원래 아이템은 주운 아이템 칸으로.
+        /// 어디에도 못 놓으면 아무것도 바꾸지 않는다.
+        /// </summary>
+        bool TrySwap(RunData run, InventoryItemView v, Inventory inv, int cx, int cy)
+        {
+            var hits = inv.Overlapping(v.Def, cx, cy, v.Rotated, v.Placed);
+            if (hits == null || hits.Count != 1) return false;
+            var other = hits[0];
+
+            inv.Remove(other);
+            v.Source?.Remove(v.Placed);
+            var placed = inv.Place(v.Def, cx, cy, v.Rotated);
+            if (placed != null)
+            {
+                if (v.Source == null) { run.Loot.Remove(v.Def); run.Loot.Add(other.Def); return true; }
+                var back = v.Source.PlaceNear(other.Def, v.Placed.X, v.Placed.Y, other.Rotated);
+                if (back == null && v.Source != inv) back = inv.PlaceNear(other.Def, other.X, other.Y, other.Rotated);
+                if (back != null) return true;
+                inv.Remove(placed);
+            }
+            // 되돌리기
+            inv.Items.Add(other);
+            if (v.Source != null) v.Source.Items.Add(v.Placed);
+            return false;
+        }
+
         public void ShowInfo(ItemDef def)
         {
             if (!_info) return;
             _info.text = def == null
-                ? "아이템에 마우스를 올리면 효과가 보입니다.\n장비 칸에 끼운 파티원에게만 효과가 있고, 보관함은 보관만 합니다.\n끌어서 옮기기 · 끄는 중 우클릭: 회전"
+                ? "아이템에 마우스를 올리면 효과가 보입니다.\n장비 칸에 끼운 파티원에게만 효과가 있고, 보관함은 보관만 합니다.\n끌어서 옮기기(아이템 위에 놓으면 서로 바꿈) · 끄는 중 우클릭: 회전"
                 : $"{def.Name}\n[{ItemDef.RarityLabel(def.Rarity)} · {def.W}×{def.H}칸]\n\n{def.Description}";
         }
 

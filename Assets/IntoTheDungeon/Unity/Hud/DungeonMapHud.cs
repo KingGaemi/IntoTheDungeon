@@ -28,6 +28,8 @@ namespace IntoTheDungeon.Unity.Hud
         Text _info;
         Font _font;
         RunData _builtFor;
+        DungeonMap _builtMap;   // 스테이지가 바뀌면 지도도 바뀐다
+        Text _title;
         int _builtVersion = -1;
         int _version;                       // 방을 고를 때마다 올려 다시 그린다
         readonly List<(Image img, MapNode node)> _choiceImages = new();
@@ -46,7 +48,7 @@ namespace IntoTheDungeon.Unity.Hud
             if (!show) return;
 
             var run = RunState.Current;
-            if (_builtFor != run || _builtVersion != _version) Redraw(run);
+            if (_builtFor != run || _builtMap != run.Map || _builtVersion != _version) Redraw(run);
 
             if (_backToCamp.activeSelf != run.CanReturnToCamp) _backToCamp.SetActive(run.CanReturnToCamp);
 
@@ -67,7 +69,9 @@ namespace IntoTheDungeon.Unity.Hud
         void Redraw(RunData run)
         {
             _builtFor = run;
+            _builtMap = run.Map;
             _builtVersion = _version;
+            _title.text = $"스테이지 {run.Stage} / {RunData.MaxStage} 지도";
             _choiceImages.Clear();
             for (int i = _mapArea.childCount - 1; i >= 0; i--) Destroy(_mapArea.GetChild(i).gameObject);
 
@@ -176,7 +180,7 @@ namespace IntoTheDungeon.Unity.Hud
             dim.raycastTarget = true;   // 뒤의 필살기 버튼이 눌리지 않게
             Stretch(dim.rectTransform, 0f);
 
-            var title = NewText(_root.transform, "던전 지도", 52);
+            var title = _title = NewText(_root.transform, "던전 지도", 52);
             Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -50f), new Vector2(800f, 70f));
 
             _info = NewText(_root.transform, "", 28);

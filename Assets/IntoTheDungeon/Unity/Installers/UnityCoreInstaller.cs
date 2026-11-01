@@ -83,6 +83,10 @@ namespace IntoTheDungeon.Unity
             new() { recipe = "Orc1", displayName = "오크", gStr = 1, gAgi = 1, gInt = 0, gWil = 1, bodyRadius = 0.35f, bodyMass = 1.2f, headHeight = 1.27f, str = 5, agi = 3, intel = 0, wil = 2 },
             new() { recipe = "Orc2", displayName = "오크 전사", gStr = 2, gAgi = 1, gInt = 0, gWil = 1, bodyRadius = 0.4f, bodyMass = 1.5f, headHeight = 1.36f, str = 7, agi = 4, intel = 0, wil = 3 },
             new() { recipe = "Orc3", displayName = "오크 대장", gStr = 2, gAgi = 1, gInt = 0, gWil = 2, bodyRadius = 0.45f, bodyMass = 2f, headHeight = 1.59f, str = 10, agi = 3, intel = 1, wil = 6 },
+            // 스테이지 2: 식인 식물(FreeAssets craftpix Plant1~3)
+            new() { recipe = "Plant1", displayName = "식인초", gStr = 1, gAgi = 2, gInt = 0, gWil = 1, bodyRadius = 0.3f, bodyMass = 1f, headHeight = 1.0f, str = 5, agi = 7, intel = 0, wil = 2 },
+            new() { recipe = "Plant2", displayName = "가시 덩굴", gStr = 2, gAgi = 1, gInt = 0, gWil = 2, bodyRadius = 0.38f, bodyMass = 1.6f, headHeight = 1.05f, str = 8, agi = 3, intel = 0, wil = 5 },
+            new() { recipe = "Plant3", displayName = "독꽃", gStr = 2, gAgi = 1, gInt = 1, gWil = 1, bodyRadius = 0.4f, bodyMass = 1.8f, headHeight = 1.1f, str = 10, agi = 5, intel = 2, wil = 5 },
             new() { recipe = "Archer", displayName = "궁수", gStr = 1, gAgi = 2, gInt = 1, gWil = 0, bodyRadius = 0.28f, bodyMass = 0.9f, headHeight = 1.05f, ranged = true, attackRange = 5.5f, minRange = 2f,
                     windup = 0.6f, recovery = 0.3f, skill = SkillPreset.PowerShot, str = 5, agi = 9, intel = 3, wil = 3 },
         };
@@ -214,6 +218,7 @@ namespace IntoTheDungeon.Unity
             world.SystemManager.AddUnique(new CharacterIntentApplySystem());
             world.SystemManager.AddUnique(new PhaseControlSystem());
             world.SystemManager.AddUnique(new SpecialSkillSystem());   // 필살기: 평타 끊고 시전·검기 발사·종료
+            world.SystemManager.AddUnique(new BossSystem());           // 보스 내려찍기: 힘 모으기(예고) → 범위 공격
 
             // 전투: 히트박스 생성 → 위치 갱신 → 판정 → HP 적용 → 사망 상태 → 수명 정리
             world.SystemManager.AddUnique(new AttackSystem());

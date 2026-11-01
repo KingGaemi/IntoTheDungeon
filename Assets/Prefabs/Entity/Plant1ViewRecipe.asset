@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ed56150cb932cf4ea6d83be3e1cce4b, type: 3}
+  m_Name: Plant1ViewRecipe
+  m_EditorClassIdentifier: 
+  prefab: {fileID: 7626262773234588638, guid: 24e12ca07ca74c8eaed95079229802ce, type: 3}
+  attackWindupClip: {fileID: 7400000, guid: fc97a68639044e67af85f57bb7f85748, type: 2}
+  attackRecoveryClip: {fileID: 7400000, guid: ca21f30a403048d8b19aea52886d11a7, type: 2}
+  visualBehaviourTypeNames:
+  - UnityEngine.SpriteRenderer, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral,
+    PublicKeyToken=null
+  - UnityEngine.Animator, UnityEngine.AnimationModule, Version=0.0.0.0, Culture=neutral,
+    PublicKeyToken=null
+  - IntoTheDungeon.Features.Character.CharacterAnimator, Assembly-CSharp, Version=0.0.0.0,
+    Culture=neutral, PublicKeyToken=null
+  - UnityEngine.U2D.Animation.SpriteResolver, Unity.2D.Animation.Runtime, Version=0.0.0.0,
+    Culture=neutral, PublicKeyToken=null
+  - UnityEngine.U2D.Animation.SpriteLibrary, Unity.2D.Animation.Runtime, Version=0.0.0.0,
+    Culture=neutral, PublicKeyToken=null
+  - IntoTheDungeon.Features.Character.HitShake, Assembly-CSharp, Version=0.0.0.0,
+    Culture=neutral, PublicKeyToken=null
+  scriptBehaviourTypeNames:
+  - IntoTheDungeon.Unity.Behaviour.CharacterCoreBehaviour, Assembly-CSharp, Version=0.0.0.0,
+    Culture=neutral, PublicKeyToken=null
+  - IntoTheDungeon.Unity.Behaviour.CharacterInitBehaviour, Assembly-CSharp, Version=0.0.0.0,
+    Culture=neutral, PublicKeyToken=null
+  - IntoTheDungeon.Unity.DebugTools.EntityStatusViewer, Assembly-CSharp, Version=0.0.0.0,
+    Culture=neutral, PublicKeyToken=null
+  displayName: Plant1

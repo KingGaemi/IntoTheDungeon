@@ -35,6 +35,7 @@ namespace IntoTheDungeon.Features.Battle
         ISystemSpawnQueue _spawnQueue;
         IRecipeTable _recipes;
         IWalkArea _area;
+        INameTable _names;
         readonly System.Random _rng = new(7);
         bool _partySpawned, _hpApplied;
         readonly System.Collections.Generic.List<Entity> _leveled = new(16);
@@ -47,6 +48,7 @@ namespace IntoTheDungeon.Features.Battle
             Enabled = world.TryGet(out _progress) && world.TryGet(out _config)
                    && world.TryGet(out _spawnQueue) && world.TryGet(out _recipes);
             world.TryGet(out _area);
+            world.TryGet(out _names);
         }
 
         public void Tick(float dt)
@@ -97,7 +99,7 @@ namespace IntoTheDungeon.Features.Battle
         void BeginRoom(MapNode node)
         {
             _config.Waves.Clear();
-            _config.Waves.AddRange(Encounters.For(node.Type, node.Layer));
+            _config.Waves.AddRange(Encounters.For(node.Type, node.Layer, RunState.Current.Stage));
             _progress.TotalWaves = _config.Waves.Count;
             _progress.Wave = 0;
             Enter(BattlePhase.Intro);
@@ -168,10 +170,10 @@ namespace IntoTheDungeon.Features.Battle
 
         static bool IsFallen(RunData run, int slot) => slot < run.PartyHp.Count && run.PartyHp[slot] <= 0f;
 
-        /// <summary>적 레벨(임시값): 1 + 층/2, 정예 +1, 보스 +1. 파티가 평소엔 적보다 조금 높게.</summary>
+        /// <summary>적 레벨(임시값): 1 + 던전 깊이/2(깊이 = (스테이지-1)×층 수 + 층), 정예 +1, 보스 +1. 파티가 평소엔 적보다 조금 높게.</summary>
         static int EnemyLevel(RunData run)
         {
-            int lv = 1 + System.Math.Max(0, run.CurrentLayer) / 2;
+            int lv = 1 + run.Depth / 2;
             if (run.Current != null && run.Current.Type == RoomType.Elite) lv += 1;
             if (run.Current != null && run.Current.Type == RoomType.Boss) lv += 1;
             return lv;
@@ -190,27 +192,35 @@ namespace IntoTheDungeon.Features.Battle
                     if (teams[i].TeamFlag == TeamFlag.Enemy && !em.HasComponent<EnemyLeveledTag>(entities[i])) _leveled.Add(entities[i]);
             }
             int level = EnemyLevel(run);
+            NameId bossName = default;
+            bool hasBossName = _names != null && _names.TryGetId(Boss.SpawnName, out bossName);
             foreach (var e in _leveled)
             {
                 em.AddComponent(e, new EnemyLeveledTag());
+                bool boss = hasBossName && em.TryGetComponent<InformationComponent>(e, out var info) && info.NameId.Equals(bossName);
+                if (boss) Boss.Promote(em, e);   // 보스: 스탯 보너스·몸집·내려찍기
                 ref var ps = ref em.GetComponent<PrimaryStatsComponent>(e);
                 ps.Level = level;
                 if (!em.HasComponent<DerivedStatsComponent>(e)) continue;
                 StatFormula.Apply(ps.Total, ref em.GetComponent<StatusComponent>(e), ref em.GetComponent<DerivedStatsComponent>(e));
+                if (boss) Boss.ApplyHp(em, e);
                 if (em.HasComponent<HitStunComponent>(e)) em.GetComponent<HitStunComponent>(e).Resistance = em.GetComponent<DerivedStatsComponent>(e).CcResist;
             }
         }
 
-        // 바닥에 떨어진 아이템을 모두 주워 판에 넣는다(정비 화면에서 가방에 배치)
+        // 바닥에 떨어진 아이템을 모두 주워 판에 넣는다(정비 화면에서 가방에 배치). 그림은 하나씩 차례로 가방으로 날아간다
         void CollectLoot(RunData run)
         {
+            int k = 0;
             foreach (var chunk in _world.EntityManager.GetChunks(typeof(LootDropComponent)))
             {
                 var drops = chunk.GetComponentArray<LootDropComponent>();
                 for (int i = 0; i < chunk.Count; i++)
                 {
-                    if (drops[i].Collected) continue;
-                    drops[i].Collected = true;
+                    if (drops[i].Collected || drops[i].Collecting) continue;
+                    drops[i].Collecting = true;
+                    drops[i].CollectAge = 0f;
+                    drops[i].CollectDelay = 0.5f + 0.15f * k++;   // 임시값
                     var item = ItemPool.Get(drops[i].ItemIndex);
                     if (item != null) run.Loot.Add(item);
                 }
@@ -251,7 +261,7 @@ namespace IntoTheDungeon.Features.Battle
                 for (int k = 0; k < s.Count; k++, n++)
                 {
                     var pos = new Vec2(partyPos.X + side * (_config.SpawnDistance + n * 0.7f), RandomDepth(partyPos.Y));
-                    Enqueue(id, s.Recipe, pos, side < 0 ? 1f : -1f, TeamFlag.Enemy);
+                    Enqueue(id, s.Boss ? Boss.SpawnName : s.Recipe, pos, side < 0 ? 1f : -1f, TeamFlag.Enemy);
                 }
             }
         }

@@ -70,7 +70,7 @@ namespace IntoTheDungeon.Features.Run
         public static List<CardDef> Offer(RoomType type, int partySize, System.Random rng)
         {
             var offer = new List<CardDef>(3);
-            if (type == RoomType.Elite && partySize < MaxPartySize)
+            if (type is RoomType.Elite or RoomType.Boss && partySize < MaxPartySize)
                 offer.Add(Recruits[rng.Next(Recruits.Length)]);
 
             var pool = new List<CardDef>(Passives);

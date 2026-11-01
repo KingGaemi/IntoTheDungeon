@@ -33,7 +33,17 @@ namespace IntoTheDungeon.Features.Run
     {
         public const float RestHealRatio = 0.3f;   // 휴식: 최대 체력의 30% 회복(쓰러진 파티원도 30%로 일으킴)
 
-        public readonly DungeonMap Map;
+        public DungeonMap Map { get; private set; }
+
+        /// <summary>스테이지(1부터). 스테이지마다 새 지도, 마지막 스테이지 보스를 깨면 판 클리어.</summary>
+        public int Stage { get; private set; } = 1;
+        public const int MaxStage = 2;
+        public bool IsLastStage => Stage >= MaxStage;
+        /// <summary>이번 스테이지 보스를 깼다(정비를 마치고 지도로 가면 다음 스테이지).</summary>
+        public bool StageCleared { get; private set; }
+
+        /// <summary>던전 전체 깊이: 스테이지마다 지도 층 수만큼 더해진다(적 레벨·드랍 등급 계산용).</summary>
+        public int Depth => (Stage - 1) * Map.LayerCount + System.Math.Max(0, CurrentLayer);
         public readonly Difficulty Difficulty;
         public MapNode Current { get; private set; }   // 마지막으로 들어간 방(시작 전 null)
         public RunPhase Phase { get; private set; } = RunPhase.ChoosingRoom;
@@ -181,7 +191,9 @@ namespace IntoTheDungeon.Features.Run
                 if (PartyHp[i] > 0f) PartyHp[i] = System.MathF.Min(1f, PartyHp[i] + PostBattleHealRatio(i));   // 쓰러진 파티원은 휴식 방에서만
 
             LastHeal = DifficultyTable.PostBattleHeal(Difficulty) + BuildModifiers(-1).PostBattleHealAdd;   // 표시용(덱까지, 장비는 파티원별)
-            Phase = Current != null && Current.Type == RoomType.Boss ? RunPhase.Cleared : RunPhase.Camp;
+            bool boss = Current != null && Current.Type == RoomType.Boss;
+            Phase = boss && IsLastStage ? RunPhase.Cleared : RunPhase.Camp;
+            if (boss && !IsLastStage) StageCleared = true;   // 정비 뒤 다음 스테이지
 
             PendingRewards.Clear();
             RewardTaken = false;
@@ -209,6 +221,15 @@ namespace IntoTheDungeon.Features.Run
             if (Phase != RunPhase.Camp) return;
             Phase = RunPhase.ChoosingRoom;
             CanReturnToCamp = true;
+            if (StageCleared)
+            {
+                // 다음 스테이지: 새 지도 첫 층부터
+                StageCleared = false;
+                Stage++;
+                Map = DungeonMap.Generate(_rng.Next());
+                Current = null;
+                LastMessage = $"스테이지 {Stage} 시작";
+            }
         }
 
         /// <summary>지도에서 방을 고르기 전이면 정비 화면으로 돌아간다(보상·가방 다시 손보기).</summary>

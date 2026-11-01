@@ -23,7 +23,8 @@ namespace IntoTheDungeon.Features.Battle
     {
         public readonly string Recipe;
         public readonly int Count;
-        public WaveSpawn(string recipe, int count) { Recipe = recipe; Count = count; }
+        public readonly bool Boss;   // 보스로 나옴(크게·강하게·내려찍기 패턴)
+        public WaveSpawn(string recipe, int count, bool boss = false) { Recipe = recipe; Count = count; Boss = boss; }
     }
 
     /// <summary>전투 한 판의 구성: 웨이브별 몹(방에 들어갈 때 Encounters로 채움), 연출 시간. 파티 구성은 RunState.</summary>

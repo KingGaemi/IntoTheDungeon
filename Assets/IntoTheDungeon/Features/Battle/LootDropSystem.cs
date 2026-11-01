@@ -16,6 +16,11 @@ namespace IntoTheDungeon.Features.Battle
         public Vec2 Position;   // 바닥 평면(떨어진 자리)
         public float Age;       // 떨어진 뒤 지난 시간(튀어 오르는 연출용)
         public bool Collected;  // 이미 주웠음(그림 숨김)
+
+        // 방을 깨면 가방으로 날아간다: CollectDelay 뒤 FlyTime 동안 날고, 다 날면 Collected
+        public bool Collecting;
+        public float CollectAge, CollectDelay;
+        public const float FlyTime = 0.55f;
     }
 
     /// <summary>드랍 판정을 이미 한 시체 표시.</summary>
@@ -29,6 +34,18 @@ namespace IntoTheDungeon.Features.Battle
     {
         readonly List<(Entity e, Vec2 pos, int maxHp)> _dead = new(8);
 
+        /// <summary>가방으로 날아가는 중인 아이템이 남아 있나(정비 화면 전환은 다 들어간 뒤).</summary>
+        public static bool AnyFlying(IEntityManager em)
+        {
+            foreach (var chunk in em.GetChunks(typeof(LootDropComponent)))
+            {
+                var drops = chunk.GetComponentArray<LootDropComponent>();
+                for (int i = 0; i < chunk.Count; i++)
+                    if (drops[i].Collecting && !drops[i].Collected) return true;
+            }
+            return false;
+        }
+
         public void Tick(float dt)
         {
             var em = _world.EntityManager;
@@ -36,7 +53,13 @@ namespace IntoTheDungeon.Features.Battle
             foreach (var chunk in em.GetChunks(typeof(LootDropComponent)))
             {
                 var drops = chunk.GetComponentArray<LootDropComponent>();
-                for (int i = 0; i < chunk.Count; i++) drops[i].Age += dt;
+                for (int i = 0; i < chunk.Count; i++)
+                {
+                    drops[i].Age += dt;
+                    if (!drops[i].Collecting || drops[i].Collected) continue;
+                    drops[i].CollectAge += dt;
+                    if (drops[i].CollectAge >= drops[i].CollectDelay + LootDropComponent.FlyTime) drops[i].Collected = true;
+                }
             }
 
             _dead.Clear();
@@ -58,7 +81,7 @@ namespace IntoTheDungeon.Features.Battle
             var run = RunState.Current;
             var room = run.Current?.Type ?? RoomType.Battle;
             float chanceBonus = room == RoomType.Boss ? 0.3f : room == RoomType.Elite ? 0.15f : 0f;
-            float rareBonus = (room == RoomType.Boss ? 1f : room == RoomType.Elite ? 0.5f : 0f) + 0.05f * System.Math.Max(0, run.CurrentLayer);
+            float rareBonus = (room == RoomType.Boss ? 1f : room == RoomType.Elite ? 0.5f : 0f) + 0.05f * run.Depth;
 
             // 청크 순회가 끝난 뒤 구조 변경
             foreach (var (e, pos, maxHp) in _dead)

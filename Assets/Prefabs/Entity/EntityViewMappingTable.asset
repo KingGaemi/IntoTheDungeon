@@ -23,3 +23,9 @@ MonoBehaviour:
     viewRecipe: {fileID: 11400000, guid: df7964d54ac949c29f7bff80d4d8e42d, type: 2}
   - recipeIdString: Archer
     viewRecipe: {fileID: 11400000, guid: 4f4bafc8cdc0472c85d50d93501ae958, type: 2}
+  - recipeIdString: Plant1
+    viewRecipe: {fileID: 11400000, guid: 0275f4db0b894cc5a05139b609dc01c8, type: 2}
+  - recipeIdString: Plant2
+    viewRecipe: {fileID: 11400000, guid: ddd9e2b357264b408a02cb989204674e, type: 2}
+  - recipeIdString: Plant3
+    viewRecipe: {fileID: 11400000, guid: f495b6a8e9ad4cf192749f7bd8be4ddf, type: 2}
