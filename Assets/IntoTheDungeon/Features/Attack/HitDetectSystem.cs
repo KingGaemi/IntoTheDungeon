@@ -153,6 +153,9 @@ namespace IntoTheDungeon.Features.Attack
             // 방패(전사 필살기): 받는 피해 감소
             if (em.TryGetComponent<GuardComponent>(victim, out var guard) && guard.Remaining > 0f)
                 dmg = System.Math.Max(1, (int)System.MathF.Round(dmg * guard.DamageMul));
+            // 배치 열: 전열은 덜, 후열은 더 아프다
+            if (em.TryGetComponent<FormationComponent>(victim, out var form) && form.Active)
+                dmg = System.Math.Max(1, (int)System.MathF.Round(dmg * Formation.DamageTakenMul(form.Row)));
             if (em.TryGetComponent<DerivedStatsComponent>(victim, out var d))
                 dmg = StatFormula.Mitigate(dmg, hb.Type == DamageType.Magic ? d.MagicResist : d.Armor);
             CombatMeter.Block(em, victim, hb.Damage - dmg);   // 딜 미터: 막은 피해(방어·난이도·방패)

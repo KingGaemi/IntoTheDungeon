@@ -18,6 +18,7 @@ namespace IntoTheDungeon.Features.Run
         public string LastMessage = "";
         public List<NodeSave> Nodes = new();
         public List<string> Members = new();
+        public List<int> Formation = new();   // 슬롯별 배치 칸(없던 옛 저장은 비어 있음 → 기본 자리)
         public List<float> PartyHp = new();
         public List<int> Levels = new(), Xp = new(), LastLevelUps = new();
         public List<ItemSave> Items = new();

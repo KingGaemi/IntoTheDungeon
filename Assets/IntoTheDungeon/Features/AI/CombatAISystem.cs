@@ -46,7 +46,7 @@ namespace IntoTheDungeon.Features.AI
         public void Tick(float dt)
         {
             _time += dt;
-            if (_progress != null && _progress.Phase == BattlePhase.Map) return;   // 지도에서 방 고르는 동안은 가만히
+            if (_progress != null && _progress.Phase is BattlePhase.Map or BattlePhase.Deploy) return;   // 지도·배치 중엔 가만히
             var em = _world.EntityManager;
             // 웨이브 진행 중엔 방이 넓어도(마지막 웨이브는 문 앞에서 나옴) 거리와 상관없이 가장 가까운 적과 붙는다
             bool fighting = _progress == null || _progress.Phase == BattlePhase.Fighting;
@@ -87,6 +87,14 @@ namespace IntoTheDungeon.Features.AI
                     var self = transforms[i].Position;
                     bool hasTarget = TryTaunter(em, entities[i], self, out var target, out float dist)
                                   || TryFindNearest(entities[i], teams[i].TeamFlag, self, out target, out dist);
+
+                    // 적이 남아 있으면 거리와 상관없이 찾아가 싸우고(맵 전체), 없을 때만 배치 칸으로 돌아가 선다
+                    if (!hasTarget && em.TryGetComponent<FormationComponent>(entities[i], out var form) && form.Active)
+                    {
+                        HoldAnchor(ref ai, ref buf, states[i], self, form.Anchor);
+                        continue;
+                    }
+
                     if (!hasTarget || (!fighting && dist > ai.AggroRange))
                     {
                         if (!TryFollowLeader(ref ai, ref buf, entities[i], teams[i].TeamFlag, self, states[i]))
@@ -164,6 +172,27 @@ namespace IntoTheDungeon.Features.AI
             MoveIfChanged(ref buf, state, to.Normalized);
             ai.State = CombatAIState.Follow;
             return true;
+        }
+
+        // 배치 칸으로 돌아가 적 쪽(오른쪽)을 보고 선다
+        static void HoldAnchor(ref CombatAIComponent ai, ref CharacterIntentBuffer buf, in StateComponent state, Vec2 self, Vec2 anchor)
+        {
+            var to = anchor - self;
+            float limit = ai.State == CombatAIState.Follow ? 0.1f : 0.35f;   // 가는 중이면 거의 닿을 때까지, 서 있으면 조금 밀려도 그대로
+            if (to.Magnitude > limit)
+            {
+                MoveIfChanged(ref buf, state, to.Normalized);
+                ai.State = CombatAIState.Follow;
+                return;
+            }
+            var cur = state.Current;
+            if (cur.Facing != Facing2D.Right)
+            {
+                buf.Add(CharacterIntent.Move(Facing2D.Right));
+                buf.Add(CharacterIntent.Stop());
+            }
+            else StopIfMoving(ref buf, cur);
+            ai.State = CombatAIState.Idle;
         }
 
         static void MoveIfChanged(ref CharacterIntentBuffer buf, in StateComponent state, Vec2 want)

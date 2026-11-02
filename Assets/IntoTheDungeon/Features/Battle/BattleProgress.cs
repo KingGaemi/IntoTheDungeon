@@ -2,7 +2,8 @@ using System.Collections.Generic;
 
 namespace IntoTheDungeon.Features.Battle
 {
-    public enum BattlePhase { Map, Intro, Fighting, Interlude, Victory, Defeat }   // Map: 지도에서 방 고르는 중(전투 없음)
+    // Map: 지도에서 방 고르는 중(전투 없음), Deploy: 방에 들어와 전투 전 배치(파티만 서 있음, 「전투 시작」을 누르면 Intro)
+    public enum BattlePhase { Map, Intro, Fighting, Interlude, Victory, Defeat, Deploy }
 
     /// <summary>
     /// 전투 한 판의 진행 상황. BattleFlowSystem이 쓰고 HUD가 읽는다(월드 서비스로 등록).
@@ -15,6 +16,11 @@ namespace IntoTheDungeon.Features.Battle
         public int EnemiesAlive;
         public float PhaseTime;   // 지금 단계에 들어온 뒤 지난 시간(초)
         public float Fade;        // 화면 덮개(0 밝음 ~ 1 깜깜): 웨이브 사이 다음 구역으로 넘어갈 때
+
+        // 배치 단계(DeployHud가 쓰고 BattleFlowSystem이 읽는다)
+        public bool DeployConfirmed;   // 「전투 시작」
+        public int DragSlot = -1;      // 끌고 있는 파티원 슬롯(-1 = 없음)
+        public IntoTheDungeon.Core.Util.Vec2 DragPos;   // 끄는 중인 바닥 위치
 
         public bool IsOver => Phase is BattlePhase.Victory or BattlePhase.Defeat;
         public bool IsFighting => Phase is BattlePhase.Intro or BattlePhase.Fighting or BattlePhase.Interlude;

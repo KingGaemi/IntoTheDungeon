@@ -47,6 +47,7 @@ namespace IntoTheDungeon.Features.Character
                 em.AddComponent(e, _def.Trait);
             }
             em.AddComponent(e, new PoisonComponent());
+            em.AddComponent(e, new IntoTheDungeon.Features.Battle.FormationComponent());   // 파티원만 배치 때 켜진다
             em.AddComponent(e, new PrimaryStatsComponent { Base = _def.Stats, Growth = _def.Growth, Level = 1 });
             em.AddComponent(e, status);
             em.AddComponent(e, derived);

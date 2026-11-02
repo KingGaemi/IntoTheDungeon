@@ -80,7 +80,7 @@ namespace IntoTheDungeon.Unity
             World.BakeScene();
 
             // 전투 화면 UI(필살기 버튼·웨이브 진행·던전 지도·정비)와 투사체(검기·화살)·체력바·데미지 숫자·떨어진 아이템 그림: 씬 배치 없이 코드로 만든다(주입 전에 만들어야 Init을 받음)
-            new GameObject("BattleHud", typeof(Hud.SkillButtonHud), typeof(Hud.ProjectileRenderer), typeof(Hud.HealthBarRenderer), typeof(Hud.DamageNumberRenderer), typeof(Hud.LootRenderer), typeof(Hud.RewardFxRenderer), typeof(Hud.BossRenderer), typeof(Hud.GuardRenderer), typeof(Hud.DoorRenderer), typeof(Hud.SpeedControlHud), typeof(Hud.MeterHud), typeof(Hud.BattleStatusHud), typeof(Hud.DungeonMapHud), typeof(Hud.CampHud), typeof(Hud.GemHud), typeof(Hud.SealHud), typeof(RunAutoSave));
+            new GameObject("BattleHud", typeof(Hud.SkillButtonHud), typeof(Hud.ProjectileRenderer), typeof(Hud.HealthBarRenderer), typeof(Hud.DamageNumberRenderer), typeof(Hud.LootRenderer), typeof(Hud.RewardFxRenderer), typeof(Hud.BossRenderer), typeof(Hud.GuardRenderer), typeof(Hud.DoorRenderer), typeof(Hud.SpeedControlHud), typeof(Hud.MeterHud), typeof(Hud.BattleStatusHud), typeof(Hud.DungeonMapHud), typeof(Hud.CampHud), typeof(Hud.GemHud), typeof(Hud.SealHud), typeof(Hud.DeployHud), typeof(RunAutoSave));
 
             Debug.Log("[Bootstrapper] Calling ReinjectScene()");
             _bootstrap.ReinjectScene();
@@ -185,13 +185,20 @@ namespace IntoTheDungeon.Unity
         void Update()
         {
             // 외부 엔진 틱 연결
-            _bootstrap?.Tick(Time.deltaTime);
+            _bootstrap?.Tick(GameplayPaused() ? 0f : Time.deltaTime);
         }
 
         void FixedUpdate()
         {
-            _bootstrap?.FixedTick(Time.fixedDeltaTime);
+            _bootstrap?.FixedTick(GameplayPaused() ? 0f : Time.fixedDeltaTime);
         }
+
+        // 전투 배치 중엔 게임 시간을 멈춘다(재사용 대기·체력/마나 회복·이동이 흐르지 않게).
+        // 시스템은 dt 0으로 계속 돌아 스폰·배치·그림 동기화는 되고, Animator는 Unity 시간으로 돌아 애니메이션은 재생된다.
+        bool GameplayPaused()
+            => _bootstrap?.World != null
+               && _bootstrap.World.TryGet(out IntoTheDungeon.Features.Battle.BattleProgress p)
+               && p.Phase == IntoTheDungeon.Features.Battle.BattlePhase.Deploy;
 
         void OnActiveSceneChanged(Scene _, Scene __)
         {

@@ -20,16 +20,35 @@ namespace IntoTheDungeon.Unity.Title
         [SerializeField] Color buttonColor = new(0.16f, 0.22f, 0.45f, 1f);
         [SerializeField] Color accent = new(1f, 0.82f, 0.3f, 1f);
 
+        /// <summary>판이 끝나 「새 던전」을 누르고 타이틀로 오면 바로 봉인석 고르기를 연다.</summary>
+        public static bool OpenSealSelectOnLoad;
+
         Font _font;
-        GameObject _menu, _settings, _continue;
+        GameObject _menu, _settings, _continue, _titleGroup;
         Text _shakeValue, _overlayLabel;
+        SealSelectScreen _seal;
 
-        void Awake() => Build();
+        void Awake()
+        {
+            Build();
+            if (OpenSealSelectOnLoad) { OpenSealSelectOnLoad = false; ShowSeal(true); }
+        }
 
-        void NewGame()
+        // 새 게임: 먼저 봉인석 단계를 고른다(판 도중엔 못 바꿈)
+        void NewGame() => ShowSeal(true);
+
+        void ShowSeal(bool show)
+        {
+            _seal.Show(show);
+            _menu.SetActive(!show);
+            _titleGroup.SetActive(!show);
+        }
+
+        void StartRun(int sealTier)
         {
             RunSaveStore.Delete();   // 새 판을 시작하면 이전 판 저장은 지운다
             RunState.StartNew();
+            RunState.Current.SetSealTier(sealTier);
             SceneManager.LoadScene(gameSceneName);
         }
 
@@ -55,6 +74,7 @@ namespace IntoTheDungeon.Unity.Title
         {
             _settings.SetActive(show);
             _menu.SetActive(!show);
+            _titleGroup.SetActive(true);
             if (show) RefreshSettings();
         }
 
@@ -83,10 +103,11 @@ namespace IntoTheDungeon.Unity.Title
 
             Stretch(NewImage(root, background).rectTransform);
 
-            var title = NewText(root, "Into The Dungeon", 110);
+            _titleGroup = NewGroup(root);
+            var title = NewText(_titleGroup.transform, "Into The Dungeon", 110);
             title.color = accent;
             Place(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 250f), new Vector2(1400f, 140f));
-            var sub = NewText(root, "파티를 꾸려 던전 끝까지", 34);
+            var sub = NewText(_titleGroup.transform, "파티를 꾸려 던전 끝까지", 34);
             sub.color = new Color(1f, 1f, 1f, 0.6f);
             Place(sub.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 160f), new Vector2(1000f, 50f));
 
@@ -117,6 +138,9 @@ namespace IntoTheDungeon.Unity.Title
             _overlayLabel = overlay.GetComponentInChildren<Text>();
             NewButton(_settings.transform, "돌아가기", new Vector2(0f, -240f), () => ShowSettings(false));
             _settings.SetActive(false);
+
+            _seal = gameObject.AddComponent<SealSelectScreen>();
+            _seal.Build(root, _font, StartRun, () => ShowSeal(false));
         }
 
         GameObject NewGroup(Transform parent)

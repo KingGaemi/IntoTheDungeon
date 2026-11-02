@@ -57,6 +57,39 @@ namespace IntoTheDungeon.Features.Run
         public readonly List<string> Members = new() { "Warrior", "Catherine", "Archer" };
         public int PartySize => Members.Count;
 
+        /// <summary>파티원별 배치 칸(슬롯 순, Battle.Formation 칸 번호). -1이면 아직 없음 → 전투 전에 기본 자리로 채운다.</summary>
+        public readonly List<int> Formation = new();
+
+        public int CellOf(int slot) => slot >= 0 && slot < Formation.Count ? Formation[slot] : -1;
+
+        /// <summary>빈 슬롯(새로 영입 등)과 겹친 칸을 기본 자리로 채운다. 근접은 전열부터, 원거리는 후열부터.</summary>
+        public void EnsureFormation(System.Func<string, bool> isRanged)
+        {
+            while (Formation.Count < Members.Count) Formation.Add(-1);
+            var used = new HashSet<int>();
+            for (int s = 0; s < Members.Count; s++)
+            {
+                int c = Formation[s];
+                if (c < 0 || c >= Battle.Formation.Cells || used.Contains(c)) Formation[s] = -1;
+                else used.Add(c);
+            }
+            for (int s = 0; s < Members.Count; s++)
+            {
+                if (Formation[s] >= 0) continue;
+                foreach (int c in Battle.Formation.Preference(isRanged(Members[s])))
+                    if (used.Add(c)) { Formation[s] = c; break; }
+            }
+        }
+
+        /// <summary>그 칸에 놓는다. 다른 파티원이 있던 칸이면 서로 자리를 바꾼다.</summary>
+        public void PlaceInCell(int slot, int cell)
+        {
+            if (slot < 0 || slot >= Formation.Count || cell < 0 || cell >= Battle.Formation.Cells) return;
+            int other = Formation.IndexOf(cell);
+            if (other >= 0 && other != slot) Formation[other] = Formation[slot];
+            Formation[slot] = cell;
+        }
+
         /// <summary>파티원별 장비 칸(슬롯 순). 여기 놓인 아이템은 그 파티원에게만 효과가 있다.</summary>
         public readonly List<Inventory> Gear = new();
 
@@ -94,7 +127,7 @@ namespace IntoTheDungeon.Features.Run
         /// 적 하나를 처치했을 때 경험치·골드(임시값). 최대 체력이 클수록(강한 몹·높은 레벨) 많이 준다.
         /// 경험치 = 최대 체력/25 × (1 + 0.2×(레벨-1)), 골드 = 경험치의 절반 정도에 ±30% 흔들림.
         /// </summary>
-        public static int KillXp(int maxHp, int level) => System.Math.Max(1, (int)System.MathF.Round(maxHp / 25f * (1f + 0.2f * System.Math.Max(0, level - 1))));
+        public static int KillXp(int maxHp, int level) => System.Math.Max(1, (int)System.MathF.Round(maxHp / 60f * (1f + 0.2f * System.Math.Max(0, level - 1))));
         public int KillGold(int xp) => System.Math.Max(1, (int)System.MathF.Round(xp * 0.5f * (0.7f + 0.6f * (float)Rng.NextDouble())));
 
         /// <summary>파티 공용 보관함. 효과 없이 보관만 한다.</summary>
@@ -315,6 +348,7 @@ namespace IntoTheDungeon.Features.Run
                 foreach (var n in row)
                     s.Nodes.Add(new NodeSave { Layer = n.Layer, Index = n.Index, Type = (int)n.Type, Visited = n.Visited, Next = new List<int>(n.Next) });
             s.Members.AddRange(Members);
+            s.Formation.AddRange(Formation);
             s.PartyHp.AddRange(PartyHp);
             s.Levels.AddRange(Levels);
             s.Xp.AddRange(Xp);
@@ -361,6 +395,7 @@ namespace IntoTheDungeon.Features.Run
 
             run.Members.Clear();
             run.Members.AddRange(s.Members);
+            if (s.Formation != null) run.Formation.AddRange(s.Formation);
             run.PartyHp.AddRange(s.PartyHp);
             run.Levels.AddRange(s.Levels);
             run.Xp.AddRange(s.Xp);

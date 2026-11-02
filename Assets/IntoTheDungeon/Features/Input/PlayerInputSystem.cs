@@ -55,7 +55,8 @@ namespace IntoTheDungeon.Features.Input
             var em = _world.EntityManager;
 
             int slot = _input.SkillSlot;
-            if (slot >= 0)
+            bool deploying = _world.TryGet(out BattleProgress bp) && bp.Phase == BattlePhase.Deploy;   // 배치 중엔 필살기 안 나감
+            if (slot >= 0 && !deploying)
             {
                 Party.Collect(em, _party);
                 if (Party.TryGetSlot(_party, slot, out var m) && m.Alive && em.HasComponent<SpecialSkillComponent>(m.Entity))

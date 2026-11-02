@@ -61,13 +61,13 @@ namespace IntoTheDungeon.Features.Stats
     public static class StatFormula
     {
         // 힘
-        public const float BaseHp = 150f, HpPerStr = 14f;   // 공격력 대비 체력을 넉넉히(전투가 몇 대 만에 끝나지 않게)
+        public const float BaseHp = 230f, HpPerStr = 20f;   // 공격력 대비 체력을 넉넉히(유저: 전투가 너무 짧다 → 150+14에서 상향)
         public const float BaseDamage = 4f, DamagePerStr = 1.2f;
         public const float HpRegenPerStr = 0.15f;
         // 민첩
         public const float BaseAttackSpeed = 1f, AttackSpeedPerAgi = 0.03f;
         public const float ArmorPerAgi = 2f;
-        public const float BaseMoveSpeed = 5f, MoveSpeedPerAgi = 0.015f;
+        public const float BaseMoveSpeed = 2.3f, MoveSpeedPerAgi = 0.015f;   // 유저: 전체적으로 너무 빠르다 → 5 → 3.3 → 2.3
         // 지능
         public const float BaseMana = 50f, ManaPerInt = 10f;
         public const float BaseManaRegen = 1f, ManaRegenPerInt = 0.3f;

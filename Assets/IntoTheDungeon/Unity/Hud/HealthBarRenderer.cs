@@ -112,7 +112,7 @@ namespace IntoTheDungeon.Unity.Hud
             if (!hidden)
             {
                 float now = Time.time;
-                bool snap = _progress != null && _progress.Phase == BattlePhase.Intro;
+                bool snap = _progress != null && _progress.Phase is BattlePhase.Intro or BattlePhase.Deploy;
                 foreach (var chunk in _world.EntityManager.GetChunks(typeof(StatusComponent), typeof(TransformComponent), typeof(TeamComponent)))
                 {
                     var statuses = chunk.GetComponentArray<StatusComponent>();

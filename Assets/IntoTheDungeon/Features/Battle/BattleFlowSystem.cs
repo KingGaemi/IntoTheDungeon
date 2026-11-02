@@ -30,6 +30,7 @@ namespace IntoTheDungeon.Features.Battle
     public sealed class BattleFlowSystem : GameSystem, ITick
     {
         const float SpawnSettleTime = 1f;
+        const float EnemyHpBase = 1.6f, EnemyDamageBase = 1.35f;   // 몹 전체 배율(임시값, 특성·레벨·봉인석 위에 곱함)
         const float PartyStartInset = 4f;   // 파티는 방 왼쪽 끝에서 이만큼 안쪽에서 시작(몹은 오른쪽에서 옴)   // 스폰 직후엔 아직 엔티티가 없을 수 있어 이 시간 뒤부터 전멸 판정
 
         BattleProgress _progress;
@@ -70,8 +71,8 @@ namespace IntoTheDungeon.Features.Battle
                 return;
             }
 
-            // 방에 들어온 첫 프레임: 판 기록대로 파티 전원 스폰(쓰러진 슬롯은 아예 안 나옴)
-            if (p.Phase == BattlePhase.Intro && !_partySpawned) { SpawnParty(run); _partySpawned = true; return; }
+            // 배치: 판 기록대로 파티를 배치 칸에 세우고(쓰러진 슬롯은 안 나옴) 「전투 시작」을 기다린다
+            if (p.Phase == BattlePhase.Deploy) { TickDeploy(run); return; }
 
             bool partyFound = HasPartyMember();
             Party.TryGetCenter(_world.EntityManager, out var partyPos, out int partyAlive);
@@ -131,7 +132,77 @@ namespace IntoTheDungeon.Features.Battle
             _config.Waves.AddRange(Encounters.For(node.Type, node.Layer, RunState.Current.Stage));
             _progress.TotalWaves = _config.Waves.Count;
             _progress.Wave = 0;
+            _progress.DeployConfirmed = false;
+            _progress.DragSlot = -1;
+            Enter(BattlePhase.Deploy);
+        }
+
+        void TickDeploy(RunData run)
+        {
+            if (!_partySpawned) { SpawnParty(run); _partySpawned = true; return; }
+            if (!HasPartyMember()) return;                                   // 스폰 대기
+            if (!_hpApplied) { ApplyRunToParty(run); _hpApplied = true; }   // 슬롯·덱·체력(스폰된 다음 프레임)
+            PlaceParty(run, Formation.MiddleOf(_area), deploying: true);
+            if (!_progress.DeployConfirmed) return;
+
+            _progress.DeployConfirmed = false;
+            _progress.DragSlot = -1;
+            RefreshFormationStats(run);   // 열 보정(공격력·공속)을 정한 자리대로
             Enter(BattlePhase.Intro);
+        }
+
+        /// <summary>
+        /// 살아 있는 파티원(슬롯 있는)에게 배치 칸 자리·열을 입힌다. deploying이면 그 자리에 바로 세운다(끄는 중인 파티원은 마우스 위치).
+        /// </summary>
+        void PlaceParty(RunData run, Vec2 middle, bool deploying)
+        {
+            var em = _world.EntityManager;
+            run.EnsureFormation(IsRanged);
+            Party.Collect(em, _party);
+            int back = 0;
+            foreach (var m in _party)
+            {
+                var e = m.Entity;
+                if (m.Slot >= Party.NoSlot || !em.Exists(e) || !em.HasComponent<FormationComponent>(e)) continue;
+                int cell = run.CellOf(m.Slot);
+                if (cell < 0) continue;
+                var anchor = Formation.CellPos(cell, middle, _area);
+                ref var f = ref em.GetComponent<FormationComponent>(e);
+                f.Active = m.Alive;
+                f.Row = Formation.RowOf(cell);
+                f.Anchor = anchor;
+
+                if (!deploying && m.Alive) continue;
+                // 배치 중: 칸에 바로 세움 / 웨이브 사이 이동 때 쓰러진 파티원: 후열 뒤에 눕혀 둔다
+                var pos = m.Alive
+                    ? (m.Slot == _progress.DragSlot ? _progress.DragPos : anchor)
+                    : new Vec2(middle.X - Formation.ColGap * 2f - 0.8f - back++ * 0.6f, anchor.Y);
+                if (_area != null) pos = _area.Clamp(pos);
+                ref var tr = ref em.GetComponent<TransformComponent>(e);
+                tr.Position = pos;
+                tr.Height = 0f;
+                tr.Moved = true;
+                if (em.HasComponent<KnockbackComponent>(e)) em.GetComponent<KnockbackComponent>(e).Velocity = Vec2.Zero;
+            }
+        }
+
+        bool IsRanged(string recipe)
+            => _world.TryGet(out IntoTheDungeon.Features.Character.CharacterCatalog cat) && cat.Get(recipe).Ranged;
+
+        // 배치를 정한 뒤 열 보정이 들어가도록 능력치를 다시 계산(체력 비율은 유지)
+        void RefreshFormationStats(RunData run)
+        {
+            var em = _world.EntityManager;
+            Party.Collect(em, _party);
+            foreach (var m in _party)
+            {
+                if (m.Slot >= Party.NoSlot || !m.Alive) continue;
+                ref var st0 = ref em.GetComponent<StatusComponent>(m.Entity);
+                float ratio = st0.MaxHp > 0 ? (float)st0.CurrentHp / st0.MaxHp : 1f;
+                RecalculatePartyStats(em, m.Entity, run, m.Slot);
+                ref var st = ref em.GetComponent<StatusComponent>(m.Entity);
+                st.CurrentHp = System.Math.Max(1, (int)System.MathF.Round(st.MaxHp * ratio));
+            }
         }
 
         // 판의 덱(패시브 보정)과 슬롯별 체력 비율을 파티에 입힌다(쓰러졌던 파티원은 다시 쓰러뜨림)
@@ -204,6 +275,13 @@ namespace IntoTheDungeon.Features.Battle
             st.MaxHp = (int)System.MathF.Round(st.MaxHp * mods.MaxHpMul);
             st.AttackSpeed *= mods.AttackSpeedMul;
             st.MovementSpeed *= mods.MoveSpeedMul;
+
+            // 배치 열 보정(전열 피해 감소는 HitDetectSystem에서)
+            if (em.TryGetComponent<FormationComponent>(e, out var f) && f.Active)
+            {
+                st.Damage = (int)System.MathF.Round(st.Damage * Formation.DamageMul(f.Row));
+                st.AttackSpeed *= Formation.AttackSpeedMul(f.Row);
+            }
             return mods;
         }
 
@@ -245,6 +323,9 @@ namespace IntoTheDungeon.Features.Battle
                 ref var eds = ref em.GetComponent<DerivedStatsComponent>(e);
                 StatFormula.Apply(ps.Total, ref est, ref eds);
                 TraitComponent.ApplyIfAny(em, e, ref est, ref eds);   // 몹 특성(단단함·유리 대포 등)
+                // 몹 전체 기본 강화(유저: 몹이 너무 약하다)
+                est.MaxHp = (int)System.MathF.Round(est.MaxHp * EnemyHpBase);
+                est.Damage = (int)System.MathF.Round(est.Damage * EnemyDamageBase);
                 // 봉인석: 체력·공격력 배율
                 est.MaxHp = (int)System.MathF.Round(est.MaxHp * SealStone.EnemyHpMul(run.SealTier));
                 est.CurrentHp = est.MaxHp;
@@ -337,24 +418,25 @@ namespace IntoTheDungeon.Features.Battle
             foreach (var e in _leveled) { _viewOps?.Enqueue(e); em.DestroyEntity(e); }
 
             Party.Collect(em, _party);
-            var start = StartPosition();
+            var middle = Formation.MiddleOf(_area);
             // 마지막 구역(문이 있는 곳)은 문 가까이에서 시작한다(방이 넓어 왼쪽 끝이면 한참 걸어가야 하므로)
             if (_progress.Wave + 1 == _progress.TotalWaves && _area is RectWalkArea ra)
-                start = new Vec2(System.MathF.Max(start.X, DoorPosition(ra).X - 11f), start.Y);
-            int row = 0, back = 0;
+                middle = new Vec2(System.MathF.Max(middle.X, DoorPosition(ra).X - 11f + Formation.ColGap), middle.Y);
+            var run = RunState.Current;
+            PlaceParty(run, middle, deploying: false);   // 자리(Anchor) 갱신 + 쓰러진 파티원은 뒤에 눕힘
             foreach (var m in _party)
             {
                 var e = m.Entity;
                 if (!em.Exists(e) || !em.HasComponent<TransformComponent>(e)) continue;
-                // 살아 있으면 앞줄부터, 쓰러진 파티원은 맨 뒤에 눕혀 둔다
-                var pos = m.Alive ? new Vec2(start.X - row++ * 0.9f, RandomDepth(start.Y)) : new Vec2(start.X - 3.2f - back++ * 0.6f, RandomDepth(start.Y));
+                // 살아 있으면 배치 칸 그대로(슬롯 없는 파티원은 중열 가운데 근처)
+                if (!m.Alive) continue;
+                Vec2 pos = em.TryGetComponent<FormationComponent>(e, out var fc) && fc.Active ? fc.Anchor : new Vec2(middle.X, RandomDepth(middle.Y));
                 if (_area != null) pos = _area.Clamp(pos);
                 ref var tr = ref em.GetComponent<TransformComponent>(e);
                 tr.Position = pos;
                 tr.Height = 0f;
                 tr.Moved = true;
                 if (em.HasComponent<KnockbackComponent>(e)) em.GetComponent<KnockbackComponent>(e).Velocity = Vec2.Zero;
-                if (!m.Alive) continue;
                 if (em.HasComponent<CharacterIntentBuffer>(e))
                 {
                     ref var buf = ref em.GetComponent<CharacterIntentBuffer>(e);
@@ -395,12 +477,12 @@ namespace IntoTheDungeon.Features.Battle
         void SpawnParty(RunData run)
         {
             _expectedSlots.Clear();
-            var start = StartPosition();
-            int row = 0;
+            run.EnsureFormation(IsRanged);
+            var middle = Formation.MiddleOf(_area);
             for (int slot = 0; slot < run.Members.Count; slot++)
             {
                 if (IsFallen(run, slot) || !_recipes.TryGetId(run.Members[slot], out var id)) continue;
-                var pos = new Vec2(start.X - row++ * 0.9f, RandomDepth(start.Y));
+                var pos = Formation.CellPos(run.CellOf(slot), middle, _area);   // 배치 칸
                 Enqueue(id, "Party", pos, 1f, Party.Team);
                 _expectedSlots.Add(slot);
             }

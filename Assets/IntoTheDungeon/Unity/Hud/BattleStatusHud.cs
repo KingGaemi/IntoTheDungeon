@@ -33,7 +33,7 @@ namespace IntoTheDungeon.Unity.Hud
         GameObject _retry, _toTitle;
         Image _fade;
         float _fadeAlpha, _settled;
-        bool _leaving;
+        bool _leaving, _toSealSelect;
 
         public void Init(IWorld world)
         {
@@ -86,7 +86,17 @@ namespace IntoTheDungeon.Unity.Hud
             if (_leaving)
             {
                 _fadeAlpha = Mathf.MoveTowards(_fadeAlpha, 1f, Time.unscaledDeltaTime / fadeOutTime);   // 배속과 무관하게
-                if (_fadeAlpha >= 1f) { s_fadeInNext = true; _leaving = false; Reload(); }
+                if (_fadeAlpha >= 1f)
+                {
+                    _leaving = false;
+                    if (_toSealSelect)
+                    {
+                        // 판이 끝났으면 새 판은 봉인석부터 다시 고른다
+                        IntoTheDungeon.Unity.Title.TitleMenu.OpenSealSelectOnLoad = true;
+                        SceneManager.LoadScene(IntoTheDungeon.Unity.Title.TitleMenu.SceneName);
+                    }
+                    else { s_fadeInNext = true; Reload(); }
+                }
             }
             else _fadeAlpha = Mathf.MoveTowards(_fadeAlpha, 0f, Time.unscaledDeltaTime / fadeInTime);
             float a = Mathf.Max(_fadeAlpha, _progress != null ? _progress.Fade : 0f);   // 웨이브 사이 다음 구역으로 넘어갈 때도
@@ -104,8 +114,9 @@ namespace IntoTheDungeon.Unity.Hud
         void Retry()
         {
             var run = RunState.Current;
-            if (run.Phase is RunPhase.Cleared or RunPhase.Failed) RunState.StartNew();   // 판이 끝났으면 새 지도
-            _leaving = true;                                                          // 어두워진 뒤 다시 불러옴
+            _toSealSelect = run.Phase is RunPhase.Cleared or RunPhase.Failed;   // 판이 끝났으면 봉인석 고르기 → 새 판
+            if (_toSealSelect) RunSaveStore.Delete();
+            _leaving = true;                                                    // 어두워진 뒤 다시 불러옴
         }
 
         // 다시 불러오면 정비 또는 지도부터
