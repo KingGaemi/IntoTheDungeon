@@ -20,6 +20,8 @@ namespace IntoTheDungeon.Features.Battle
         public Vec2 Position;
         public float Height;   // 발 높이 + 머리 높이(숫자가 나올 자리)
         public int Xp, Gold;
+        public string Gem;     // 잼을 떨궜으면 이름(아니면 null)
+        public float GemR, GemG, GemB;
     }
 
     /// <summary>전투 중 파티원이 레벨 업했다(이펙트용).</summary>
@@ -48,7 +50,9 @@ namespace IntoTheDungeon.Features.Battle
     {
         const float LevelUpHeal = 0.2f;   // 임시값
 
-        readonly List<(Entity e, KillRewardEvent evt, int maxHp, int level)> _dead = new(8);
+        const float EliteGemChance = 0.1f;   // 정예 방 몹 하나당 잼 확률(보스는 확정)
+
+        readonly List<(Entity e, KillRewardEvent evt, int maxHp, int level, bool boss)> _dead = new(8);
         readonly List<Party.Member> _party = new(8);
 
         public void Tick(float dt)
@@ -69,21 +73,29 @@ namespace IntoTheDungeon.Features.Battle
                     float head = em.TryGetComponent<BodyComponent>(e, out var body) ? body.HeadHeight : 1.2f;
                     int level = em.TryGetComponent<PrimaryStatsComponent>(e, out var ps) ? ps.Level : 1;
                     var evt = new KillRewardEvent { Position = transforms[i].Position, Height = transforms[i].Height + head };
-                    _dead.Add((e, evt, statuses[i].MaxHp, level));
+                    _dead.Add((e, evt, statuses[i].MaxHp, level, em.HasComponent<BossComponent>(e)));
                 }
             }
             if (_dead.Count == 0) return;
 
             var run = RunState.Current;
             Party.Collect(em, _party);
+            float goldMul = run.BuildModifiers(-1).GoldMul;   // 잼(황수정)
+            bool elite = run.Current != null && run.Current.Type == RoomType.Elite;
 
             // 청크 순회가 끝난 뒤 구조 변경
-            foreach (var (e, evt0, maxHp, level) in _dead)
+            foreach (var (e, evt0, maxHp, level, boss) in _dead)
             {
                 em.AddComponent(e, new KillRewardedTag());
                 var evt = evt0;
-                evt.Xp = RunData.KillXp(maxHp, level);
-                evt.Gold = run.KillGold(evt.Xp);
+                evt.Xp = (int)System.MathF.Round(RunData.KillXp(maxHp, level) * SealStone.RewardMul(run.SealTier));   // 봉인석 보상
+                evt.Gold = System.Math.Max(1, (int)System.MathF.Round(run.KillGold(evt.Xp) * goldMul));
+                if (boss || (elite && run.Rng.NextDouble() < EliteGemChance))
+                {
+                    var gem = run.FindGem();
+                    evt.Gem = gem.Name;
+                    evt.GemR = gem.R; evt.GemG = gem.G; evt.GemB = gem.B;
+                }
                 run.Gold += evt.Gold;
                 run.LastGold += evt.Gold;
                 run.LastXp += evt.Xp;
@@ -108,6 +120,7 @@ namespace IntoTheDungeon.Features.Battle
 
             st = ref em.GetComponent<StatusComponent>(e);
             st.CurrentHp = System.Math.Clamp(st.MaxHp - missing + (int)System.MathF.Round(st.MaxHp * LevelUpHeal), 1, st.MaxHp);
+            CombatMeter.Heal(em, e, st.CurrentHp - (st.MaxHp - missing));   // 레벨 업 회복
             if (hasMana)
             {
                 ref var ds = ref em.GetComponent<DerivedStatsComponent>(e);

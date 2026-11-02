@@ -29,7 +29,13 @@ namespace IntoTheDungeon.Features.Character
             ai.AttackRange = _def.AttackRange;
             ai.MinRange = _def.MinRange;
             em.AddComponent(e, ai);
-            em.AddComponent(e, _def.Skill == SkillPreset.PowerShot ? SpecialSkillComponent.PowerShot : SpecialSkillComponent.SwordWave);
+            em.AddComponent(e, _def.Skill switch
+            {
+                SkillPreset.PowerShot => SpecialSkillComponent.PowerShot,
+                SkillPreset.TauntGuard => SpecialSkillComponent.TauntGuard,
+                _ => SpecialSkillComponent.SwordWave
+            });
+            if (_def.BasicSkill != BasicSkillPreset.None) em.AddComponent(e, BasicSkills.Create(_def.BasicSkill));
             em.AddComponent(e, new StateComponent(ActionState.Idle));
             // 기본 스탯 → 체력·공격력·공속·이속·방어 등
             var status = new StatusComponent { IsAlive = true };
@@ -52,7 +58,12 @@ namespace IntoTheDungeon.Features.Character
             // 판정 크기는 임시값. X = 가로 반폭, Y = 깊이 반두께(같은 줄에 있어야 맞음)
             em.AddComponent(e, new HurtboxComponent { Offset = new Vec2(0f, 0f), HalfExtents = new Vec2(0.3f, 0.25f) });
             if (_def.Ranged) em.AddComponent(e, RangedAttackComponent.Arrow);
-            else em.AddComponent(e, MeleeAttackComponent.Default);
+            else
+            {
+                var melee = MeleeAttackComponent.Default;
+                melee.CleaveBase = melee.Cleave = _def.Cleave;
+                em.AddComponent(e, melee);
+            }
         }
     }
 }

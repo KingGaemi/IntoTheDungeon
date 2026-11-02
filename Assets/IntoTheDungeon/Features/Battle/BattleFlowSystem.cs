@@ -13,6 +13,8 @@ using IntoTheDungeon.Features.Run;
 using IntoTheDungeon.Features.Attack;
 using IntoTheDungeon.Features.Physics.Components;
 using IntoTheDungeon.Features.Stats;
+using IntoTheDungeon.Features.AI;
+using IntoTheDungeon.Features.Command;
 
 namespace IntoTheDungeon.Features.Battle
 {
@@ -36,6 +38,8 @@ namespace IntoTheDungeon.Features.Battle
         IRecipeTable _recipes;
         IWalkArea _area;
         INameTable _names;
+        IViewOpQueue _viewOps;
+        bool _advanced;   // 이번 웨이브 사이에 이미 다음 구역으로 옮겼나
         readonly System.Random _rng = new(7);
         bool _partySpawned, _hpApplied;
         readonly System.Collections.Generic.List<Entity> _leveled = new(16);
@@ -49,6 +53,7 @@ namespace IntoTheDungeon.Features.Battle
                    && world.TryGet(out _spawnQueue) && world.TryGet(out _recipes);
             world.TryGet(out _area);
             world.TryGet(out _names);
+            world.TryGet(out _viewOps);
         }
 
         public void Tick(float dt)
@@ -85,19 +90,43 @@ namespace IntoTheDungeon.Features.Battle
                     ApplyEnemyLevels(run);
                     if (p.PhaseTime >= SpawnSettleTime && p.EnemiesAlive == 0)
                     {
-                        if (p.Wave < p.TotalWaves) Enter(BattlePhase.Interlude);
+                        if (p.Wave < p.TotalWaves)
+                        {
+                            Enter(BattlePhase.Interlude);
+                            CollectLoot(run);        // 떨어진 아이템은 웨이브마다 가방으로
+                            BeginAdvance();          // 파티가 오른쪽(안쪽)으로 달려간다
+                        }
                         else { Enter(BattlePhase.Victory); CollectLoot(run); run.WinRoom(CollectPartyHp()); }
                     }
                     break;
 
                 case BattlePhase.Interlude:
-                    if (p.PhaseTime >= _config.InterludeTime) StartWave(p.Wave + 1, partyPos);
+                {
+                    // 달리기 → 어두워짐 → (깜깜할 때) 시작 자리로 옮김 → 밝아짐 → 다음 웨이브
+                    float t = p.PhaseTime - _config.AdvanceRunTime;
+                    float dark = _config.AdvanceFadeOut, hold = _config.AdvanceHold, light = _config.AdvanceFadeIn;
+                    if (t < 0f) { p.Fade = 0f; KeepRunning(); }
+                    else if (t < dark) p.Fade = t / dark;
+                    else if (t < dark + hold)
+                    {
+                        p.Fade = 1f;
+                        if (!_advanced) { _advanced = true; FinishAdvance(); }
+                    }
+                    else if (t < dark + hold + light) p.Fade = 1f - (t - dark - hold) / light;
+                    else
+                    {
+                        p.Fade = 0f;
+                        Party.TryGetCenter(_world.EntityManager, out var start, out _);
+                        StartWave(p.Wave + 1, start);
+                    }
                     break;
+                }
             }
         }
 
         void BeginRoom(MapNode node)
         {
+            CombatMeter.Reset();   // 딜 미터는 방마다 새로
             _config.Waves.Clear();
             _config.Waves.AddRange(Encounters.For(node.Type, node.Layer, RunState.Current.Stage));
             _progress.TotalWaves = _config.Waves.Count;
@@ -129,6 +158,8 @@ namespace IntoTheDungeon.Features.Battle
                 st.CurrentHp = st.MaxHp;
                 if (em.HasComponent<SpecialSkillComponent>(e))
                     em.GetComponent<SpecialSkillComponent>(e).Cooldown *= mods.SkillCooldownMul;
+                if (em.HasComponent<BasicSkillComponent>(e))
+                    em.GetComponent<BasicSkillComponent>(e).Skill.Cooldown *= mods.SkillCooldownMul;
                 if (em.HasComponent<BodyComponent>(e))
                 {
                     ref var body = ref em.GetComponent<BodyComponent>(e);
@@ -159,6 +190,13 @@ namespace IntoTheDungeon.Features.Battle
                 ref var ds = ref em.GetComponent<DerivedStatsComponent>(e);
                 StatFormula.Apply(ps.Total, ref st, ref ds);
                 if (em.HasComponent<HitStunComponent>(e)) em.GetComponent<HitStunComponent>(e).Resistance = ds.CcResist;
+            }
+
+            // 범위 평타: 캐릭터 자체 또는 장비
+            if (em.HasComponent<MeleeAttackComponent>(e))
+            {
+                ref var melee = ref em.GetComponent<MeleeAttackComponent>(e);
+                melee.Cleave = melee.CleaveBase || mods.Cleave;
             }
 
             st.Damage = (int)System.MathF.Round(st.Damage * mods.DamageMul);
@@ -202,7 +240,12 @@ namespace IntoTheDungeon.Features.Battle
                 ref var ps = ref em.GetComponent<PrimaryStatsComponent>(e);
                 ps.Level = level;
                 if (!em.HasComponent<DerivedStatsComponent>(e)) continue;
-                StatFormula.Apply(ps.Total, ref em.GetComponent<StatusComponent>(e), ref em.GetComponent<DerivedStatsComponent>(e));
+                ref var est = ref em.GetComponent<StatusComponent>(e);
+                StatFormula.Apply(ps.Total, ref est, ref em.GetComponent<DerivedStatsComponent>(e));
+                // 봉인석: 체력·공격력 배율
+                est.MaxHp = (int)System.MathF.Round(est.MaxHp * SealStone.EnemyHpMul(run.SealTier));
+                est.CurrentHp = est.MaxHp;
+                est.Damage = (int)System.MathF.Round(est.Damage * SealStone.EnemyDamageMul(run.SealTier));
                 if (boss) Boss.ApplyHp(em, e);
                 if (em.HasComponent<HitStunComponent>(e)) em.GetComponent<HitStunComponent>(e).Resistance = em.GetComponent<DerivedStatsComponent>(e).CcResist;
             }
@@ -242,6 +285,81 @@ namespace IntoTheDungeon.Features.Battle
         {
             _progress.Phase = phase;
             _progress.PhaseTime = 0f;
+            _progress.Fade = 0f;
+            _advanced = false;
+        }
+
+        // 웨이브를 깨면 살아 있는 파티원이 AI를 멈추고 오른쪽(던전 안쪽)으로 달린다
+        void BeginAdvance()
+        {
+            var em = _world.EntityManager;
+            Party.Collect(em, _party);
+            foreach (var m in _party)
+            {
+                if (!m.Alive || !em.Exists(m.Entity)) continue;
+                if (em.HasComponent<CombatAIComponent>(m.Entity)) em.GetComponent<CombatAIComponent>(m.Entity).Enabled = false;
+                if (em.HasComponent<CharacterIntentBuffer>(m.Entity)) em.GetComponent<CharacterIntentBuffer>(m.Entity).Add(CharacterIntent.Move(new Vec2(1f, 0f)));
+            }
+        }
+
+        // 웨이브가 끝나는 순간 휘두르거나 스킬을 쓰던 파티원은 달리라는 의도를 놓칠 수 있어, 멈춰 있으면 다시 넣는다
+        void KeepRunning()
+        {
+            var em = _world.EntityManager;
+            Party.Collect(em, _party);
+            foreach (var m in _party)
+            {
+                var e = m.Entity;
+                if (!m.Alive || !em.Exists(e) || !em.TryGetComponent<IntoTheDungeon.Features.State.StateComponent>(e, out var st)) continue;
+                if (st.Current.Movement != IntoTheDungeon.Core.Abstractions.Types.MovementState.Idle) continue;
+                if (st.Current.Action is IntoTheDungeon.Core.Abstractions.Types.ActionState.Attack or IntoTheDungeon.Core.Abstractions.Types.ActionState.Skill) continue;   // 끝나면 다음 프레임에
+                if (em.HasComponent<CombatAIComponent>(e)) em.GetComponent<CombatAIComponent>(e).Enabled = false;
+                if (em.HasComponent<CharacterIntentBuffer>(e)) em.GetComponent<CharacterIntentBuffer>(e).Add(CharacterIntent.Move(new Vec2(1f, 0f)));
+            }
+        }
+
+        // 화면이 깜깜할 때: 남은 적 시체를 치우고, 파티를 왼쪽 시작 자리로 옮겨 세운 뒤 AI를 다시 켠다(새 구역에 들어선 것처럼)
+        void FinishAdvance()
+        {
+            var em = _world.EntityManager;
+            _leveled.Clear();
+            foreach (var chunk in em.GetChunks(typeof(StatusComponent), typeof(TeamComponent)))
+            {
+                var statuses = chunk.GetComponentArray<StatusComponent>();
+                var teams = chunk.GetComponentArray<TeamComponent>();
+                var entities = chunk.GetEntities();
+                for (int i = 0; i < chunk.Count; i++)
+                    if (!statuses[i].IsAlive && teams[i].TeamFlag != Party.Team) _leveled.Add(entities[i]);
+            }
+            foreach (var e in _leveled) { _viewOps?.Enqueue(e); em.DestroyEntity(e); }
+
+            Party.Collect(em, _party);
+            var start = StartPosition();
+            // 마지막 구역(문이 있는 곳)은 문 가까이에서 시작한다(방이 넓어 왼쪽 끝이면 한참 걸어가야 하므로)
+            if (_progress.Wave + 1 == _progress.TotalWaves && _area is RectWalkArea ra)
+                start = new Vec2(System.MathF.Max(start.X, DoorPosition(ra).X - 11f), start.Y);
+            int row = 0, back = 0;
+            foreach (var m in _party)
+            {
+                var e = m.Entity;
+                if (!em.Exists(e) || !em.HasComponent<TransformComponent>(e)) continue;
+                // 살아 있으면 앞줄부터, 쓰러진 파티원은 맨 뒤에 눕혀 둔다
+                var pos = m.Alive ? new Vec2(start.X - row++ * 0.9f, RandomDepth(start.Y)) : new Vec2(start.X - 3.2f - back++ * 0.6f, RandomDepth(start.Y));
+                if (_area != null) pos = _area.Clamp(pos);
+                ref var tr = ref em.GetComponent<TransformComponent>(e);
+                tr.Position = pos;
+                tr.Height = 0f;
+                tr.Moved = true;
+                if (em.HasComponent<KnockbackComponent>(e)) em.GetComponent<KnockbackComponent>(e).Velocity = Vec2.Zero;
+                if (!m.Alive) continue;
+                if (em.HasComponent<CharacterIntentBuffer>(e))
+                {
+                    ref var buf = ref em.GetComponent<CharacterIntentBuffer>(e);
+                    buf.Add(CharacterIntent.Stop());
+                    buf.Add(CharacterIntent.Turn(Facing2D.Right));
+                }
+                if (em.HasComponent<CombatAIComponent>(e)) em.GetComponent<CombatAIComponent>(e).Enabled = true;
+            }
         }
 
         void StartWave(int wave, Vec2 partyPos)
@@ -254,13 +372,16 @@ namespace IntoTheDungeon.Features.Battle
             float side = 1f;
             if (_area is RectWalkArea r && partyPos.X + _config.SpawnDistance + 2f > r.MaxX) side = -1f;
 
+            bool fromDoor = wave == _config.Waves.Count && _area is RectWalkArea;   // 마지막 웨이브: 문 앞에서
             int n = 0;
             foreach (var s in _config.Waves[wave - 1])
             {
                 if (!_recipes.TryGetId(s.Recipe, out var id)) continue;
                 for (int k = 0; k < s.Count; k++, n++)
                 {
-                    var pos = new Vec2(partyPos.X + side * (_config.SpawnDistance + n * 0.7f), RandomDepth(partyPos.Y));
+                    var pos = fromDoor
+                        ? DoorSpawn(n)
+                        : new Vec2(partyPos.X + side * (_config.SpawnDistance + n * 0.7f), RandomDepth(partyPos.Y));
                     Enqueue(id, s.Boss ? Boss.SpawnName : s.Recipe, pos, side < 0 ? 1f : -1f, TeamFlag.Enemy);
                 }
             }
@@ -287,6 +408,18 @@ namespace IntoTheDungeon.Features.Battle
         {
             if (_area is RectWalkArea r) return new Vec2(r.MinX + PartyStartInset, (r.MinDepth + r.MaxDepth) * 0.5f);
             return Vec2.Zero;
+        }
+
+        /// <summary>마지막 웨이브의 문(오른쪽 벽 안쪽) 바닥 위치. DoorRenderer도 같은 자리에 문을 그린다.</summary>
+        public static Vec2 DoorPosition(RectWalkArea r) => new(r.MaxX - 1.2f, r.MaxDepth);
+
+        // 문 앞에서 부채꼴로 퍼져 나온다
+        Vec2 DoorSpawn(int n)
+        {
+            var r = (RectWalkArea)_area;
+            var door = DoorPosition(r);
+            float spread = r.MaxDepth - r.MinDepth;
+            return new Vec2(door.X - 0.4f - (n % 3) * 0.8f - (n / 3) * 0.5f, door.Y - 0.2f - ((n * 0.37f) % 1f) * spread * 0.7f);
         }
 
         float RandomDepth(float fallback)

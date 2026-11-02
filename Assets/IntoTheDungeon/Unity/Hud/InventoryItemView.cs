@@ -10,7 +10,7 @@ namespace IntoTheDungeon.Unity.Hud
     /// 놓는 자리 판정·데이터 변경은 CampHud가 한다.
     /// </summary>
     public sealed class InventoryItemView : MonoBehaviour,
-        IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerEnterHandler, IPointerExitHandler
+        IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
     {
         public CampHud Owner;
         public ItemDef Def;
@@ -59,6 +59,12 @@ namespace IntoTheDungeon.Unity.Hud
             var parent = (RectTransform)_rt.parent;
             if (RectTransformUtility.ScreenPointToLocalPointInRectangle(parent, e.position, e.pressEventCamera, out var local))
                 _rt.anchoredPosition = local;
+        }
+
+        // 끌지 않을 때 우클릭: 빠른 장착·해제
+        public void OnPointerClick(PointerEventData e)
+        {
+            if (!Dragging && e.button == PointerEventData.InputButton.Right) Owner.QuickEquip(this);
         }
 
         public void OnPointerEnter(PointerEventData e) => Owner.ShowInfo(Def);

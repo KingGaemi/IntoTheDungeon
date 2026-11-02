@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace IntoTheDungeon.Features.Run
 {
-    public enum RoomType { Battle, Elite, Rest, Boss }
+    public enum RoomType { Battle, Elite, Rest, Boss, Shop }
 
     public sealed class MapNode
     {
@@ -16,7 +16,7 @@ namespace IntoTheDungeon.Features.Run
     /// <summary>
     /// 갈림길 지도: 아래층(0)에서 위로 올라가며 층마다 이어진 방 하나를 고른다. 마지막 층은 보스 하나.
     /// 생성 규칙(임시값): 층마다 2~4칸, 각 방은 다음 층의 가까운 방 1~2개로 이어지고, 모든 방은 들어오는 길이 있다.
-    /// 첫 층은 전부 일반 전투, 정예는 3층부터, 휴식은 4층부터, 보스 바로 앞 층은 전부 휴식.
+    /// 첫 층은 전부 일반 전투, 정예는 3층부터, 휴식은 4층부터, 상점은 3층부터(지도마다 최소 하나), 보스 바로 앞 층은 전부 휴식.
     /// </summary>
     public sealed class DungeonMap
     {
@@ -38,6 +38,8 @@ namespace IntoTheDungeon.Features.Run
                     row.Add(new MapNode { Layer = layer, Index = i, Type = PickType(rng, layer, floors) });
                 map.Layers.Add(row);
             }
+
+            EnsureShop(map, rng, floors);
 
             // 길 잇기: 각 방 → 다음 층에서 비슷한 위치(비율)의 방 1~2개
             for (int layer = 0; layer < floors - 1; layer++)
@@ -73,7 +75,24 @@ namespace IntoTheDungeon.Features.Run
             double r = rng.NextDouble();
             if (layer >= 2 && r < 0.2) return RoomType.Elite;
             if (layer >= 3 && r < 0.38) return RoomType.Rest;
+            if (layer >= 2 && r < 0.48) return RoomType.Shop;
             return RoomType.Battle;
+        }
+
+        // 상점이 하나도 안 나왔으면 가운데 층의 전투 방 하나를 상점으로
+        static void EnsureShop(DungeonMap map, System.Random rng, int floors)
+        {
+            foreach (var row in map.Layers)
+                foreach (var n in row)
+                    if (n.Type == RoomType.Shop) return;
+            int mid = System.Math.Clamp(floors / 2, 2, floors - 3);
+            for (int l = mid; l < floors - 2; l++)
+            {
+                var battles = map.Layers[l].FindAll(n => n.Type == RoomType.Battle);
+                if (battles.Count == 0) continue;
+                battles[rng.Next(battles.Count)].Type = RoomType.Shop;
+                return;
+            }
         }
 
         static int Nearest(int index, int fromCount, int toCount)

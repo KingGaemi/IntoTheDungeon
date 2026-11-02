@@ -10,7 +10,7 @@ namespace IntoTheDungeon.Unity.Hud
     /// <summary>
     /// 전투 진행 표시(임시 UI, 코드로 만든다): 위쪽 가운데 웨이브·남은 적, 화면 가운데 큰 알림
     /// ("전투 시작" / "웨이브 클리어" / "방 클리어!" / "던전 클리어!" / "패배"), 끝나면 버튼:
-    /// 이기면 "정비하러 가기"(보상·덱 정비 → 지도), 보스를 깼거나 지면 "새 던전"(새 판). 둘 다 화면이 어두워진 뒤 씬을 다시 불러온다.
+    /// 이기면 "확인"(정비 화면 → 지도), 보스를 깼거나 지면 "새 던전"(새 판). 둘 다 화면이 어두워진 뒤 씬을 다시 불러온다.
     /// 버튼은 떨어진 아이템이 모두 가방에 들어간 뒤 나온다.
     /// </summary>
     public sealed class BattleStatusHud : MonoBehaviour, IWorldInjectable
@@ -29,7 +29,7 @@ namespace IntoTheDungeon.Unity.Hud
 
         IWorld _world;
         BattleProgress _progress;
-        Text _status, _banner, _retryLabel;
+        Text _status, _banner, _retryLabel, _gemLine;
         GameObject _retry, _toTitle;
         Image _fade;
         float _fadeAlpha, _settled;
@@ -50,7 +50,7 @@ namespace IntoTheDungeon.Unity.Hud
 
             var run = RunState.Current;
             string room = run.Current != null ? $"스테이지 {run.Stage} · {run.CurrentLayer + 1}층 {Encounters.Label(run.Current.Type)}   ·   " : "";
-            _status.text = p.Wave > 0 && p.Phase != BattlePhase.Map ? $"{room}웨이브 {p.Wave} / {p.TotalWaves}   ·   남은 적 {p.EnemiesAlive}   ·   골드 {run.Gold}" : "";
+            _status.text = p.Wave > 0 && p.Phase != BattlePhase.Map ? $"{room}웨이브 {p.Wave} / {p.TotalWaves}   ·   남은 적 {p.EnemiesAlive}   ·   골드 {run.Gold}{(run.SealTier > 0 ? $"   ·   봉인석 {run.SealTier}단계" : "")}" : "";
 
             string banner = "";
             Color color = Color.white;
@@ -65,9 +65,11 @@ namespace IntoTheDungeon.Unity.Hud
                     break;
                 case BattlePhase.Defeat: banner = "패배"; color = defeatColor; break;
             }
-            _retryLabel.text = p.Phase == BattlePhase.Victory && run.Phase == RunPhase.Camp ? "정비하러 가기" : "새 던전";
+            _retryLabel.text = p.Phase == BattlePhase.Victory && run.Phase == RunPhase.Camp ? "확인" : "새 던전";
             _banner.text = banner;
             _banner.color = color;
+            bool runOverNow = p.IsOver && run.Phase is RunPhase.Cleared or RunPhase.Failed;
+            _gemLine.text = runOverNow && run.GemsFound.Count > 0 ? $"이번 판에 얻은 잼: {string.Join(", ", run.GemsFound)}  (판이 끝나도 남습니다)" : "";
             // 버튼은 아이템이 모두 가방에 들어간 뒤 잠깐 있다가 나온다(누르면 화면이 어두워지며 넘어감)
             bool flying = _world != null && LootDropSystem.AnyFlying(_world.EntityManager);
             _settled = p.IsOver && !flying ? _settled + Time.deltaTime : 0f;
@@ -87,9 +89,10 @@ namespace IntoTheDungeon.Unity.Hud
                 if (_fadeAlpha >= 1f) { s_fadeInNext = true; _leaving = false; Reload(); }
             }
             else _fadeAlpha = Mathf.MoveTowards(_fadeAlpha, 0f, Time.unscaledDeltaTime / fadeInTime);
-            _fade.color = new Color(0f, 0f, 0f, _fadeAlpha);
-            _fade.raycastTarget = _fadeAlpha > 0.01f;   // 바뀌는 동안 클릭 막기
-            if (_fade.enabled != _fadeAlpha > 0f) _fade.enabled = _fadeAlpha > 0f;
+            float a = Mathf.Max(_fadeAlpha, _progress != null ? _progress.Fade : 0f);   // 웨이브 사이 다음 구역으로 넘어갈 때도
+            _fade.color = new Color(0f, 0f, 0f, a);
+            _fade.raycastTarget = a > 0.01f;   // 바뀌는 동안 클릭 막기
+            if (_fade.enabled != a > 0f) _fade.enabled = a > 0f;
         }
 
         void ToTitle()
@@ -126,6 +129,10 @@ namespace IntoTheDungeon.Unity.Hud
 
             _banner = NewText("Banner", canvasGo.transform, font, 96);
             Place(_banner.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 140f), new Vector2(1200f, 140f));
+            _gemLine = NewText("Gems", canvasGo.transform, font, 28);
+            _gemLine.color = new Color(0.75f, 0.9f, 1f, 1f);
+            _gemLine.horizontalOverflow = HorizontalWrapMode.Wrap;
+            Place(_gemLine.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 70f), new Vector2(1500f, 44f));
 
             // 다시 하기 버튼(끝났을 때만)
             _retry = new GameObject("Retry", typeof(RectTransform), typeof(Image), typeof(Button));

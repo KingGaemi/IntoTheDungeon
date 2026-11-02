@@ -14,6 +14,7 @@ namespace IntoTheDungeon.Features.Battle
         public int TotalWaves;
         public int EnemiesAlive;
         public float PhaseTime;   // 지금 단계에 들어온 뒤 지난 시간(초)
+        public float Fade;        // 화면 덮개(0 밝음 ~ 1 깜깜): 웨이브 사이 다음 구역으로 넘어갈 때
 
         public bool IsOver => Phase is BattlePhase.Victory or BattlePhase.Defeat;
         public bool IsFighting => Phase is BattlePhase.Intro or BattlePhase.Fighting or BattlePhase.Interlude;
@@ -32,7 +33,11 @@ namespace IntoTheDungeon.Features.Battle
     {
         public readonly List<WaveSpawn[]> Waves = new();
         public float IntroTime = 1.5f;       // "전투 시작" 뒤 첫 웨이브까지
-        public float InterludeTime = 2f;     // 웨이브 사이 쉬는 시간
+        // 웨이브 사이 "안쪽으로 전진": 파티가 오른쪽으로 달려가고 → 어두워지고 → 왼쪽 시작 자리로 옮겨져 → 밝아진 뒤 다음 웨이브
+        public float AdvanceRunTime = 1.3f;
+        public float AdvanceFadeOut = 0.45f;
+        public float AdvanceHold = 0.2f;
+        public float AdvanceFadeIn = 0.45f;
         public float SpawnDistance = 6f;     // 파티 중심에서 이만큼 떨어진 곳(화면 밖 쪽)에 몹이 나온다
     }
 }

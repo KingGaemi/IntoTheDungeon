@@ -30,7 +30,7 @@ namespace IntoTheDungeon.Unity.Hud
         sealed class Slot
         {
             public GameObject Root;
-            public Image Frame, Body;
+            public Image Frame, Body, Portrait;
             public RectTransform CooldownMask, HpFill;
             public Text Label, CooldownText;
             public Button Button;
@@ -70,6 +70,11 @@ namespace IntoTheDungeon.Unity.Hud
                 bool exists = present || i < partySize;
                 if (s.Root.activeSelf != exists) s.Root.SetActive(exists);
                 if (!exists) continue;
+
+                var portrait = i < partySize ? PortraitTable.Of(RunState.Current.Members[i]) : null;
+                if (s.Portrait.sprite != portrait) s.Portrait.sprite = portrait;
+                s.Portrait.enabled = portrait;
+                s.Portrait.color = present && m.Alive ? new Color(1f, 1f, 1f, 0.45f) : new Color(0.4f, 0.4f, 0.4f, 0.3f);
 
                 float hp = present && m.MaxHp > 0 ? Mathf.Clamp01((float)m.Hp / m.MaxHp) : 0f;
                 s.HpFill.anchorMax = new Vector2(hp, 1f);
@@ -146,6 +151,11 @@ namespace IntoTheDungeon.Unity.Hud
             s.Button.targetGraphic = s.Body;
             int slot = index;
             s.Button.onClick.AddListener(() => _input?.PressSkill(slot));
+
+            // 파티원 초상화(바탕에 흐리게, 글자 뒤)
+            s.Portrait = NewImage("Portrait", s.Body.rectTransform, Color.white);
+            s.Portrait.preserveAspect = true;
+            Stretch(s.Portrait.rectTransform, 14f);
 
             var mask = NewImage("Cooldown", s.Body.rectTransform, new Color(0f, 0f, 0f, 0.6f));
             s.CooldownMask = mask.rectTransform;

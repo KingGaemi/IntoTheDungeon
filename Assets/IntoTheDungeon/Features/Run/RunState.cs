@@ -54,7 +54,7 @@ namespace IntoTheDungeon.Features.Run
         public float LastHeal;   // 마지막 전투 후 기본 회복 비율(정비 화면 표시용, 장비 보너스 제외)
 
         /// <summary>파티원 레시피(슬롯 0번부터). 전투 때 이 순서로 스폰하고, 쓰러진 슬롯은 스폰하지 않는다. 영입하면 늘어난다.</summary>
-        public readonly List<string> Members = new() { "Catherine", "Catherine", "Archer" };
+        public readonly List<string> Members = new() { "Warrior", "Catherine", "Archer" };
         public int PartySize => Members.Count;
 
         /// <summary>파티원별 장비 칸(슬롯 순). 여기 놓인 아이템은 그 파티원에게만 효과가 있다.</summary>
@@ -69,6 +69,9 @@ namespace IntoTheDungeon.Features.Run
         public int XpOf(int slot) { Grow(slot); return Xp[slot]; }
         public int LastXp, LastGold;   // 이번 방에서 처치로 얻은 경험치(살아 있는 파티원 기준)·골드(정비 화면 표시용)
         public int Gold;
+        /// <summary>봉인석 단계(0 = 기본). SealStone 배율로 몹이 강해지고 보상이 커진다.</summary>
+        public int SealTier;
+        public void SetSealTier(int tier) => SealTier = System.Math.Clamp(tier, 0, SealStone.MaxTier);
         public static int XpToNext(int level) => 50 * level;   // 임시값: 50, 100, 150, ...
 
         void Grow(int slot)
@@ -117,6 +120,13 @@ namespace IntoTheDungeon.Features.Run
         public readonly List<CardDef> PendingRewards = new();
         public bool RewardTaken { get; private set; }
 
+        /// <summary>지금 상점 품목: 전투 뒤 정비 화면엔 작은 상점, 상점 방에 들어가면 큰 상점.</summary>
+        public readonly List<ShopOffer> Shop = new();
+        /// <summary>상점 방에 들어와 있다(정비 화면을 상점이 열린 채로 쓰고, 고를 보상은 없다).</summary>
+        public bool InShopRoom { get; private set; }
+        /// <summary>정비 화면 밖에서 장비 칸·주운 아이템·파티 구성이 바뀌면 올린다(상점에서 사기 등). 화면이 보고 다시 그린다.</summary>
+        public int InventoryVersion { get; private set; }
+
         readonly System.Random _rng;
 
         public RunData(int seed, Difficulty difficulty = Difficulty.Normal)
@@ -126,12 +136,20 @@ namespace IntoTheDungeon.Features.Run
             _rng = new System.Random(seed ^ 0x5f3759df);
         }
 
+        RunData(int seed, Difficulty difficulty, DungeonMap map)
+        {
+            Difficulty = difficulty;
+            Map = map;
+            _rng = new System.Random(seed ^ 0x5f3759df);
+        }
+
         /// <summary>그 파티원의 보정값 = 덱 패시브(파티 전원) + 그 파티원 장비 칸의 아이템.</summary>
         public PartyModifiers BuildModifiers(int slot)
         {
             var m = new PartyModifiers();
             foreach (var card in Deck)
                 card.Modify?.Invoke(m);
+            MetaProgress.Current.Apply(m);   // 잼 슬롯(파티 전원)
             if (slot >= 0)
                 foreach (var item in GearOf(slot).Items)
                     item.Def.Modify?.Invoke(m);
@@ -167,6 +185,18 @@ namespace IntoTheDungeon.Features.Run
             LastLevelUps.Clear();
             node.Visited = true;
             Current = node;
+            if (node.Type == RoomType.Shop)
+            {
+                // 상점 방: 전투 없이 정비 화면을 상점이 열린 채로(보상 카드 없음)
+                InShopRoom = true;
+                Phase = RunPhase.Camp;
+                PendingRewards.Clear();
+                RewardTaken = true;
+                Shop.Clear();
+                Shop.AddRange(ShopPool.Generate(true, PartySize, Depth, _rng));
+                LastMessage = "";
+                return;
+            }
             if (node.Type == RoomType.Rest)
             {
                 for (int i = 0; i < PartyHp.Count; i++)
@@ -194,11 +224,165 @@ namespace IntoTheDungeon.Features.Run
             bool boss = Current != null && Current.Type == RoomType.Boss;
             Phase = boss && IsLastStage ? RunPhase.Cleared : RunPhase.Camp;
             if (boss && !IsLastStage) StageCleared = true;   // 정비 뒤 다음 스테이지
+            if (boss) MetaProgress.Current.AddBossKill();      // 잼 슬롯 해금 기록
+            if (Phase == RunPhase.Cleared) EndRun(true);
 
+            // 전투 뒤 보상 카드는 없다(성장은 레벨 업, 카드·영입은 상점에서)
             PendingRewards.Clear();
-            RewardTaken = false;
+            RewardTaken = true;
+            InShopRoom = false;
+            Shop.Clear();
             if (Phase == RunPhase.Camp && Current != null)
-                PendingRewards.AddRange(CardPool.Offer(Current.Type, PartySize, _rng));
+                Shop.AddRange(ShopPool.Generate(false, PartySize, Depth, _rng));
+        }
+
+        // ───────── 상점 ─────────
+
+        bool AnyFallen() { for (int i = 0; i < PartySize; i++) if (i < PartyHp.Count && PartyHp[i] <= 0f) return true; return false; }
+        bool AnyHurt() { if (PartyHp.Count == 0) return false; for (int i = 0; i < PartyHp.Count; i++) if (PartyHp[i] > 0f && PartyHp[i] < 1f) return true; return false; }
+
+        /// <summary>지금 살 수 없는 이유(살 수 있으면 null).</summary>
+        public string CannotBuy(ShopOffer o)
+        {
+            if (Phase != RunPhase.Camp || !Shop.Contains(o)) return "지금은 살 수 없습니다";
+            if (o.Sold) return "품절";
+            if (o.Kind == ShopOfferKind.Recruit && PartySize >= CardPool.MaxPartySize) return "파티가 가득 찼습니다";
+            if (o.Kind == ShopOfferKind.Revive && !AnyFallen()) return "쓰러진 파티원이 없습니다";
+            if (o.Kind == ShopOfferKind.Heal && !AnyHurt()) return "다친 파티원이 없습니다";
+            if (Gold < o.Price) return "골드가 부족합니다";
+            return null;
+        }
+
+        /// <summary>산다. 아이템은 주운 아이템 칸으로(정비 화면에서 끌어서 넣는다). 못 사면 이유를 돌려준다.</summary>
+        public string Buy(ShopOffer o)
+        {
+            var why = CannotBuy(o);
+            if (why != null) return why;
+            Gold -= o.Price;
+            switch (o.Kind)
+            {
+                case ShopOfferKind.Item:
+                    Loot.Add(o.Item);
+                    o.Sold = true;
+                    break;
+                case ShopOfferKind.Card:
+                    Deck.Add(o.Card);
+                    o.Sold = true;
+                    break;
+                case ShopOfferKind.Recruit:
+                    Members.Add(o.Card.RecruitRecipe);
+                    if (PartyHp.Count > 0) PartyHp.Add(1f);
+                    Deck.Add(o.Card);
+                    o.Sold = true;
+                    break;
+                case ShopOfferKind.Revive:   // 여러 번 살 수 있다
+                    for (int i = 0; i < PartyHp.Count; i++)
+                        if (PartyHp[i] <= 0f) { PartyHp[i] = ShopPool.ReviveRatio; break; }
+                    break;
+                case ShopOfferKind.Heal:
+                    for (int i = 0; i < PartyHp.Count; i++)
+                        if (PartyHp[i] > 0f) PartyHp[i] = System.MathF.Min(1f, PartyHp[i] + ShopPool.HealRatio);
+                    o.Sold = true;
+                    break;
+            }
+            InventoryVersion++;
+            return null;
+        }
+
+        /// <summary>아이템을 판다(원래 값의 절반). 장비 칸·보관함·주운 아이템 칸에서 빼는 건 부르는 쪽이 한다.</summary>
+        public int Sell(ItemDef def)
+        {
+            int price = ShopPool.SellPrice(def);
+            Gold += price;
+            return price;
+        }
+
+        // ───────── 저장 ─────────
+
+        /// <summary>이어하기용으로 저장할 수 있는 때: 지도에서 방을 고르는 중이거나 정비 화면.</summary>
+        public bool CanSave => Phase is RunPhase.ChoosingRoom or RunPhase.Camp;
+
+        public RunSave ToSave()
+        {
+            var s = new RunSave
+            {
+                Difficulty = (int)Difficulty, Stage = Stage, Phase = (int)Phase,
+                StageCleared = StageCleared, CanReturnToCamp = CanReturnToCamp, InShopRoom = InShopRoom, RewardTaken = RewardTaken,
+                CurrentLayer = Current?.Layer ?? -1, CurrentIndex = Current?.Index ?? -1,
+                Gold = Gold, SealTier = SealTier, LastXp = LastXp, LastGold = LastGold, LastHeal = LastHeal, LastMessage = LastMessage ?? ""
+            };
+            foreach (var row in Map.Layers)
+                foreach (var n in row)
+                    s.Nodes.Add(new NodeSave { Layer = n.Layer, Index = n.Index, Type = (int)n.Type, Visited = n.Visited, Next = new List<int>(n.Next) });
+            s.Members.AddRange(Members);
+            s.PartyHp.AddRange(PartyHp);
+            s.Levels.AddRange(Levels);
+            s.Xp.AddRange(Xp);
+            s.LastLevelUps.AddRange(LastLevelUps);
+            for (int slot = 0; slot < Gear.Count; slot++)
+                foreach (var p in Gear[slot].Items) s.Items.Add(new ItemSave { Owner = slot, Item = p.Def.Index, X = p.X, Y = p.Y, Rotated = p.Rotated });
+            foreach (var p in Stash.Items) s.Items.Add(new ItemSave { Owner = -1, Item = p.Def.Index, X = p.X, Y = p.Y, Rotated = p.Rotated });
+            foreach (var d in Loot) s.Loot.Add(d.Index);
+            foreach (var c in Deck) s.Deck.Add(c.Id);
+            foreach (var c in PendingRewards) s.PendingRewards.Add(c.Id);
+            foreach (var o in Shop)
+                s.Shop.Add(new OfferSave { Kind = (int)o.Kind, Item = o.Item?.Index ?? -1, Card = o.Card?.Id ?? "", Price = o.Price, Sold = o.Sold });
+            return s;
+        }
+
+        /// <summary>저장 데이터로 판을 되살린다. 알 수 없는 아이템·카드는 빼고, 지도가 깨졌으면 null.</summary>
+        public static RunData FromSave(RunSave s)
+        {
+            if (s == null || s.Nodes == null || s.Nodes.Count == 0) return null;
+            var map = new DungeonMap();
+            foreach (var ns in s.Nodes)
+            {
+                while (map.Layers.Count <= ns.Layer) map.Layers.Add(new List<MapNode>());
+                var node = new MapNode { Layer = ns.Layer, Index = ns.Index, Type = (RoomType)ns.Type, Visited = ns.Visited };
+                if (ns.Next != null) node.Next.AddRange(ns.Next);
+                map.Layers[ns.Layer].Add(node);
+            }
+            foreach (var row in map.Layers) row.Sort((a, b) => a.Index.CompareTo(b.Index));
+
+            var run = new RunData(System.Environment.TickCount, (Difficulty)s.Difficulty, map)
+            {
+                Stage = System.Math.Max(1, s.Stage),
+                StageCleared = s.StageCleared,
+                Phase = (RunPhase)s.Phase,
+                CanReturnToCamp = s.CanReturnToCamp,
+                InShopRoom = s.InShopRoom,
+                RewardTaken = s.RewardTaken,
+                Gold = s.Gold, SealTier = System.Math.Clamp(s.SealTier, 0, SealStone.MaxTier), LastXp = s.LastXp, LastGold = s.LastGold, LastHeal = s.LastHeal,
+                LastMessage = s.LastMessage ?? ""
+            };
+            if (!run.CanSave) run.Phase = RunPhase.ChoosingRoom;
+            if (s.CurrentLayer >= 0 && s.CurrentLayer < map.LayerCount)
+                run.Current = map.Layers[s.CurrentLayer].Find(n => n.Index == s.CurrentIndex);
+
+            run.Members.Clear();
+            run.Members.AddRange(s.Members);
+            run.PartyHp.AddRange(s.PartyHp);
+            run.Levels.AddRange(s.Levels);
+            run.Xp.AddRange(s.Xp);
+            run.LastLevelUps.AddRange(s.LastLevelUps);
+            foreach (var it in s.Items)
+            {
+                var def = ItemPool.Get(it.Item);
+                if (def == null) continue;
+                var inv = it.Owner >= 0 ? run.GearOf(it.Owner) : run.Stash;
+                if (inv.Place(def, it.X, it.Y, it.Rotated) == null) run.Loot.Add(def);   // 칸 규칙이 바뀌었으면 주운 아이템 칸으로
+            }
+            foreach (int i in s.Loot) { var def = ItemPool.Get(i); if (def != null) run.Loot.Add(def); }
+            foreach (var id in s.Deck) { var c = CardPool.Find(id); if (c != null) run.Deck.Add(c); }
+            foreach (var id in s.PendingRewards) { var c = CardPool.Find(id); if (c != null) run.PendingRewards.Add(c); }
+            foreach (var os in s.Shop)
+            {
+                var o = new ShopOffer { Kind = (ShopOfferKind)os.Kind, Item = ItemPool.Get(os.Item), Card = CardPool.Find(os.Card), Price = os.Price, Sold = os.Sold };
+                if (o.Kind == ShopOfferKind.Item && o.Item == null) continue;
+                if (o.Kind is ShopOfferKind.Card or ShopOfferKind.Recruit && o.Card == null) continue;
+                run.Shop.Add(o);
+            }
+            return run;
         }
 
         /// <summary>보상 하나를 고른다. 동료 영입이면 파티에 합류(체력 가득), 패시브면 덱에 넣는다.</summary>
@@ -220,7 +404,8 @@ namespace IntoTheDungeon.Features.Run
         {
             if (Phase != RunPhase.Camp) return;
             Phase = RunPhase.ChoosingRoom;
-            CanReturnToCamp = true;
+            CanReturnToCamp = !InShopRoom;   // 상점 방에서 나오면 상점으로 되돌아가지 않는다
+            InShopRoom = false;
             if (StageCleared)
             {
                 // 다음 스테이지: 새 지도 첫 층부터
@@ -241,7 +426,34 @@ namespace IntoTheDungeon.Features.Run
 
         public bool CanReturnToCamp { get; private set; }
 
-        public void Lose() => Phase = RunPhase.Failed;
+        public void Lose()
+        {
+            Phase = RunPhase.Failed;
+            EndRun(false);
+        }
+
+        /// <summary>이번 판에 얻은 잼 이름(처치 드랍 + 판 끝 보상, 결과 화면 표시용).</summary>
+        public readonly List<string> GemsFound = new();
+        bool _runEnded;
+
+        /// <summary>잼 하나를 얻는다(판이 끝나도 남는다).</summary>
+        public GemDef FindGem()
+        {
+            var gem = GemPool.Roll(_rng);
+            MetaProgress.Current.AddGem(gem.Id);
+            GemsFound.Add(gem.Name);
+            return gem;
+        }
+
+        /// <summary>판 끝 보상(클리어든 전멸이든 한 번): 잼 1 + 지나온 깊이 3마다 1 + 클리어 3(임시값).</summary>
+        void EndRun(bool cleared)
+        {
+            if (_runEnded) return;
+            _runEnded = true;
+            int gems = 1 + Depth / 3 + (cleared ? 3 : 0) + SealStone.EndGems(SealTier);
+            for (int i = 0; i < gems; i++) FindGem();
+            MetaProgress.Current.EndRun(cleared);
+        }
     }
 
     public static class RunState
@@ -251,5 +463,8 @@ namespace IntoTheDungeon.Features.Run
         public static RunData Current => _current ??= new RunData(System.Environment.TickCount);
 
         public static void StartNew(Difficulty difficulty = Difficulty.Normal) => _current = new RunData(System.Environment.TickCount, difficulty);
+
+        /// <summary>이어하기: 저장에서 되살린 판으로 바꾼다.</summary>
+        public static void Continue(RunData run) => _current = run;
     }
 }

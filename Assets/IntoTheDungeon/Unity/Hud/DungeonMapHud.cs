@@ -10,7 +10,7 @@ namespace IntoTheDungeon.Unity.Hud
     /// <summary>
     /// 갈림길 지도 화면(임시 UI, 코드로 만든다). 전투가 없을 때(BattlePhase.Map) 화면을 덮는다.
     /// 아래층부터 위로 방을 놓고 길을 선으로 잇는다. 지금 갈 수 있는 방만 눌린다.
-    /// 휴식 방은 누르는 즉시 회복하고 지도에 남고, 전투 방은 누르면 지도가 닫히고 전투가 시작된다.
+    /// 휴식 방은 누르는 즉시 회복하고 지도에 남고, 상점 방은 상점이 열린 정비 화면으로 가고, 전투 방은 누르면 지도가 닫히고 전투가 시작된다.
     /// </summary>
     public sealed class DungeonMapHud : MonoBehaviour, IWorldInjectable
     {
@@ -20,6 +20,7 @@ namespace IntoTheDungeon.Unity.Hud
         [SerializeField] Color eliteColor = new(0.55f, 0.32f, 0.7f, 1f);
         [SerializeField] Color restColor = new(0.3f, 0.6f, 0.4f, 1f);
         [SerializeField] Color bossColor = new(0.85f, 0.65f, 0.2f, 1f);
+        [SerializeField] Color shopColor = new(0.2f, 0.52f, 0.62f, 1f);
         [SerializeField] Color highlight = new(1f, 0.82f, 0.3f, 1f);
 
         BattleProgress _progress;
@@ -123,6 +124,7 @@ namespace IntoTheDungeon.Unity.Hud
                 RoomType.Elite => eliteColor,
                 RoomType.Rest => restColor,
                 RoomType.Boss => bossColor,
+                RoomType.Shop => shopColor,
                 _ => battleColor
             };
             bool past = node.Visited && node != run.Current;

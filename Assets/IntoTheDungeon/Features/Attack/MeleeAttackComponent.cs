@@ -14,6 +14,8 @@ namespace IntoTheDungeon.Features.Attack
         public float KnockbackSpeed;  // 맞은 쪽을 공격 방향으로 밀어내는 초기 속도
         public float LaunchSpeed;     // 맞은 쪽을 위로 띄우는 초기 속도(0이면 안 띄움)
         public float HitStun;         // 맞은 쪽 경직(초). 0이면 경직 없음
+        public bool CleaveBase;       // 캐릭터 자체가 범위 평타(중갑 전사·보스)
+        public bool Cleave;           // 지금 범위 평타인가 = CleaveBase 또는 장비(전투 시작·레벨 업 때 다시 정함). 아니면 한 명만 때린다
 
         public static readonly MeleeAttackComponent Default = new()
         {

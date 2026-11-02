@@ -65,10 +65,10 @@ namespace IntoTheDungeon.Features.Run
             Add("gold_helm", "황금 기사 투구", ItemRarity.Rare, "힘 +3, 정신력 +2", m => { m.StatBonus.Str += 3; m.StatBonus.Wil += 2; });
             Add("gold_bow", "황금 장궁", ItemRarity.Rare, "민첩 +4", m => m.StatBonus.Agi += 4);
             Add("gold_staff", "황금 현자 지팡이", ItemRarity.Rare, "지능 +3, 필살기 재사용 대기 -10%", m => { m.StatBonus.Int += 3; m.SkillCooldownMul *= 0.9f; });
-            Add("blue_sword", "청강 장검", ItemRarity.Rare, "힘 +3, 민첩 +2", m => { m.StatBonus.Str += 3; m.StatBonus.Agi += 2; });
+            Add("blue_sword", "청강 장검", ItemRarity.Rare, "힘 +2, 근접 평타가 범위 공격", m => { m.StatBonus.Str += 2; m.Cleave = true; });
 
             Add("red_shield", "진홍 연 방패", ItemRarity.Epic, "모든 스탯 +3", m => { m.StatBonus.Str += 3; m.StatBonus.Agi += 3; m.StatBonus.Int += 3; m.StatBonus.Wil += 3; });
-            Add("red_greatsword", "진홍 대검", ItemRarity.Epic, "힘 +5, 민첩 +2", m => { m.StatBonus.Str += 5; m.StatBonus.Agi += 2; });
+            Add("red_greatsword", "진홍 대검", ItemRarity.Epic, "힘 +5, 민첩 +2, 근접 평타가 범위 공격", m => { m.StatBonus.Str += 5; m.StatBonus.Agi += 2; m.Cleave = true; });
         }
 
         static void Add(string id, string name, ItemRarity r, string desc, System.Action<PartyModifiers> modify)
@@ -109,7 +109,7 @@ namespace IntoTheDungeon.Features.Run
     public sealed class Inventory
     {
         public const int GearCols = 4, GearRows = 3;     // 파티원 장비 칸(여기 놓은 아이템이 그 파티원에게 적용)
-        public const int StashCols = 6, StashRows = 3;   // 파티 보관함(효과 없음, 보관만)
+        public const int StashCols = 12, StashRows = 3;   // 파티 보관함(효과 없음, 보관만)
 
         public readonly int Cols, Rows;
         public readonly List<PlacedItem> Items = new();

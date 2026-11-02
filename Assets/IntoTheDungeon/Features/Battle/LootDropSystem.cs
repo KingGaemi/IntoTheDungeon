@@ -28,7 +28,7 @@ namespace IntoTheDungeon.Features.Battle
 
     /// <summary>
     /// 적이 쓰러지면 확률로 그 자리에 아이템을 떨어뜨린다(임시값).
-    /// 확률 = 최대 체력/1000(강한 몹일수록 잘 떨굼) + 방 보너스(정예 +15%, 보스 +30%). 등급은 방 종류·층이 높을수록 좋아진다.
+    /// 확률 = 최대 체력/2500(강한 몹일수록 잘 떨굼, 오크 약 9%) + 방 보너스(정예 +6%, 보스 +15%). 등급은 방 종류·층이 높을수록 좋아진다.
     /// </summary>
     public sealed class LootDropSystem : GameSystem, ITick
     {
@@ -80,14 +80,15 @@ namespace IntoTheDungeon.Features.Battle
 
             var run = RunState.Current;
             var room = run.Current?.Type ?? RoomType.Battle;
-            float chanceBonus = room == RoomType.Boss ? 0.3f : room == RoomType.Elite ? 0.15f : 0f;
-            float rareBonus = (room == RoomType.Boss ? 1f : room == RoomType.Elite ? 0.5f : 0f) + 0.05f * run.Depth;
+            float chanceBonus = room == RoomType.Boss ? 0.15f : room == RoomType.Elite ? 0.06f : 0f;
+            float rareBonus = (room == RoomType.Boss ? 1f : room == RoomType.Elite ? 0.5f : 0f) + 0.05f * run.Depth + SealStone.RareBonus(run.SealTier);
+            float dropMul = SealStone.DropMul(run.SealTier);
 
             // 청크 순회가 끝난 뒤 구조 변경
             foreach (var (e, pos, maxHp) in _dead)
             {
                 em.AddComponent(e, new LootRolledTag());
-                if (run.Rng.NextDouble() >= maxHp / 1000f + chanceBonus) continue;
+                if (run.Rng.NextDouble() >= (maxHp / 2500f + chanceBonus) * dropMul) continue;
                 var item = ItemPool.Roll(run.Rng, rareBonus);
                 var drop = em.CreateEntity();
                 em.AddComponent(drop, new LootDropComponent { ItemIndex = item.Index, Position = pos });

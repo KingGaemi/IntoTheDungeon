@@ -60,6 +60,11 @@ namespace IntoTheDungeon.Features.Battle
                 ImpactAge = -1f
             });
             if (em.HasComponent<PrimaryStatsComponent>(e)) em.GetComponent<PrimaryStatsComponent>(e).Bonus += StatBonus;
+            if (em.HasComponent<MeleeAttackComponent>(e))   // 보스 평타는 범위
+            {
+                ref var melee = ref em.GetComponent<MeleeAttackComponent>(e);
+                melee.CleaveBase = melee.Cleave = true;
+            }
             if (em.HasComponent<BodyComponent>(e))
             {
                 ref var body = ref em.GetComponent<BodyComponent>(e);

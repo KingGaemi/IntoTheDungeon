@@ -13,6 +13,7 @@ namespace IntoTheDungeon.Features.Stats
             {
                 var statuses = chunk.GetComponentArray<StatusComponent>();
                 var derived = chunk.GetComponentArray<DerivedStatsComponent>();
+                var entities = chunk.GetEntities();
                 for (int i = 0; i < chunk.Count; i++)
                 {
                     ref var st = ref statuses[i];
@@ -26,7 +27,9 @@ namespace IntoTheDungeon.Features.Stats
                         if (whole > 0)
                         {
                             d.HpRegenCarry -= whole;
+                            int before = st.CurrentHp;
                             st.CurrentHp = System.Math.Min(st.MaxHp, st.CurrentHp + whole);
+                            IntoTheDungeon.Features.Battle.CombatMeter.Heal(_world.EntityManager, entities[i], st.CurrentHp - before);   // 딜 미터 회복량
                         }
                     }
                     else d.HpRegenCarry = 0f;

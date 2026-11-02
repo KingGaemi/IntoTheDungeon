@@ -6,7 +6,7 @@ using IntoTheDungeon.Features.Stats;
 
 namespace IntoTheDungeon.Features.Character
 {
-    public enum SkillPreset { SwordWave, PowerShot }
+    public enum SkillPreset { SwordWave, PowerShot, TauntGuard }
 
     /// <summary>캐릭터 종류별 정의(레시피 이름 기준): 기본 스탯 4종, 몸 크기·무게, 공격 방식(근접/원거리)·사거리, 동작 시간, 필살기.</summary>
     public struct CharacterDefinition
@@ -23,6 +23,8 @@ namespace IntoTheDungeon.Features.Character
         public float WindupDuration;    // 공격 준비(이 끝에 판정·화살이 나감)
         public float RecoveryDuration;  // 공격 마무리
         public SkillPreset Skill;
+        public IntoTheDungeon.Features.Attack.BasicSkillPreset BasicSkill;   // 자동으로 쓰는 기본 스킬(없으면 None)
+        public bool Cleave;             // 근접 평타가 범위 공격(아니면 한 명만)
         public PrimaryStats Stats;      // 레벨 1의 힘·민첩·지능·정신력 → 체력·공격력·공속·이속 등은 StatFormula가 계산
         public PrimaryStats Growth;     // 레벨당 오르는 스탯
 

@@ -25,6 +25,12 @@ namespace IntoTheDungeon.Features.Attack
         public float WaveHitStun;       // 맞은 쪽 경직(초). 필살기는 크게
         public ProjectileVisual Visual; // 투사체 그림
 
+        // 도발 + 방패(TauntRadius > 0이면 투사체 대신 이것: TauntSystem)
+        public float TauntRadius;       // 이 가로 반경(깊이는 절반) 안의 적이 시전자만 노린다
+        public float TauntDuration;     // 도발 유지(초)
+        public float GuardDuration;     // 방패 유지(초)
+        public float GuardDamageMul;    // 방패 동안 받는 피해 배율
+
         // 시전 상태
         public bool Requested;
         public float RequestAge;
@@ -41,12 +47,13 @@ namespace IntoTheDungeon.Features.Attack
         // 케서린: 대시 공격 + 큰 검기 한 방
         public static readonly SpecialSkillComponent SwordWave = new()
         {
-            Cooldown = 12f,                  // 평타 비중을 높이려고 길게(필살기는 노리는 순간에)
-            ManaCost = 45f,                  // 케서린 마나 70·초당 1.6 → 다시 찰 때까지 대략 재사용 대기만큼
+            Cooldown = 20f,                  // 평타 비중을 높이려고 길게(필살기는 노리는 순간에)
+            CooldownRemaining = 8f,          // 전투 시작하자마자 쓰지 않게(첫 필살기는 8초 뒤)
+            ManaCost = 60f,                  // 케서린 마나 70·초당 1.6 → 다시 찰 때까지 대략 40초
             CastTime = 0.3f,
             Duration = 0.7f,                 // Catherine Dash_Attack.anim 길이
             DashSpeed = 6f,
-            DamageMultiplier = 5f,
+            DamageMultiplier = 4f,           // 기본 공격력이 오른 만큼 낮춤(한 방 피해는 예전과 비슷)
             WaveSpeed = 10f,
             WaveLifetime = 0.6f,             // 사거리 약 6
             WaveHalfExtents = new Vec2(0.6f, 0.5f),
@@ -56,15 +63,30 @@ namespace IntoTheDungeon.Features.Attack
             Visual = ProjectileVisual.SwordWave
         };
 
+        // 중갑 전사: 칼을 치켜들고 외쳐 주변 적을 끌어모으고, 방패를 세워 받는 피해를 줄인다
+        public static readonly SpecialSkillComponent TauntGuard = new()
+        {
+            Cooldown = 20f,
+            CooldownRemaining = 5f,          // 탱커라 다른 필살기보다 조금 일찍
+            ManaCost = 40f,
+            CastTime = 0.25f,
+            Duration = 0.75f,                // Warrior_Taunt(칼 들기) 동안 멈춤
+            TauntRadius = 4.5f,
+            TauntDuration = 5f,
+            GuardDuration = 6f,
+            GuardDamageMul = 0.5f
+        };
+
         // 궁수: 제자리에서 빠르게 시위를 당겨 한 줄을 꿰뚫는 강화 화살(검기보다 가늘고 멀리)
         public static readonly SpecialSkillComponent PowerShot = new()
         {
-            Cooldown = 12f,                  // 평타 비중을 높이려고 길게(필살기는 노리는 순간에)
-            ManaCost = 40f,                  // 궁수 마나 80·초당 1.9
+            Cooldown = 20f,                  // 평타 비중을 높이려고 길게(필살기는 노리는 순간에)
+            CooldownRemaining = 8f,          // 전투 시작하자마자 쓰지 않게
+            ManaCost = 60f,                  // 궁수 마나 80·초당 1.9 → 대략 30초
             CastTime = 0.58f,                // Archer_Skill(24fps) 14번째 프레임 = 시위를 놓는 순간
             Duration = 0.71f,                // Archer_Skill 길이(17프레임/24fps)
             DashSpeed = 0f,
-            DamageMultiplier = 4f,
+            DamageMultiplier = 3f,           // 기본 공격력이 오른 만큼 낮춤
             WaveSpeed = 16f,
             WaveLifetime = 0.7f,             // 사거리 약 11
             WaveHalfExtents = new Vec2(0.5f, 0.3f),

@@ -16,7 +16,7 @@ namespace IntoTheDungeon.Unity.Hud
     /// 오른쪽: 파티원별 장비 칸(4×3, 끼운 파티원에게만 적용), 파티 보관함(6×3, 효과 없음), 이번 전투에서 주운 아이템.
     /// 아이템은 칸 사이를 끌어서 옮기고(끄는 중 우클릭 = 회전), 버리기 칸에 놓으면 버린다. 방을 고르면 못 넣은 아이템은 사라진다.
     /// </summary>
-    public sealed class CampHud : MonoBehaviour, IWorldInjectable
+    public sealed partial class CampHud : MonoBehaviour, IWorldInjectable
     {
         const int RewardSlots = 3;
         const float Cell = 50f;   // 격자 한 칸(픽셀)
@@ -38,7 +38,7 @@ namespace IntoTheDungeon.Unity.Hud
         sealed class MemberCard
         {
             public GameObject Root;
-            public Image Body;
+            public Image Body, Portrait;
             public Text Name, Stats, XpText;
             public RectTransform XpFill;
         }
@@ -62,7 +62,11 @@ namespace IntoTheDungeon.Unity.Hud
         BattleProgress _progress;
         CharacterCatalog _catalog;
         GameObject _root;
-        RectTransform _lootArea, _discard, _dragLayer;
+        RectTransform _lootArea, _discard, _dragLayer, _rewardPanel;
+        int _itemsVersion;
+        Button _sellAll;
+        GameObject _confirmBox;
+        Text _confirmText;
         Text _partyTitle, _header, _deck, _info, _toMapLabel;
         Button _confirm;
         Font _font;
@@ -82,10 +86,14 @@ namespace IntoTheDungeon.Unity.Hud
             var run = RunState.Current;
             bool show = _progress.Phase == BattlePhase.Map && run.Phase == RunPhase.Camp;
             if (_root.activeSelf != show) _root.SetActive(show);
-            if (!show) { _wasShown = false; return; }
-            if (!_wasShown) { _wasShown = true; _selected = -1; RebuildItems(); ShowInfo(null); }
+            if (!show) { _wasShown = false; if (_confirmBox.activeSelf) _confirmBox.SetActive(false); return; }
+            if (!_wasShown) { _wasShown = true; _selected = -1; RebuildItems(); ShowInfo(null); if (_shopMessage) _shopMessage.text = ""; }
+            // 상점에서 산 아이템·영입한 동료가 보이게(끄는 중이 아닐 때)
+            if (_itemsVersion != run.InventoryVersion && _dragLayer.childCount == 0) RebuildItems();
 
-            var head = run.Current != null
+            var head = run.InShopRoom
+                ? $"스테이지 {run.Stage} · {run.CurrentLayer + 1}층 상점   ·   산 아이템은 주운 아이템 칸에 들어갑니다"
+                : run.Current != null
                 ? $"스테이지 {run.Stage} · {run.CurrentLayer + 1}층 {Encounters.Label(run.Current.Type)} 클리어   ·   경험치 +{run.LastXp}   ·   골드 +{run.LastGold}   ·   전투 후 회복 +{Mathf.RoundToInt(run.LastHeal * 100f)}%"
                 : "";
             if (run.LastLevelUps.Count > 0)
@@ -103,8 +111,12 @@ namespace IntoTheDungeon.Unity.Hud
             string next = run.StageCleared ? $"스테이지 {run.Stage + 1}로" : "지도로";
             _toMapLabel.text = run.Loot.Count > 0 ? $"{next} (방을 고르면 못 넣은 아이템 {run.Loot.Count}개는 버려짐)" : next;
 
+            bool rewards = run.PendingRewards.Count > 0;   // 지금은 전투 보상 카드가 없어 늘 숨김
+            if (_rewardPanel.gameObject.activeSelf != rewards) _rewardPanel.gameObject.SetActive(rewards);
             UpdateRewards(run);
             UpdateMembers(run);
+            UpdateShop(run);
+            _sellAll.interactable = run.Loot.Count > 0;
             UpdateDeck(run);
         }
 
@@ -171,6 +183,10 @@ namespace IntoTheDungeon.Unity.Hud
                 float ratio = i < run.PartyHp.Count ? run.PartyHp[i] : 1f;
                 bool fallen = ratio <= 0f;
                 card.Name.text = $"{i + 1}. {NameOf(run, i)}";
+                var portrait = PortraitTable.Of(recipe);
+                if (card.Portrait.sprite != portrait) card.Portrait.sprite = portrait;
+                card.Portrait.enabled = portrait;
+                card.Portrait.color = fallen ? new Color(0.45f, 0.45f, 0.45f, 1f) : Color.white;
                 card.Body.color = fallen ? new Color(0.14f, 0.12f, 0.14f, 1f) : cardColor;
                 int xp = run.XpOf(i), need = RunData.XpToNext(level);
                 card.XpFill.anchorMax = new Vector2(Mathf.Clamp01((float)xp / need), 1f);
@@ -184,7 +200,9 @@ namespace IntoTheDungeon.Unity.Hud
                     $"마나 {d.MaxMana:0} (+{d.ManaRegen:0.0}/초)\n" +
                     $"체력회복 {d.HpRegen:0.0}/초\n" +
                     $"마법저항 {d.MagicResist:0}\n" +
-                    $"넉백·CC저항 {d.KnockbackResist * 100f:0}%·{d.CcResist * 100f:0}%";
+                    $"넉백·CC저항 {d.KnockbackResist * 100f:0}%·{d.CcResist * 100f:0}%\n" +
+                    $"평타: {(def.Ranged ? "원거리" : def.Cleave || mods.Cleave ? "범위" : "한 명")}\n" +
+                    $"기본 스킬: {IntoTheDungeon.Features.Attack.BasicSkills.Name(def.BasicSkill)}";
                 card.Stats.color = fallen ? new Color(1f, 1f, 1f, 0.45f) : Color.white;
             }
         }
@@ -221,6 +239,7 @@ namespace IntoTheDungeon.Unity.Hud
             foreach (var v in _views) if (v) Destroy(v.gameObject);
             _views.Clear();
             var run = RunState.Current;
+            _itemsVersion = run.InventoryVersion;
 
             // 격자마다 판 데이터 연결(파티원 수가 바뀌었을 수 있음)
             for (int i = 0; i < _gear.Length; i++)
@@ -352,8 +371,14 @@ namespace IntoTheDungeon.Unity.Hud
             }
             else if (RectTransformUtility.RectangleContainsScreenPoint(_discard, screen, cam))
             {
+                // 팔기: 원래 값의 절반
                 if (v.Source != null) v.Source.Remove(v.Placed);
                 else run.Loot.Remove(v.Def);
+                int gold = run.Sell(v.Def);
+                if (_shopMessage) _shopMessage.text = $"{v.Def.Name} 판매 +{gold} 골드";
+                RebuildItems();
+                ShowInfo(null, $"{v.Def.Name}을(를) 팔았습니다. +{gold} 골드");
+                return;
             }
             else if (v.Source != null && RectTransformUtility.RectangleContainsScreenPoint(_lootArea, screen, cam))
             {
@@ -392,15 +417,103 @@ namespace IntoTheDungeon.Unity.Hud
             return false;
         }
 
+        /// <summary>
+        /// 우클릭 빠른 장착: 주운 아이템·보관함 아이템은 빈자리가 있는 파티원 장비 칸에(살아 있는 파티원 먼저, 1번부터),
+        /// 장비 칸에 낀 아이템은 보관함으로(꽉 찼으면 주운 아이템 칸으로) 뺀다.
+        /// </summary>
+        public void QuickEquip(InventoryItemView v)
+        {
+            var run = RunState.Current;
+            bool equipped = false;
+            foreach (var g in _gear) if (g.Inv != null && g.Inv == v.Source) equipped = true;
+
+            if (equipped)
+            {
+                v.Source.Remove(v.Placed);
+                if (run.Stash.PlaceNear(v.Def, 0, 0, v.Rotated) == null) run.Loot.Add(v.Def);
+            }
+            else
+            {
+                PlacedItem placed = null;
+                for (int pass = 0; pass < 2 && placed == null; pass++)   // 0: 살아 있는 파티원, 1: 쓰러진 파티원
+                    for (int i = 0; i < run.PartySize && placed == null; i++)
+                    {
+                        bool alive = i >= run.PartyHp.Count || run.PartyHp[i] > 0f;
+                        if (alive == (pass == 0)) placed = run.GearOf(i).PlaceNear(v.Def, 0, 0, v.Rotated);
+                    }
+                if (placed == null) { ShowInfo(v.Def, "장비 칸에 빈자리가 없습니다."); return; }
+                if (v.Source != null) v.Source.Remove(v.Placed);
+                else run.Loot.Remove(v.Def);
+            }
+            RebuildItems();
+            ShowInfo(null);
+        }
+
+        void ShowInfo(ItemDef def, string note)
+        {
+            ShowInfo(def);
+            if (_info) _info.text += $"\n\n{note}";
+        }
+
         public void ShowInfo(ItemDef def)
         {
             if (!_info) return;
             _info.text = def == null
-                ? "아이템에 마우스를 올리면 효과가 보입니다.\n장비 칸에 끼운 파티원에게만 효과가 있고, 보관함은 보관만 합니다.\n끌어서 옮기기(아이템 위에 놓으면 서로 바꿈) · 끄는 중 우클릭: 회전"
-                : $"{def.Name}\n[{ItemDef.RarityLabel(def.Rarity)} · {def.W}×{def.H}칸]\n\n{def.Description}";
+                ? "마우스 올리기: 효과 보기\n끌기: 옮기기(위에 놓으면 맞바꿈)\n끄는 중 우클릭: 회전\n우클릭: 빠른 장착 / 빼기\n장비 칸만 효과, 보관함은 보관만"
+                : $"{def.Name}\n[{ItemDef.RarityLabel(def.Rarity)} · {def.W}×{def.H}칸 · 판매가 {ShopPool.SellPrice(def)} 골드]\n\n{def.Description}";
         }
 
         void Leave() => RunState.Current.LeaveCamp();   // 같은 씬에서 바로 지도 화면으로
+
+        // ───────── 전부 판매(확인창) ─────────
+
+        /// <summary>주운 아이템 칸의 아이템을 모두 판다. 바로 팔지 않고 개수·받을 골드를 보여 주는 확인창을 띄운다.</summary>
+        void AskSellAll()
+        {
+            var run = RunState.Current;
+            if (run.Loot.Count == 0) return;
+            int gold = 0;
+            foreach (var def in run.Loot) gold += ShopPool.SellPrice(def);
+            _confirmText.text = $"주운 아이템 {run.Loot.Count}개를 모두 팝니다.\n+{gold} 골드\n\n(장비 칸·보관함에 넣은 아이템은 팔지 않습니다)";
+            _confirmBox.SetActive(true);
+        }
+
+        void SellAll()
+        {
+            _confirmBox.SetActive(false);
+            var run = RunState.Current;
+            int count = run.Loot.Count, gold = 0;
+            foreach (var def in run.Loot.ToArray())
+            {
+                run.Loot.Remove(def);
+                gold += run.Sell(def);
+            }
+            RebuildItems();
+            ShowInfo(null, $"주운 아이템 {count}개를 팔았습니다. +{gold} 골드");
+            if (_shopMessage) _shopMessage.text = $"{count}개 판매 +{gold} 골드";
+        }
+
+        void BuildConfirm()
+        {
+            var dim = NewImage(_root.transform, new Color(0f, 0f, 0f, 0.6f));
+            dim.raycastTarget = true;   // 뒤를 못 누르게
+            Stretch(dim.rectTransform);
+            _confirmBox = dim.gameObject;
+            var box = NewImage(dim.transform, panelColor);
+            Place(box.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(620f, 300f));
+            var frame = box.gameObject.AddComponent<Outline>();
+            frame.effectColor = accent;
+            frame.effectDistance = new Vector2(3f, -3f);
+            var title = NewText(box.rectTransform, "전부 판매", 32);
+            title.color = accent;
+            Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -36f), new Vector2(560f, 44f));
+            _confirmText = NewText(box.rectTransform, "", 24);
+            _confirmText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            Place(_confirmText.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 10f), new Vector2(560f, 140f));
+            NewButton(box.rectTransform, "판매", new Vector2(-120f, -105f), new Vector2(200f, 50f), new Color(0.85f, 0.55f, 0.35f, 1f), SellAll);
+            NewButton(box.rectTransform, "취소", new Vector2(120f, -105f), new Vector2(200f, 50f), new Color(0.6f, 0.62f, 0.7f, 1f), () => _confirmBox.SetActive(false));
+            _confirmBox.SetActive(false);
+        }
 
         // ───────── 화면 만들기 ─────────
 
@@ -427,20 +540,20 @@ namespace IntoTheDungeon.Unity.Hud
             Place(_header.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -92f), new Vector2(1200f, 36f));
 
             // 왼쪽: 보상
-            var reward = Panel(new Vector2(-480f, 255f), new Vector2(900f, 290f), "보상 (카드를 고른 뒤 확정)");
+            var reward = _rewardPanel = Panel(new Vector2(-480f, 255f), new Vector2(900f, 290f), "보상 (카드를 고른 뒤 확정)");
             for (int i = 0; i < RewardSlots; i++)
                 _rewards[i] = BuildRewardSlot(reward, i, new Vector2((i - 1) * 285f, -12f), new Vector2(265f, 170f));
             _confirm = NewButton(reward, "선택 확정", new Vector2(0f, -120f), new Vector2(260f, 40f), accent, Confirm);
 
             // 왼쪽: 파티
-            var party = Panel(new Vector2(-480f, -170f), new Vector2(900f, 530f), "파티");
+            var party = Panel(new Vector2(-480f, -240f), new Vector2(900f, 420f), "파티");
             _partyTitle = party.GetComponentInChildren<Text>();
             for (int i = 0; i < _members.Length; i++)
-                _members[i] = BuildMemberCard(party, new Vector2(-330f + i * 220f, -10f), new Vector2(212f, 410f));
+                _members[i] = BuildMemberCard(party, new Vector2(-330f + i * 220f, -2f), new Vector2(212f, 320f));
             _deck = NewText(party, "", 18);
             _deck.alignment = TextAnchor.MiddleLeft;
             _deck.horizontalOverflow = HorizontalWrapMode.Wrap;
-            Place(_deck.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, 26f), new Vector2(860f, 40f));
+            Place(_deck.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, 18f), new Vector2(860f, 30f));
 
             // 오른쪽: 파티원별 장비 칸
             var gear = Panel(new Vector2(480f, 205f), new Vector2(900f, 370f), "장비 (끼운 파티원에게만 적용)");
@@ -461,13 +574,13 @@ namespace IntoTheDungeon.Unity.Hud
 
             // 오른쪽: 보관함 + 아이템 정보
             var stash = Panel(new Vector2(480f, -95f), new Vector2(900f, 210f), "보관함 (효과 없음)");
-            _stash = BuildGrid(stash, new Vector2(-260f, -20f), Inventory.StashCols, Inventory.StashRows);
+            _stash = BuildGrid(stash, new Vector2(-130f, -20f), Inventory.StashCols, Inventory.StashRows);
             _stash.Block = _stash.Rect.gameObject;
             _stash.Slot = -1;
-            _info = NewText(stash, "", 19);
+            _info = NewText(stash, "", 16);
             _info.alignment = TextAnchor.UpperLeft;
             _info.horizontalOverflow = HorizontalWrapMode.Wrap;
-            Place(_info.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(180f, -20f), new Vector2(480f, 150f));
+            Place(_info.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(315f, -20f), new Vector2(250f, 160f));
 
             // 오른쪽: 주운 아이템 + 버리기
             var loot = Panel(new Vector2(480f, -330f), new Vector2(900f, 220f), "주운 아이템 (끌어서 장비 칸이나 보관함에)");
@@ -477,9 +590,12 @@ namespace IntoTheDungeon.Unity.Hud
             var discard = NewImage(loot, new Color(0.25f, 0.12f, 0.12f, 1f));
             discard.raycastTarget = true;
             _discard = discard.rectTransform;
-            Place(_discard, new Vector2(0.5f, 0.5f), new Vector2(345f, -20f), new Vector2(150f, 155f));
-            var dl = NewText(_discard, "버리기\n(여기에 놓기)", 22);
+            Place(_discard, new Vector2(0.5f, 0.5f), new Vector2(345f, -2f), new Vector2(150f, 112f));
+            var dl = NewText(_discard, "팔기\n(여기에 놓으면\n절반 값 골드)", 20);
             Stretch(dl.rectTransform);
+            _sellAll = NewButton(loot, "전부 판매", new Vector2(345f, -84f), new Vector2(150f, 36f), new Color(0.85f, 0.55f, 0.35f, 1f), AskSellAll);
+
+            BuildShop();
 
             // 지도로
             var toMap = NewButton(_root.transform, "지도로", new Vector2(0f, -508f), new Vector2(520f, 52f), accent, Leave);
@@ -490,6 +606,7 @@ namespace IntoTheDungeon.Unity.Hud
             _dragLayer.SetParent(_root.transform, false);
             Stretch(_dragLayer);
 
+            BuildConfirm();
             _root.SetActive(false);
         }
 
@@ -530,12 +647,26 @@ namespace IntoTheDungeon.Unity.Hud
             card.Body = NewImage(parent, cardColor);
             card.Root = card.Body.gameObject;
             Place(card.Body.rectTransform, new Vector2(0.5f, 0.5f), pos, size);
+            // 초상화(왼쪽 위 네모)
+            var frame = NewImage(card.Body.rectTransform, new Color(0f, 0f, 0f, 0.55f));
+            var prt = frame.rectTransform;
+            prt.anchorMin = prt.anchorMax = prt.pivot = new Vector2(0f, 1f);
+            prt.anchoredPosition = new Vector2(8f, -8f);
+            prt.sizeDelta = new Vector2(58f, 58f);
+            card.Portrait = NewImage(prt, Color.white);
+            card.Portrait.preserveAspect = true;
+            var irt = card.Portrait.rectTransform;
+            irt.anchorMin = Vector2.zero; irt.anchorMax = Vector2.one;
+            irt.offsetMin = new Vector2(2f, 2f); irt.offsetMax = new Vector2(-2f, -2f);
+
             card.Name = NewText(card.Body.rectTransform, "", 22);
             card.Name.color = accent;
             Band(card.Name.rectTransform, 1f, -8f, 30f);
+            card.Name.rectTransform.offsetMin = new Vector2(72f, card.Name.rectTransform.offsetMin.y);   // 초상화 오른쪽
             // 경험치 바: 노란 채움 + "Lv.2  40 / 100"
             var xpBack = NewImage(card.Body.rectTransform, new Color(0f, 0f, 0f, 0.6f));
             Band(xpBack.rectTransform, 1f, -42f, 24f);
+            xpBack.rectTransform.offsetMin = new Vector2(72f, xpBack.rectTransform.offsetMin.y);
             card.XpFill = NewImage(xpBack.rectTransform, new Color(0.85f, 0.68f, 0.18f, 1f)).rectTransform;
             card.XpFill.anchorMin = Vector2.zero; card.XpFill.anchorMax = new Vector2(0f, 1f);
             card.XpFill.offsetMin = card.XpFill.offsetMax = Vector2.zero;
@@ -544,9 +675,9 @@ namespace IntoTheDungeon.Unity.Hud
             xrt.anchorMin = Vector2.zero; xrt.anchorMax = Vector2.one;
             xrt.offsetMin = xrt.offsetMax = Vector2.zero;
 
-            card.Stats = NewText(card.Body.rectTransform, "", 17);
+            card.Stats = NewText(card.Body.rectTransform, "", 14);
             card.Stats.alignment = TextAnchor.UpperLeft;
-            card.Stats.lineSpacing = 1.1f;
+            card.Stats.lineSpacing = 1f;
             var srt = card.Stats.rectTransform;
             srt.anchorMin = Vector2.zero; srt.anchorMax = Vector2.one;
             srt.offsetMin = new Vector2(12f, 8f); srt.offsetMax = new Vector2(-6f, -74f);

@@ -128,6 +128,8 @@ namespace IntoTheDungeon.Features.Attack
                     phase.ReadyToAct = false;
                     phase.DirtyPhase = false;
 
+                    if (em.HasComponent<BasicSkillComponent>(e))   // 시전 중인 기본 스킬은 끊는다(필살기가 우선)
+                        em.GetComponent<BasicSkillComponent>(e).Skill.Casting = false;
                     sk.Requested = false;
                     sk.Casting = true;
                     sk.Timer = 0f;
@@ -146,7 +148,10 @@ namespace IntoTheDungeon.Features.Attack
 
             // 청크 순회 중 구조 변경을 피하려고 생성은 순회가 끝난 뒤에 한다.
             foreach (var w in _waves)
-                CreateWave(em, w);
+            {
+                if (w.Skill.TauntRadius > 0f) TauntSystem.Apply(em, w.Owner, w.Team, w.Pos, w.Skill);
+                else CreateWave(em, w);
+            }
         }
 
         void SetAction(Entity e, ref StateComponent state, ActionState action, bool stopMoving = false)
@@ -167,23 +172,26 @@ namespace IntoTheDungeon.Features.Attack
         }
 
         static void CreateWave(IEntityManager em, in WaveRequest r)
+            => CreateWave(em, r.Owner, r.Team, r.Damage, r.Pos, r.Height, r.FacingSign, r.Skill);
+
+        /// <summary>스킬 투사체(검기·강화 화살) 하나. 기본 스킬(BasicSkillSystem)도 쓴다.</summary>
+        public static void CreateWave(IEntityManager em, Entity owner, TeamFlag team, int damage, Vec2 pos, float height, float facingSign, in SpecialSkillComponent sk)
         {
-            var sk = r.Skill;
             var e = em.CreateEntity();
             em.AddComponent(e, new HitboxComponent
             {
-                Owner = r.Owner,
-                Team = r.Team,
-                Damage = r.Damage,
-                Center = new Vec2(r.Pos.X + r.FacingSign * (sk.WaveHalfExtents.X + 0.2f), r.Pos.Y),   // 몸 바로 앞에서 출발
+                Owner = owner,
+                Team = team,
+                Damage = damage,
+                Center = new Vec2(pos.X + facingSign * (sk.WaveHalfExtents.X + 0.2f), pos.Y),   // 몸 바로 앞에서 출발
                 HalfExtents = sk.WaveHalfExtents,
-                Height = r.Height,
-                FacingSign = r.FacingSign,
+                Height = height,
+                FacingSign = facingSign,
                 KnockbackSpeed = sk.WaveKnockback,
                 LaunchSpeed = sk.WaveLaunch,
                 HitStun = sk.WaveHitStun
             });
-            em.AddComponent(e, new ProjectileComponent { Velocity = new Vec2(r.FacingSign * sk.WaveSpeed, 0f), DestroyOnHit = false });
+            em.AddComponent(e, new ProjectileComponent { Velocity = new Vec2(facingSign * sk.WaveSpeed, 0f), DestroyOnHit = false });
             em.AddComponent(e, new LifetimeComponent { Remaining = sk.WaveLifetime });
             em.AddComponent(e, new HitListComponent());   // 관통: 같은 대상은 한 번만
             em.AddComponent(e, new ProjectileVisualComponent { Kind = sk.Visual, TotalLifetime = sk.WaveLifetime });

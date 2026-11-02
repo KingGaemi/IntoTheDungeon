@@ -8,7 +8,7 @@ using IntoTheDungeon.Features.Settings;
 namespace IntoTheDungeon.Unity.Title
 {
     /// <summary>
-    /// 타이틀 씬의 시작 메뉴(임시 UI, 코드로 만든다): 새 게임 · 설정 · 종료.
+    /// 타이틀 씬의 시작 메뉴(임시 UI, 코드로 만든다): 이어하기(자동 저장이 있을 때) · 새 게임 · 설정 · 종료.
     /// 설정: 피격 흔들림 세기(0~150%), 머리 위 디버그 글자 표시. 값은 GameSettings(PlayerPrefs)에 바로 저장된다.
     /// </summary>
     public sealed class TitleMenu : MonoBehaviour
@@ -21,14 +21,24 @@ namespace IntoTheDungeon.Unity.Title
         [SerializeField] Color accent = new(1f, 0.82f, 0.3f, 1f);
 
         Font _font;
-        GameObject _menu, _settings;
+        GameObject _menu, _settings, _continue;
         Text _shakeValue, _overlayLabel;
 
         void Awake() => Build();
 
         void NewGame()
         {
+            RunSaveStore.Delete();   // 새 판을 시작하면 이전 판 저장은 지운다
             RunState.StartNew();
+            SceneManager.LoadScene(gameSceneName);
+        }
+
+        // 이어하기: 마지막 자동 저장(지도·정비 화면)부터
+        void Continue()
+        {
+            var run = RunSaveStore.Load();
+            if (run == null) { _continue.SetActive(false); return; }
+            RunState.Continue(run);
             SceneManager.LoadScene(gameSceneName);
         }
 
@@ -82,9 +92,13 @@ namespace IntoTheDungeon.Unity.Title
 
             // 메인 메뉴
             _menu = NewGroup(root);
-            NewButton(_menu.transform, "새 게임", new Vector2(0f, 0f), NewGame);
-            NewButton(_menu.transform, "설정", new Vector2(0f, -110f), () => ShowSettings(true));
-            NewButton(_menu.transform, "종료", new Vector2(0f, -220f), Quit);
+            bool hasSave = RunSaveStore.HasSave;
+            float top = hasSave ? 40f : 0f;   // 이어하기가 있으면 한 칸씩 위로
+            _continue = NewButton(_menu.transform, "이어하기", new Vector2(0f, top + 110f), Continue).gameObject;
+            _continue.SetActive(hasSave);
+            NewButton(_menu.transform, "새 게임", new Vector2(0f, top), NewGame);
+            NewButton(_menu.transform, "설정", new Vector2(0f, top - 110f), () => ShowSettings(true));
+            NewButton(_menu.transform, "종료", new Vector2(0f, top - 220f), Quit);
 
             // 설정
             _settings = NewGroup(root);

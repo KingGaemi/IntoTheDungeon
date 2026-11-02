@@ -110,6 +110,7 @@ namespace IntoTheDungeon.Unity.Hud
 
             AddFloat($"+{e.Xp} 경험치", xpColor, head + new Vector3(0f, 0.35f, 0f), 0f);
             AddFloat($"+{e.Gold} 골드", goldColor, head + new Vector3(0f, 0.05f, 0f), 0.12f);
+            if (e.Gem != null) AddFloat($"잼 획득! {e.Gem}", new Color(e.GemR, e.GemG, e.GemB, 1f), head + new Vector3(0f, 0.75f, 0f), 0.25f);
         }
 
         bool StepCoin(Fx f, float dt)

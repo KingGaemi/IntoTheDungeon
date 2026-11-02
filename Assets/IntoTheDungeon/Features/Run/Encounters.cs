@@ -82,6 +82,7 @@ namespace IntoTheDungeon.Features.Run
             RoomType.Elite => "정예",
             RoomType.Rest => "휴식",
             RoomType.Boss => "보스",
+            RoomType.Shop => "상점",
             _ => "?"
         };
     }

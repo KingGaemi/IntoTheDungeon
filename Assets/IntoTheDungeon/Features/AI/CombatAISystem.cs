@@ -11,6 +11,7 @@ using IntoTheDungeon.Features.Command;
 using IntoTheDungeon.Features.State;
 using IntoTheDungeon.Features.Status;
 using IntoTheDungeon.Features.Battle;
+using IntoTheDungeon.Features.Attack;
 
 namespace IntoTheDungeon.Features.AI
 {
@@ -47,6 +48,8 @@ namespace IntoTheDungeon.Features.AI
             _time += dt;
             if (_progress != null && _progress.Phase == BattlePhase.Map) return;   // 지도에서 방 고르는 동안은 가만히
             var em = _world.EntityManager;
+            // 웨이브 진행 중엔 방이 넓어도(마지막 웨이브는 문 앞에서 나옴) 거리와 상관없이 가장 가까운 적과 붙는다
+            bool fighting = _progress == null || _progress.Phase == BattlePhase.Fighting;
             CollectTargets(em);
             _hasPartyCenter = Party.TryGetCenter(em, out _partyCenter, out _);
 
@@ -82,8 +85,9 @@ namespace IntoTheDungeon.Features.AI
                     if (attacking) continue;   // 휘두르는 중엔 건드리지 않는다
 
                     var self = transforms[i].Position;
-                    bool hasTarget = TryFindNearest(entities[i], teams[i].TeamFlag, self, out var target, out float dist);
-                    if (!hasTarget || dist > ai.AggroRange)
+                    bool hasTarget = TryTaunter(em, entities[i], self, out var target, out float dist)
+                                  || TryFindNearest(entities[i], teams[i].TeamFlag, self, out target, out dist);
+                    if (!hasTarget || (!fighting && dist > ai.AggroRange))
                     {
                         if (!TryFollowLeader(ref ai, ref buf, entities[i], teams[i].TeamFlag, self, states[i]))
                         {
@@ -194,6 +198,22 @@ namespace IntoTheDungeon.Features.AI
                     _targets.Add(new Target { E = entities[i], Team = teams[i].TeamFlag, Pos = transforms[i].Position });
                 }
             }
+        }
+
+        // 도발당한 동안은 도발한 쪽(살아 있으면)을 노린다
+        bool TryTaunter(IEntityManager em, Entity self, Vec2 selfPos, out Target best, out float dist)
+        {
+            best = default;
+            dist = 0f;
+            if (!em.TryGetComponent<TauntedComponent>(self, out var taunt) || taunt.Remaining <= 0f) return false;
+            foreach (var t in _targets)
+            {
+                if (t.E != taunt.Taunter) continue;
+                best = t;
+                dist = (t.Pos - selfPos).Magnitude;
+                return true;
+            }
+            return false;
         }
 
         bool TryFindNearest(Entity self, TeamFlag myTeam, Vec2 selfPos, out Target best, out float bestDist)

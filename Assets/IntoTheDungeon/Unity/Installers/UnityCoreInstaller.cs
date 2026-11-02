@@ -69,6 +69,10 @@ namespace IntoTheDungeon.Unity
             [Tooltip("공격 준비·마무리 시간(0이면 기본 0.5·0.7)")]
             public float windup, recovery;
             public SkillPreset skill;
+            [Tooltip("자동으로 쓰는 기본 스킬")]
+            public BasicSkillPreset basic;
+            [Tooltip("근접 평타가 범위 공격(아니면 한 명만)")]
+            public bool cleave;
             [Tooltip("레벨 1 기본 스탯(모두 0이면 5·5·5·5)")]
             public int str, agi, intel, wil;
             [Tooltip("레벨당 오르는 스탯(모두 0이면 1·1·1·1)")]
@@ -78,8 +82,8 @@ namespace IntoTheDungeon.Unity
         [Header("캐릭터 종류별 정의(없는 이름은 반지름 0.3·무게 1)")]
         [SerializeField] CharacterDefEntry[] characterDefs =
         {
-            new() { recipe = "Character", displayName = "케서린", gStr = 2, gAgi = 1, gInt = 0, gWil = 1, bodyRadius = 0.3f, bodyMass = 1f, headHeight = 1.0f, str = 8, agi = 5, intel = 2, wil = 4 },
-            new() { recipe = "Catherine", displayName = "케서린", gStr = 2, gAgi = 1, gInt = 0, gWil = 1, bodyRadius = 0.3f, bodyMass = 1f, headHeight = 1.0f, str = 8, agi = 5, intel = 2, wil = 4 },
+            new() { recipe = "Character", displayName = "케서린", gStr = 4, gAgi = 2, gInt = 1, gWil = 2, bodyRadius = 0.3f, bodyMass = 1f, headHeight = 1.0f, basic = BasicSkillPreset.Slash, str = 12, agi = 7, intel = 2, wil = 5 },
+            new() { recipe = "Catherine", displayName = "케서린", gStr = 4, gAgi = 2, gInt = 1, gWil = 2, bodyRadius = 0.3f, bodyMass = 1f, headHeight = 1.0f, basic = BasicSkillPreset.Slash, str = 12, agi = 7, intel = 2, wil = 5 },
             new() { recipe = "Orc1", displayName = "오크", gStr = 1, gAgi = 1, gInt = 0, gWil = 1, bodyRadius = 0.35f, bodyMass = 1.2f, headHeight = 1.27f, str = 5, agi = 3, intel = 0, wil = 2 },
             new() { recipe = "Orc2", displayName = "오크 전사", gStr = 2, gAgi = 1, gInt = 0, gWil = 1, bodyRadius = 0.4f, bodyMass = 1.5f, headHeight = 1.36f, str = 7, agi = 4, intel = 0, wil = 3 },
             new() { recipe = "Orc3", displayName = "오크 대장", gStr = 2, gAgi = 1, gInt = 0, gWil = 2, bodyRadius = 0.45f, bodyMass = 2f, headHeight = 1.59f, str = 10, agi = 3, intel = 1, wil = 6 },
@@ -87,8 +91,11 @@ namespace IntoTheDungeon.Unity
             new() { recipe = "Plant1", displayName = "식인초", gStr = 1, gAgi = 2, gInt = 0, gWil = 1, bodyRadius = 0.3f, bodyMass = 1f, headHeight = 1.0f, str = 5, agi = 7, intel = 0, wil = 2 },
             new() { recipe = "Plant2", displayName = "가시 덩굴", gStr = 2, gAgi = 1, gInt = 0, gWil = 2, bodyRadius = 0.38f, bodyMass = 1.6f, headHeight = 1.05f, str = 8, agi = 3, intel = 0, wil = 5 },
             new() { recipe = "Plant3", displayName = "독꽃", gStr = 2, gAgi = 1, gInt = 1, gWil = 1, bodyRadius = 0.4f, bodyMass = 1.8f, headHeight = 1.1f, str = 10, agi = 5, intel = 2, wil = 5 },
-            new() { recipe = "Archer", displayName = "궁수", gStr = 1, gAgi = 2, gInt = 1, gWil = 0, bodyRadius = 0.28f, bodyMass = 0.9f, headHeight = 1.05f, ranged = true, attackRange = 5.5f, minRange = 2f,
-                    windup = 0.6f, recovery = 0.3f, skill = SkillPreset.PowerShot, str = 5, agi = 9, intel = 3, wil = 3 },
+            // 중갑 전사(탱커): 체력·방어·넉백 저항이 높고 무겁다. 대신 휘두르는 게 느려 평타 피해는 낮다. 평타는 범위, 필살기는 도발 + 방패
+            new() { recipe = "Warrior", displayName = "중갑 전사", gStr = 4, gAgi = 3, gInt = 1, gWil = 3, bodyRadius = 0.36f, bodyMass = 2.2f, headHeight = 1.3f,
+                    windup = 0.7f, recovery = 0.8f, skill = SkillPreset.TauntGuard, basic = BasicSkillPreset.ShieldBash, cleave = true, str = 13, agi = 8, intel = 1, wil = 10 },
+            new() { recipe = "Archer", displayName = "궁수", gStr = 3, gAgi = 4, gInt = 2, gWil = 1, bodyRadius = 0.28f, bodyMass = 0.9f, headHeight = 1.05f, ranged = true, attackRange = 5.5f, minRange = 2f,
+                    windup = 0.6f, recovery = 0.3f, skill = SkillPreset.PowerShot, basic = BasicSkillPreset.QuickShot, str = 7, agi = 12, intel = 3, wil = 4 },
         };
 
         public override void Install(GameWorld world)
@@ -128,6 +135,8 @@ namespace IntoTheDungeon.Unity
                     if (d.windup > 0f) def.WindupDuration = d.windup;
                     if (d.recovery > 0f) def.RecoveryDuration = d.recovery;
                     def.Skill = d.skill;
+                    def.BasicSkill = d.basic;
+                    def.Cleave = d.cleave;
                     var stats = new PrimaryStats(d.str, d.agi, d.intel, d.wil);
                     if (!stats.IsZero) def.Stats = stats;
                     var growth = new PrimaryStats(d.gStr, d.gAgi, d.gInt, d.gWil);
@@ -218,6 +227,9 @@ namespace IntoTheDungeon.Unity
             world.SystemManager.AddUnique(new CharacterIntentApplySystem());
             world.SystemManager.AddUnique(new PhaseControlSystem());
             world.SystemManager.AddUnique(new SpecialSkillSystem());   // 필살기: 평타 끊고 시전·검기 발사·종료
+            world.SystemManager.AddUnique(new BasicSkillSystem());     // 기본 스킬: 재사용 대기·마나가 되면 AI가 알아서
+            world.SystemManager.AddUnique(new TauntSystem());          // 도발·방패 남은 시간
+            world.SystemManager.AddUnique(new CombatMeterSystem());    // 딜 미터 전투 시간
             world.SystemManager.AddUnique(new BossSystem());           // 보스 내려찍기: 힘 모으기(예고) → 범위 공격
 
             // 전투: 히트박스 생성 → 위치 갱신 → 판정 → HP 적용 → 사망 상태 → 수명 정리

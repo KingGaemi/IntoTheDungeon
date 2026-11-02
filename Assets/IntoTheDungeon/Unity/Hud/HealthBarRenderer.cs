@@ -5,6 +5,7 @@ using IntoTheDungeon.Core.Abstractions.Gameplay;
 using IntoTheDungeon.Core.ECS.Abstractions;
 using IntoTheDungeon.Core.ECS.Components;
 using IntoTheDungeon.Features.Battle;
+using IntoTheDungeon.Features.Attack;
 using IntoTheDungeon.Features.Physics.Components;
 using IntoTheDungeon.Features.Status;
 using IntoTheDungeon.Features.Stats;
@@ -34,6 +35,13 @@ namespace IntoTheDungeon.Unity.Hud
         [SerializeField] Color manaColor = new(0.3f, 0.55f, 1f, 1f);
         [SerializeField] float manaHeight = 0.06f;
         [SerializeField] Color borderColor = new(0f, 0f, 0f, 0.9f);
+        [Header("기본 스킬 재사용 대기(체력바 오른쪽 동그라미)")]
+        [SerializeField] int cooldownDots = 12;
+        [SerializeField] float cooldownRadius = 0.11f;
+        [SerializeField] float cooldownDotSize = 0.05f;
+        [SerializeField] Color cooldownReady = new(0.55f, 0.95f, 1f, 1f);
+        [SerializeField] Color cooldownCharging = new(0.3f, 0.6f, 0.8f, 1f);
+        [SerializeField] Color cooldownEmpty = new(0.08f, 0.08f, 0.1f, 0.85f);
 
         [Header("깎이는 연출")]
         [Tooltip("맞은 뒤 잔상이 버티는 시간(초)")]
@@ -59,6 +67,8 @@ namespace IntoTheDungeon.Unity.Hud
             public SpriteRenderer Border, Back, Trail, Fill;
             public SpriteRenderer ManaBorder, ManaBack, ManaFill;   // 파티원만 켬
             public TextMesh Level, LevelShadow;                      // 바 왼쪽 "Lv.3"
+            public SpriteRenderer CdBack;                            // 기본 스킬 재사용 대기(동그라미)
+            public readonly List<SpriteRenderer> CdDots = new();
             public MeshRenderer LevelRenderer, LevelShadowRenderer;
             public int ShownLevel = -1;
             public float Shown = -1f, Trail_ = 1f, HoldUntil, FlashUntil;
@@ -134,6 +144,22 @@ namespace IntoTheDungeon.Unity.Hud
                         bool showMana = party && _world.EntityManager.TryGetComponent(e, out ds) && ds.MaxMana > 0f;
                         if (bar.ManaFill.enabled != showMana) bar.ManaBorder.enabled = bar.ManaBack.enabled = bar.ManaFill.enabled = showMana;
                         if (showMana) SetWidth(bar.ManaFill, Mathf.Clamp01(ds.Mana / ds.MaxMana));
+                        // 기본 스킬 재사용 대기: 12시 방향부터 시계 방향으로 점이 차오르고, 다 차면 깜빡, 쓰는 중엔 흰색
+                        bool hasBasic = _world.EntityManager.TryGetComponent<BasicSkillComponent>(e, out var basic) && basic.Skill.Cooldown > 0f;
+                        if (bar.CdBack.enabled != hasBasic) { bar.CdBack.enabled = hasBasic; foreach (var d in bar.CdDots) d.enabled = hasBasic; }
+                        if (hasBasic)
+                        {
+                            var bs = basic.Skill;
+                            float k = 1f - Mathf.Clamp01(bs.CooldownRemaining / bs.Cooldown);
+                            bool ready = bs.CooldownRemaining <= 0f;
+                            float pulse = 0.65f + 0.35f * Mathf.Sin(now * 8f);
+                            for (int d = 0; d < bar.CdDots.Count; d++)
+                            {
+                                bool lit = ready || (d + 1f) / bar.CdDots.Count <= k + 1e-4f;
+                                var c = bs.Casting ? Color.white : ready ? cooldownReady * new Color(pulse, pulse, pulse, 1f) : lit ? cooldownCharging : cooldownEmpty;
+                                bar.CdDots[d].color = c;
+                            }
+                        }
                         bar.Fill.color = now < bar.FlashUntil ? Color.white : party ? partyColor : enemyColor;
                         SetWidth(bar.Fill, ratio);
                         SetWidth(bar.Trail, bar.Trail_);
@@ -147,6 +173,8 @@ namespace IntoTheDungeon.Unity.Hud
                         bar.ManaBorder.sortingOrder = order;
                         bar.ManaBack.sortingOrder = order + 1;
                         bar.ManaFill.sortingOrder = order + 3;
+                        bar.CdBack.sortingOrder = order;
+                        foreach (var d in bar.CdDots) d.sortingOrder = order + 3;
 
                         // 레벨(바 왼쪽)
                         int level = _world.EntityManager.TryGetComponent<PrimaryStatsComponent>(e, out var ps) ? ps.Level : 0;
@@ -218,6 +246,19 @@ namespace IntoTheDungeon.Unity.Hud
             bar.ManaBack = Part(root, "ManaBack", _center, backColor, new Vector3(0f, my), new Vector2(width, manaHeight));
             bar.ManaFill = Part(root, "ManaFill", _left, manaColor, new Vector3(-width * 0.5f, my), new Vector2(width, manaHeight));
             bar.ManaBorder.enabled = bar.ManaBack.enabled = bar.ManaFill.enabled = false;
+
+            // 기본 스킬 재사용 대기: 체력바 오른쪽 끝 옆의 동그라미(점 12개)
+            var cdCenter = new Vector3(width * 0.5f + border + cooldownRadius + cooldownDotSize, -manaHeight * 0.5f, 0f);
+            bar.CdBack = Part(root, "CdBack", FxSprites.DotSprite, new Color(0f, 0f, 0f, 0.75f), cdCenter,
+                              Vector2.one * (cooldownRadius + cooldownDotSize) * 2.2f);
+            for (int d = 0; d < cooldownDots; d++)
+            {
+                float a = Mathf.PI * 0.5f - d * Mathf.PI * 2f / cooldownDots;   // 12시부터 시계 방향
+                var pos = cdCenter + new Vector3(Mathf.Cos(a), Mathf.Sin(a), 0f) * cooldownRadius;
+                bar.CdDots.Add(Part(root, "CdDot", FxSprites.DotSprite, cooldownEmpty, pos, Vector2.one * cooldownDotSize));
+            }
+            bar.CdBack.enabled = false;
+            foreach (var d in bar.CdDots) d.enabled = false;
 
             if (!_font) _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             var levelPos = new Vector3(-width * 0.5f - border - 0.04f, 0f, 0f);

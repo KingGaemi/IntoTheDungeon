@@ -19,6 +19,8 @@ namespace IntoTheDungeon.Features.Run
         public float BodyRadiusAdd = 0f;
         public float BodyMassMul = 1f;
         public float PostBattleHealAdd = 0f;   // 전투 후 회복(최대 체력 비율)에 더해짐
+        public bool Cleave;                     // 근접 평타가 범위 공격(특수 장비)
+        public float GoldMul = 1f;              // 처치 골드 배율(잼)
         public PrimaryStats StatBonus;          // 파티 전원 기본 스탯에 더해짐(세부 능력치는 다시 계산)
     }
 
@@ -64,7 +66,16 @@ namespace IntoTheDungeon.Features.Run
         {
             CardDef.Recruit("recruit_catherine", "동료 영입: 케서린", "검사 동료가 파티에 합류", "Catherine"),
             CardDef.Recruit("recruit_archer", "동료 영입: 궁수", "뒤에서 화살을 쏘는 동료가 파티에 합류", "Archer"),
+            CardDef.Recruit("recruit_warrior", "동료 영입: 중갑 전사", "적을 끌어모으고 방패로 버티는 탱커가 파티에 합류", "Warrior"),
         };
+
+        /// <summary>Id로 카드 찾기(저장 불러오기용). 없으면 null.</summary>
+        public static CardDef Find(string id)
+        {
+            foreach (var c in Passives) if (c.Id == id) return c;
+            foreach (var c in Recruits) if (c.Id == id) return c;
+            return null;
+        }
 
         /// <summary>방 종류별 보상 3장: 일반은 패시브 3장, 정예는 동료 영입 1장 + 패시브 2장(파티가 가득이면 패시브 3장).</summary>
         public static List<CardDef> Offer(RoomType type, int partySize, System.Random rng)

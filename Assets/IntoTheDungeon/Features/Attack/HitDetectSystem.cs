@@ -53,13 +53,33 @@ namespace IntoTheDungeon.Features.Attack
 #if UNITY_EDITOR
                     DrawBox(min, max, hb.Height, UnityEngine.Color.red);
 #endif
+                    // 단일 대상(일반 근접 평타): 겹친 대상 중 공격자 쪽 끝에서 가장 가까운 하나만
+                    if (hb.MaxTargets > 0)
+                    {
+                        if (hits.HitCount >= hb.MaxTargets) continue;
+                        float nearX = hb.Center.X - hb.FacingSign * hb.HalfExtents.X;
+                        int best = -1;
+                        float bestD = float.MaxValue;
+                        for (int k = 0; k < _targets.Count; k++)
+                        {
+                            var t = _targets[k];
+                            if (!CanHit(hb, ref hits, min, max, t)) continue;
+                            float d = System.MathF.Abs((t.Min.X + t.Max.X) * 0.5f - nearX);
+                            if (d < bestD) { bestD = d; best = k; }
+                        }
+                        if (best < 0) continue;
+                        var target = _targets[best];
+                        hits.AddHit(target.E.Index);
+                        ref var tq = ref em.GetComponent<HpModificationQueue>(target.E);
+                        tq.Enqueue(HpModification.Damage(Mitigated(em, target.E, hb), hb.Owner));
+                        ApplyHitReaction(em, target.E, hb);
+                        continue;
+                    }
+
                     foreach (var t in _targets)
                     {
                         if (hits.IsFull) break;
-                        if (t.E == hb.Owner || t.Team == hb.Team) continue;
-                        if (hits.AlreadyHit(t.E.Index)) continue;
-                        if (!Overlap(min, max, t.Min, t.Max)) continue;
-                        if (System.MathF.Abs(hb.Height - t.Height) > HeightReach) continue;   // 높이가 너무 다르면 안 맞음
+                        if (!CanHit(hb, ref hits, min, max, t)) continue;
 
                         hits.AddHit(t.E.Index);
                         ref var q = ref em.GetComponent<HpModificationQueue>(t.E);
@@ -76,6 +96,14 @@ namespace IntoTheDungeon.Features.Attack
                     }
                 }
             }
+        }
+
+        static bool CanHit(in HitboxComponent hb, ref HitListComponent hits, Vec2 min, Vec2 max, in Target t)
+        {
+            if (t.E == hb.Owner || t.Team == hb.Team) return false;
+            if (hits.AlreadyHit(t.E.Index)) return false;
+            if (!Overlap(min, max, t.Min, t.Max)) return false;
+            return System.MathF.Abs(hb.Height - t.Height) <= HeightReach;   // 높이가 너무 다르면 안 맞음
         }
 
         void CollectTargets(IEntityManager em)
@@ -120,8 +148,13 @@ namespace IntoTheDungeon.Features.Attack
             // 난이도: 파티가 받는 피해 배율
             if (em.TryGetComponent<TeamComponent>(victim, out var team) && team.TeamFlag == Party.Team)
                 dmg = System.Math.Max(1, (int)System.MathF.Round(dmg * DifficultyTable.PartyDamageTaken(RunState.Current.Difficulty)));
-            if (!em.TryGetComponent<DerivedStatsComponent>(victim, out var d)) return dmg;
-            return StatFormula.Mitigate(dmg, hb.Type == DamageType.Magic ? d.MagicResist : d.Armor);
+            // 방패(전사 필살기): 받는 피해 감소
+            if (em.TryGetComponent<GuardComponent>(victim, out var guard) && guard.Remaining > 0f)
+                dmg = System.Math.Max(1, (int)System.MathF.Round(dmg * guard.DamageMul));
+            if (em.TryGetComponent<DerivedStatsComponent>(victim, out var d))
+                dmg = StatFormula.Mitigate(dmg, hb.Type == DamageType.Magic ? d.MagicResist : d.Armor);
+            CombatMeter.Block(em, victim, hb.Damage - dmg);   // 딜 미터: 막은 피해(방어·난이도·방패)
+            return dmg;
         }
 
         // 맞은 쪽을 공격 방향으로 밀고 위로 띄운다(공중에서 또 맞으면 다시 띄워 공중 콤보)

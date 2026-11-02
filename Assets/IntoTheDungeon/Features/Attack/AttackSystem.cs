@@ -121,7 +121,8 @@ namespace IntoTheDungeon.Features.Attack
                 FacingSign = r.FacingSign,
                 KnockbackSpeed = r.Melee.KnockbackSpeed,
                 LaunchSpeed = r.Melee.LaunchSpeed,
-                HitStun = r.Melee.HitStun
+                HitStun = r.Melee.HitStun,
+                MaxTargets = r.Melee.Cleave ? 0 : 1   // 일반 평타는 한 명, 범위 평타는 휘두른 범위 전부
             });
             em.AddComponent(e, new FollowOwnerComponent { Offset = r.Melee.Offset });
             em.AddComponent(e, new LifetimeComponent { Remaining = r.Melee.ActiveTime });
