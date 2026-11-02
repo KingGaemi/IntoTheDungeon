@@ -32,6 +32,8 @@ namespace IntoTheDungeon.Features.Character
         public float MeleeKnockback;    // 근접 평타 넉백(0이면 기본)
         public float MeleeLaunch;       // 근접 평타 띄우기(0이면 기본)
         public float MeleeHitStun;      // 근접 평타 경직(0이면 없음)
+        // 강타(예고 후 범위 공격, BossSlamComponent): 힘 모으는 동안 도발로 끊을 수 있다. 반지름 0이면 없음
+        public float SlamRadius, SlamCharge, SlamCooldown, SlamDamageMul;
 
         public static readonly CharacterDefinition Default = new()
         {

@@ -196,9 +196,13 @@ namespace IntoTheDungeon.Unity.Hud
             _shakeRoot.anchoredPosition = amp > 0.01f ? new Vector2(Random.Range(-amp, amp), Random.Range(-amp, amp)) : Vector2.zero;
 
             // 후광: 단계가 높을수록 크고 진하게 숨 쉰다
+            // 배지(작게)는 은은하게: 빛 번짐을 줄이고 맥동도 거의 없이(글자·룬이 잘 보이게)
+            float glowMul = _big ? 1f : 0.25f;
+            float pulseMul = _big ? 1f : 0.3f;
+            pulse *= pulseMul;
             float aura = _tier == 0 ? 0.06f : 0.16f + 0.34f * k;
-            _aura.color = WithA(col, aura * (1f + 0.18f * pulse) + 0.5f * _boost);
-            _aura.rectTransform.localScale = Vector3.one * (0.85f + 0.3f * k + 0.04f * pulse + 0.6f * _boost);
+            _aura.color = WithA(col, (aura * (1f + 0.18f * pulse) + 0.5f * _boost) * glowMul);
+            _aura.rectTransform.localScale = Vector3.one * (_big ? 0.85f + 0.3f * k + 0.04f * pulse + 0.6f * _boost : 0.75f);
 
             // 빛줄기: 느리게 돌고 하나씩 깜빡임
             if (_rays != null)
@@ -223,7 +227,7 @@ namespace IntoTheDungeon.Unity.Hud
                 if (!on) continue;
                 _crackPop[lv] = Mathf.Min(PopTime, _crackPop[lv] + dt);
                 float p = 1f - _crackPop[lv] / PopTime;
-                float glow = 0.7f + 0.3f * Mathf.Sin(_time * 3.4f + lv * 1.7f);
+                float glow = 0.7f + 0.3f * pulseMul * Mathf.Sin(_time * 3.4f + lv * 1.7f);
                 _cracks[lv].color = WithA(Color.Lerp(Color.Lerp(col, Color.white, 0.3f), Color.white, p), glow);
             }
 
@@ -235,20 +239,20 @@ namespace IntoTheDungeon.Unity.Hud
                 float pk = _runePop[i] / PopTime;
                 float pop = 1f + 0.9f * Mathf.Sin(pk * Mathf.PI) * (1f - pk);
                 _runes[i].enabled = lit;
-                float g = 0.5f + 0.5f * Mathf.Sin(_time * 3.1f + i * 0.9f);
+                float g = 0.5f + 0.5f * pulseMul * Mathf.Sin(_time * 3.1f + i * 0.9f);
                 if (lit)
                 {
                     _runes[i].color = Color.Lerp(Color.Lerp(col, Color.white, 0.35f + 0.15f * g), Color.white, 1f - pk);
                     _runes[i].rectTransform.localScale = Vector3.one * pop;
                 }
-                _runeGlows[i].color = lit ? WithA(col, 0.35f + 0.25f * g + 0.6f * (1f - pk)) : new Color(0f, 0f, 0f, 0f);
+                _runeGlows[i].color = lit ? WithA(col, (0.35f + 0.25f * g + 0.6f * (1f - pk)) * glowMul) : new Color(0f, 0f, 0f, 0f);
                 _runeGlows[i].rectTransform.localScale = Vector3.one * (lit ? 1f + 0.8f * (1f - pk) : 1f);
             }
 
             // 수정 핵: 봉인 상태면 어둡고, 풀수록 밝게 맥동
             _core.color = _tier == 0 ? new Color(0.38f, 0.38f, 0.48f) : Color.Lerp(col, Color.white, 0.2f + 0.2f * pulse * k);
             _core.rectTransform.localScale = Vector3.one * (1f + 0.05f * k * pulse + 0.3f * _boost);
-            _coreGlow.color = WithA(col, _tier == 0 ? 0f : 0.25f + 0.45f * k + 0.12f * pulse + _boost);
+            _coreGlow.color = WithA(col, _tier == 0 ? 0f : (0.25f + 0.45f * k + 0.12f * pulse + _boost) * glowMul);
             _coreGlow.rectTransform.localScale = Vector3.one * (0.8f + 0.5f * k + 0.1f * pulse + 2.5f * _boost);
 
             _flashA = Mathf.MoveTowards(_flashA, 0f, dt * 2.4f);

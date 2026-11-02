@@ -7,6 +7,7 @@ using IntoTheDungeon.Core.Abstractions.Types;
 using IntoTheDungeon.Core.Abstractions.Gameplay;
 using IntoTheDungeon.Core.Util;
 using IntoTheDungeon.Features.Status;
+using IntoTheDungeon.Features.State;
 
 namespace IntoTheDungeon.Features.Attack
 {
@@ -77,11 +78,63 @@ namespace IntoTheDungeon.Features.Attack
             {
                 if (em.HasComponent<TauntedComponent>(e)) em.GetComponent<TauntedComponent>(e) = taunt;
                 else em.AddComponent(e, taunt);
+                Interrupt(em, e);
             }
 
             var guard = new GuardComponent { Remaining = sk.GuardDuration, Duration = sk.GuardDuration, DamageMul = sk.GuardDamageMul, Radius = sk.TauntRadius };
             if (em.HasComponent<GuardComponent>(owner)) em.GetComponent<GuardComponent>(owner) = guard;
             else em.AddComponent(owner, guard);
         }
+
+        // 패턴 끊기(임시값): 보스가 힘을 모으던 내려찍기는 취소 + 그로기, 휘두르려던 평타는 끊고 경직, 나머지는 움찔
+        public const float PatternBreakStun = 2f, AttackBreakStun = 0.8f, FlinchStun = 0.35f;
+
+        static void Interrupt(IEntityManager em, Entity e)
+        {
+            if (!em.HasComponent<HitStunComponent>(e) || !em.TryGetComponent<StateComponent>(e, out var state)) return;
+            var kind = InterruptKind.Flinch;
+            float stun = FlinchStun;
+
+            if (em.HasComponent<Battle.BossSlamComponent>(e))
+            {
+                ref var slam = ref em.GetComponent<Battle.BossSlamComponent>(e);
+                if (slam.Charging && !slam.Fired)
+                {
+                    slam.Charging = false;
+                    slam.Remaining = slam.Cooldown;   // 다시 쓰려면 재사용 대기를 처음부터
+                    kind = InterruptKind.PatternBroken;
+                    stun = PatternBreakStun;
+                }
+            }
+            if (kind == InterruptKind.Flinch && state.Current.Action == ActionState.Attack
+                && em.TryGetComponent<ActionPhaseComponent>(e, out var phase) && phase.ActionPhase == ActionPhase.Windup)
+            {
+                kind = InterruptKind.AttackBroken;
+                stun = AttackBreakStun;
+            }
+
+            ref var hs = ref em.GetComponent<HitStunComponent>(e);
+            if (hs.PendingBreak < stun) hs.PendingBreak = stun;
+            if (kind == InterruptKind.Flinch) return;
+
+            var pos = em.GetComponent<TransformComponent>(e);
+            float head = em.TryGetComponent<Physics.Components.BodyComponent>(e, out var body) ? body.HeadHeight : 1.2f;
+            InterruptFeed.Pending.Add(new InterruptInfo { Kind = kind, Position = pos.Position, Height = pos.Height + head });
+        }
+    }
+
+    public enum InterruptKind : byte { Flinch, AttackBroken, PatternBroken }
+
+    public struct InterruptInfo
+    {
+        public InterruptKind Kind;
+        public Vec2 Position;   // 바닥 위치(가로, 깊이)
+        public float Height;    // 발 높이 + 머리 높이
+    }
+
+    /// <summary>패턴을 끊은 순간들(연출용). 게임 로직이 쌓고 화면(InterruptFxRenderer)이 꺼내 간다.</summary>
+    public static class InterruptFeed
+    {
+        public static readonly List<InterruptInfo> Pending = new(8);
     }
 }

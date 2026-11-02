@@ -52,13 +52,16 @@ namespace IntoTheDungeon.Features.Battle
         public static void Promote(IEntityManager em, Entity e)
         {
             em.AddComponent(e, new BossComponent { Scale = Scale });
-            em.AddComponent(e, new BossSlamComponent
+            var slam = new BossSlamComponent
             {
                 Cooldown = 7f, Remaining = 4f,
                 ChargeTime = 1.4f, RecoveryTime = 0.6f,
                 Radius = 2.4f, DamageMultiplier = 2.5f,
                 ImpactAge = -1f
-            });
+            };
+            // 원래 강타가 있던 몹(오크 등)이면 보스 내려찍기로 덮어쓴다
+            if (em.HasComponent<BossSlamComponent>(e)) em.GetComponent<BossSlamComponent>(e) = slam;
+            else em.AddComponent(e, slam);
             if (em.HasComponent<PrimaryStatsComponent>(e)) em.GetComponent<PrimaryStatsComponent>(e).Bonus += StatBonus;
             if (em.HasComponent<MeleeAttackComponent>(e))   // 보스 평타는 범위
             {
@@ -165,6 +168,7 @@ namespace IntoTheDungeon.Features.Battle
             // 청크 순회가 끝난 뒤 생성
             foreach (var r in _slams)
             {
+                bool boss = em.HasComponent<BossComponent>(r.owner);   // 일반 몹 강타는 조금 약하게 띄우고 짧게 굳힘
                 var hit = em.CreateEntity();
                 em.AddComponent(hit, new HitboxComponent
                 {
@@ -176,8 +180,8 @@ namespace IntoTheDungeon.Features.Battle
                     Height = r.height,
                     FacingSign = r.facing,
                     KnockbackSpeed = 1.5f,
-                    LaunchSpeed = 5f,
-                    HitStun = 0.6f
+                    LaunchSpeed = boss ? 5f : 3f,
+                    HitStun = boss ? 0.6f : 0.4f
                 });
                 em.AddComponent(hit, new LifetimeComponent { Remaining = 0.12f });
                 em.AddComponent(hit, new HitListComponent());

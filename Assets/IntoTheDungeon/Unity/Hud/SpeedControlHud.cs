@@ -22,6 +22,11 @@ namespace IntoTheDungeon.Unity.Hud
             new(0.65f, 0.2f, 0.15f, 0.95f)
         };
 
+        // 히트스톱: 패턴을 끊는 순간 등 아주 잠깐 거의 멈춘 듯 느리게(실제 시간 기준, 배속과 무관)
+        const float HitStopScale = 0.04f;
+        static float s_hitStopUntil;
+        public static void HitStop(float seconds) => s_hitStopUntil = Mathf.Max(s_hitStopUntil, Time.unscaledTime + seconds);
+
         BattleProgress _progress;
         GameObject _button;
         Image _image;
@@ -42,7 +47,8 @@ namespace IntoTheDungeon.Unity.Hud
             if (_button.activeSelf != battle) _button.SetActive(battle);
             if (battle && Input.GetKeyDown(toggleKey)) Next();
 
-            Time.timeScale = battle ? Speeds[_index] : 1f;
+            bool stopped = battle && Time.unscaledTime < s_hitStopUntil;
+            Time.timeScale = !battle ? 1f : stopped ? HitStopScale : Speeds[_index];
             _label.text = $"{Speeds[_index]}배속 (Tab)";
             _image.color = speedColors[Mathf.Min(_index, speedColors.Length - 1)];
         }

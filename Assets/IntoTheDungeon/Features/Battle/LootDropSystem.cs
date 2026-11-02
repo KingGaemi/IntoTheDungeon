@@ -28,7 +28,7 @@ namespace IntoTheDungeon.Features.Battle
 
     /// <summary>
     /// 적이 쓰러지면 확률로 그 자리에 아이템을 떨어뜨린다(임시값).
-    /// 확률 = 최대 체력/6000(강한 몹일수록 잘 떨굼, 오크 약 12%; 몹 체력 상향에 맞춰 2500에서 조정) + 방 보너스(정예 +6%, 보스 +15%). 등급은 방 종류·층이 높을수록 좋아진다.
+    /// 확률 = 최대 체력/3300(강한 몹일수록 잘 떨굼, 오크 약 12%; 몹 체력에 맞춰 조정) + 방 보너스(정예 +6%, 보스 +15%). 등급은 방 종류·층이 높을수록 좋아진다.
     /// </summary>
     public sealed class LootDropSystem : GameSystem, ITick
     {
@@ -88,7 +88,7 @@ namespace IntoTheDungeon.Features.Battle
             foreach (var (e, pos, maxHp) in _dead)
             {
                 em.AddComponent(e, new LootRolledTag());
-                if (run.Rng.NextDouble() >= (maxHp / 6000f + chanceBonus) * dropMul) continue;
+                if (run.Rng.NextDouble() >= (maxHp / 3300f + chanceBonus) * dropMul) continue;
                 var item = ItemPool.Roll(run.Rng, rareBonus);
                 var drop = em.CreateEntity();
                 em.AddComponent(drop, new LootDropComponent { ItemIndex = item.Index, Position = pos });

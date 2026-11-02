@@ -8,6 +8,9 @@ using IntoTheDungeon.Features.Attack;
 using IntoTheDungeon.Features.Battle;
 using IntoTheDungeon.Features.Run;
 using IntoTheDungeon.Features.Stats;
+using IntoTheDungeon.Core.ECS.Abstractions;
+using IntoTheDungeon.Core.ECS.Components;
+using IntoTheDungeon.Core.Util;
 
 namespace IntoTheDungeon.Unity.Hud
 {
@@ -101,7 +104,35 @@ namespace IntoTheDungeon.Unity.Hud
                 s.Label.text = cooled && !enoughMana ? $"마나 부족\n{ds.Mana:0}/{sk.ManaCost:0}" : $"필살기\n마나 {sk.ManaCost:0}";
                 s.Label.color = ready ? frameColor : new Color(1f, 1f, 1f, 0.5f);
                 s.Frame.color = ready ? frameColor : new Color(frameColor.r, frameColor.g, frameColor.b, 0.35f);
+
+                // 끊기 기회: 도발이 닿는 거리에서 적이 강타 힘을 모으는 중이면 버튼이 하얗게 맥동하며 "지금 끊기!"
+                bool chance = ready && sk.TauntRadius > 0f && ChargingNear(em, m.Position, sk.TauntRadius);
+                float pulse = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 14f);
+                if (chance)
+                {
+                    s.Label.text = $"지금 끊기!\n<size=16>{i + 1}번 키</size>";
+                    s.Label.color = Color.Lerp(frameColor, Color.white, pulse);
+                    s.Frame.color = Color.Lerp(frameColor, Color.white, pulse);
+                }
+                s.Frame.rectTransform.localScale = Vector3.one * (chance ? 1.04f + 0.06f * pulse : 1f);
             }
+        }
+
+        // 적 강타(BossSlamComponent) 힘 모으기가 도발 범위(가로 반경, 깊이는 절반) 안에서 진행 중인가
+        static bool ChargingNear(IEntityManager em, Vec2 pos, float radius)
+        {
+            foreach (var chunk in em.GetChunks(typeof(BossSlamComponent), typeof(TransformComponent)))
+            {
+                var slams = chunk.GetComponentArray<BossSlamComponent>();
+                var transforms = chunk.GetComponentArray<TransformComponent>();
+                for (int k = 0; k < chunk.Count; k++)
+                {
+                    if (!slams[k].Charging || slams[k].Fired) continue;
+                    var d = transforms[k].Position - pos;
+                    if (System.MathF.Abs(d.X) <= radius && System.MathF.Abs(d.Y) <= radius * 0.5f) return true;
+                }
+            }
+            return false;
         }
 
         void Build()

@@ -66,9 +66,9 @@ namespace IntoTheDungeon.Features.Attack
         // 중갑 전사: 칼을 치켜들고 외쳐 주변 적을 끌어모으고, 방패를 세워 받는 피해를 줄인다
         public static readonly SpecialSkillComponent TauntGuard = new()
         {
-            Cooldown = 20f,
-            CooldownRemaining = 5f,          // 탱커라 다른 필살기보다 조금 일찍
-            ManaCost = 40f,
+            Cooldown = 14f,                  // 오크 강타를 끊는 게 핵심이라 다른 필살기보다 자주
+            CooldownRemaining = 1.5f,        // 전투 시작하자마자 첫 강타를 끊을 수 있게
+            ManaCost = 25f,                  // 전사 마나 60·초당 1.3 → 약 19초마다(재사용 대기와 비슷)
             CastTime = 0.25f,
             Duration = 0.75f,                // Warrior_Taunt(칼 들기) 동안 멈춤
             TauntRadius = 4.5f,

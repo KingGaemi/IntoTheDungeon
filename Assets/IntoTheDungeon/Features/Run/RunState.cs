@@ -127,7 +127,7 @@ namespace IntoTheDungeon.Features.Run
         /// 적 하나를 처치했을 때 경험치·골드(임시값). 최대 체력이 클수록(강한 몹·높은 레벨) 많이 준다.
         /// 경험치 = 최대 체력/25 × (1 + 0.2×(레벨-1)), 골드 = 경험치의 절반 정도에 ±30% 흔들림.
         /// </summary>
-        public static int KillXp(int maxHp, int level) => System.Math.Max(1, (int)System.MathF.Round(maxHp / 60f * (1f + 0.2f * System.Math.Max(0, level - 1))));
+        public static int KillXp(int maxHp, int level) => System.Math.Max(1, (int)System.MathF.Round(maxHp / 33f * (1f + 0.2f * System.Math.Max(0, level - 1))));
         public int KillGold(int xp) => System.Math.Max(1, (int)System.MathF.Round(xp * 0.5f * (0.7f + 0.6f * (float)Rng.NextDouble())));
 
         /// <summary>파티 공용 보관함. 효과 없이 보관만 한다.</summary>

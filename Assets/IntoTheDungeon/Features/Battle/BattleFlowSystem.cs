@@ -30,7 +30,7 @@ namespace IntoTheDungeon.Features.Battle
     public sealed class BattleFlowSystem : GameSystem, ITick
     {
         const float SpawnSettleTime = 1f;
-        const float EnemyHpBase = 1.6f, EnemyDamageBase = 1.35f;   // 몹 전체 배율(임시값, 특성·레벨·봉인석 위에 곱함)
+        const float EnemyHpBase = 1.15f, EnemyDamageBase = 1.35f;   // 몹 전체 배율(임시값, 특성·레벨·봉인석 위에 곱함). 체력 1.6 → 1.15(지루함)
         const float PartyStartInset = 4f;   // 파티는 방 왼쪽 끝에서 이만큼 안쪽에서 시작(몹은 오른쪽에서 옴)   // 스폰 직후엔 아직 엔티티가 없을 수 있어 이 시간 뒤부터 전멸 판정
 
         BattleProgress _progress;

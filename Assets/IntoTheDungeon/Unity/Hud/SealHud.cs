@@ -26,6 +26,7 @@ namespace IntoTheDungeon.Unity.Hud
         Hover _hover;
         SealEmblem _emblem;
         Text _label, _tipText;
+        Outline _plateOutline;
 
         public void Init(IWorld world)
         {
@@ -47,7 +48,8 @@ namespace IntoTheDungeon.Unity.Hud
 
             var col = SealArt.TierColor(t);
             _label.text = t == 0 ? "봉인석 0단계\n<size=17>봉인됨</size>" : $"봉인석 {t}단계\n<size=17>{SealArt.TierTitle(t)}</size>";
-            _label.color = t == 0 ? new Color(0.78f, 0.8f, 0.9f) : Color.Lerp(col, Color.white, 0.3f);
+            _label.color = t == 0 ? new Color(0.85f, 0.87f, 0.95f) : Color.Lerp(col, Color.white, 0.45f);
+            _plateOutline.effectColor = t == 0 ? new Color(1f, 1f, 1f, 0.18f) : new Color(col.r, col.g, col.b, 0.55f);
 
             if (_tip.activeSelf != _hover.On) _tip.SetActive(_hover.On);
             if (_hover.On) _tipText.text = $"봉인석 {t}단계 (이번 판 고정)\n" + SealArt.Describe(t);
@@ -66,29 +68,32 @@ namespace IntoTheDungeon.Unity.Hud
             scaler.matchWidthOrHeight = 0.5f;
             _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
-            // 마우스를 받는 투명 영역(문양 + 글자)
-            var hit = NewImage(canvasGo.transform, new Color(0f, 0f, 0f, 0f));
-            hit.raycastTarget = true;
-            _root = hit.gameObject;
-            var rt = hit.rectTransform;
+            // 어두운 바탕판(문양 + 글자, 마우스도 여기서 받음): 배경이 밝아도 잘 보이게
+            var plate = NewImage(canvasGo.transform, new Color(0.05f, 0.05f, 0.09f, 0.85f));
+            plate.raycastTarget = true;
+            _root = plate.gameObject;
+            _plateOutline = _root.AddComponent<Outline>();
+            _plateOutline.effectDistance = new Vector2(2f, -2f);
+            var rt = plate.rectTransform;
             rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
             rt.anchoredPosition = new Vector2(-525f, 474f);
-            rt.sizeDelta = new Vector2(290f, 96f);
+            rt.sizeDelta = new Vector2(290f, 100f);
             _hover = _root.AddComponent<Hover>();
 
             _emblem = new SealEmblem(rt, 1.4f, big: false);
             _emblem.Rect.anchorMin = _emblem.Rect.anchorMax = new Vector2(0f, 0.5f);
-            _emblem.Rect.anchoredPosition = new Vector2(48f, 0f);
+            _emblem.Rect.anchoredPosition = new Vector2(52f, 0f);
 
-            _label = NewText(rt, "", 23);
+            _label = NewText(rt, "", 24);
             _label.supportRichText = true;
             _label.alignment = TextAnchor.MiddleLeft;
             _label.lineSpacing = 0.9f;
             var lrt = _label.rectTransform;
             lrt.anchorMin = Vector2.zero; lrt.anchorMax = Vector2.one;
-            lrt.offsetMin = new Vector2(104f, 0f); lrt.offsetMax = Vector2.zero;
-            var shadow = _label.gameObject.AddComponent<Shadow>();
-            shadow.effectColor = new Color(0f, 0f, 0f, 0.8f);
+            lrt.offsetMin = new Vector2(106f, 0f); lrt.offsetMax = Vector2.zero;
+            var outline = _label.gameObject.AddComponent<Outline>();
+            outline.effectColor = new Color(0f, 0f, 0f, 0.9f);
+            outline.effectDistance = new Vector2(1.5f, -1.5f);
 
             // 설명(마우스를 올리면 아래)
             var tip = NewImage(rt, new Color(0.06f, 0.05f, 0.1f, 0.96f));
@@ -98,9 +103,9 @@ namespace IntoTheDungeon.Unity.Hud
             trt.pivot = new Vector2(0f, 1f);
             trt.anchoredPosition = new Vector2(0f, -6f);
             trt.sizeDelta = new Vector2(600f, 140f);
-            var outline = tip.gameObject.AddComponent<Outline>();
-            outline.effectColor = new Color(0.72f, 0.45f, 1f, 1f);
-            outline.effectDistance = new Vector2(2f, -2f);
+            var tipOutline = tip.gameObject.AddComponent<Outline>();
+            tipOutline.effectColor = new Color(0.72f, 0.45f, 1f, 1f);
+            tipOutline.effectDistance = new Vector2(2f, -2f);
             _tipText = NewText(trt, "", 19);
             _tipText.alignment = TextAnchor.UpperLeft;
             var tt = _tipText.rectTransform;

@@ -21,6 +21,7 @@ namespace IntoTheDungeon.Features.Character
     {
         public RecipeId Id { get; }
         readonly CharacterDefinition _def;
+        static readonly System.Random s_rng = new();
         public CharacterCoreRecipe(RecipeId id, CharacterDefinition def) { Id = id; _def = def; }
         public void Apply(IEntityManager em, Entity e)
         {
@@ -48,6 +49,17 @@ namespace IntoTheDungeon.Features.Character
             }
             em.AddComponent(e, new PoisonComponent());
             em.AddComponent(e, new IntoTheDungeon.Features.Battle.FormationComponent());   // 파티원만 배치 때 켜진다
+            if (_def.SlamRadius > 0f)
+                em.AddComponent(e, new IntoTheDungeon.Features.Battle.BossSlamComponent
+                {
+                    Cooldown = _def.SlamCooldown,
+                    Remaining = _def.SlamCooldown * (0.3f + 0.4f * (float)s_rng.NextDouble()),   // 여러 마리가 한꺼번에 쓰지 않게 첫 시점을 흩뿌림
+                    ChargeTime = _def.SlamCharge,
+                    RecoveryTime = 0.5f,
+                    Radius = _def.SlamRadius,
+                    DamageMultiplier = _def.SlamDamageMul,
+                    ImpactAge = -1f
+                });
             em.AddComponent(e, new PrimaryStatsComponent { Base = _def.Stats, Growth = _def.Growth, Level = 1 });
             em.AddComponent(e, status);
             em.AddComponent(e, derived);

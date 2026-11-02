@@ -17,6 +17,7 @@ namespace IntoTheDungeon.Features.Attack
     public struct HitStunComponent : IComponentData
     {
         public float Pending;      // 이번 프레임에 맞아서 들어온 경직(초). 여러 번 맞으면 가장 긴 것
+        public float PendingBreak; // 패턴 끊기(도발 등): CC 저항을 무시하고 시전 중(슈퍼아머)이어도 건다
         public float Remaining;    // 남은 경직(초)
         public float Resistance;   // 0 = 그대로, 0.5 = 절반, 1 = 경직 안 걸림(보스·버프용)
 
@@ -55,11 +56,14 @@ namespace IntoTheDungeon.Features.Attack
                     var cur = state.Current;
 
                     float incoming = stun.Pending * (1f - System.Math.Clamp(stun.Resistance, 0f, 1f));
+                    bool breaking = stun.PendingBreak > 0f;
+                    if (breaking) incoming = System.MathF.Max(incoming, stun.PendingBreak);
                     stun.Pending = 0f;
+                    stun.PendingBreak = 0f;
 
                     if (cur.Control == ControlState.Dead) { stun.Remaining = 0f; continue; }
 
-                    if (incoming > 0f && cur.Action != ActionState.Skill)
+                    if (incoming > 0f && (cur.Action != ActionState.Skill || breaking))
                     {
                         if (incoming > stun.Remaining) stun.Remaining = incoming;
                         if (cur.Control != ControlState.Stunned)

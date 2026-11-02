@@ -89,6 +89,8 @@ namespace IntoTheDungeon.Unity
             public float poison, poisonTime;
             [Tooltip("근접 평타 넉백·띄우기(0이면 기본 1·2)·경직")]
             public float knockback, launch, hitStun;
+            [Tooltip("강타(예고 후 범위 공격, 도발로 끊을 수 있음): 반지름(0이면 없음)·힘 모으기 초·재사용 대기·공격력 배율")]
+            public float slamRadius, slamCharge, slamCd, slamDmg;
         }
 
         [Header("캐릭터 종류별 정의(없는 이름은 반지름 0.3·무게 1)")]
@@ -98,11 +100,14 @@ namespace IntoTheDungeon.Unity
             new() { recipe = "Catherine", displayName = "케서린", gStr = 4, gAgi = 2, gInt = 1, gWil = 2, bodyRadius = 0.3f, bodyMass = 1f, headHeight = 1.0f, basic = BasicSkillPreset.Slash, str = 12, agi = 7, intel = 2, wil = 5 },
             // 오크: 단단하고(체력·넉백 저항↑) 느리지만, 맞으면 크게 밀려난다(평타 넉백·띄우기)
             new() { recipe = "Orc1", displayName = "오크", gStr = 1, gAgi = 1, gInt = 0, gWil = 1, bodyRadius = 0.35f, bodyMass = 1.2f, headHeight = 1.27f, str = 5, agi = 3, intel = 0, wil = 2,
-                    traitText = "단단함 · 묵직한 한 방(크게 밀어냄)", hpMul = 1.35f, spdMul = 0.9f, kbResist = 0.35f, knockback = 5f, launch = 3f, windup = 0.6f },
+                    traitText = "단단함 · 묵직한 한 방(크게 밀어냄) · 강타(도발로 끊기)", hpMul = 1.35f, spdMul = 0.9f, kbResist = 0.35f, knockback = 5f, launch = 3f, windup = 0.6f,
+                    slamRadius = 1.5f, slamCharge = 1.3f, slamCd = 9f, slamDmg = 2.2f },
             new() { recipe = "Orc2", displayName = "오크 전사", gStr = 2, gAgi = 1, gInt = 0, gWil = 1, bodyRadius = 0.4f, bodyMass = 1.5f, headHeight = 1.36f, str = 7, agi = 4, intel = 0, wil = 3,
-                    traitText = "단단함 · 묵직한 한 방(크게 밀어냄)", hpMul = 1.4f, spdMul = 0.9f, kbResist = 0.4f, knockback = 6f, launch = 3.5f, windup = 0.6f },
+                    traitText = "단단함 · 묵직한 한 방(크게 밀어냄) · 강타(도발로 끊기)", hpMul = 1.4f, spdMul = 0.9f, kbResist = 0.4f, knockback = 6f, launch = 3.5f, windup = 0.6f,
+                    slamRadius = 1.8f, slamCharge = 1.3f, slamCd = 8f, slamDmg = 2.5f },
             new() { recipe = "Orc3", displayName = "오크 대장", gStr = 2, gAgi = 1, gInt = 0, gWil = 2, bodyRadius = 0.45f, bodyMass = 2f, headHeight = 1.59f, str = 10, agi = 3, intel = 1, wil = 6,
-                    traitText = "매우 단단함 · 맞으면 밀려나며 잠깐 굳음", hpMul = 1.5f, spdMul = 0.85f, kbResist = 0.5f, knockback = 7f, launch = 4f, hitStun = 0.25f, windup = 0.7f },
+                    traitText = "매우 단단함 · 맞으면 밀려나며 잠깐 굳음", hpMul = 1.5f, spdMul = 0.85f, kbResist = 0.5f, knockback = 7f, launch = 4f, hitStun = 0.25f, windup = 0.7f,
+                    slamRadius = 2.1f, slamCharge = 1.4f, slamCd = 7f, slamDmg = 2.8f },
             // 식인 식물: 체력이 낮은 대신 아프다. 뿌리 때문에 느리다
             new() { recipe = "Plant1", displayName = "식인초", gStr = 1, gAgi = 2, gInt = 0, gWil = 1, bodyRadius = 0.3f, bodyMass = 1f, headHeight = 1.0f, str = 5, agi = 7, intel = 0, wil = 2,
                     traitText = "약하지만 아프게 문다", hpMul = 0.5f, dmgMul = 1.8f, spdMul = 0.8f },
@@ -180,6 +185,10 @@ namespace IntoTheDungeon.Unity
                     def.MeleeKnockback = d.knockback;
                     def.MeleeLaunch = d.launch;
                     def.MeleeHitStun = d.hitStun;
+                    def.SlamRadius = d.slamRadius;
+                    def.SlamCharge = d.slamCharge > 0f ? d.slamCharge : 1.3f;
+                    def.SlamCooldown = d.slamCd > 0f ? d.slamCd : 9f;
+                    def.SlamDamageMul = d.slamDmg > 0f ? d.slamDmg : 2f;
                     definitions[recipeTable.GetId(d.recipe)] = def;
                     catalog.Set(d.recipe, def);
                 }
