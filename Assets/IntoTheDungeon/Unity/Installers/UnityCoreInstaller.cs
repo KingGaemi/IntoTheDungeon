@@ -91,6 +91,8 @@ namespace IntoTheDungeon.Unity
             public float knockback, launch, hitStun;
             [Tooltip("강타(예고 후 범위 공격, 도발로 끊을 수 있음): 반지름(0이면 없음)·힘 모으기 초·재사용 대기·공격력 배율")]
             public float slamRadius, slamCharge, slamCd, slamDmg;
+            [Tooltip("강타 요구 저지력(0이면 10). 필살기 저지력(대부분 10)이 쌓여 이 이상이면 끊김")]
+            public int slamStop;
         }
 
         [Header("캐릭터 종류별 정의(없는 이름은 반지름 0.3·무게 1)")]
@@ -107,7 +109,7 @@ namespace IntoTheDungeon.Unity
                     slamRadius = 1.8f, slamCharge = 1.3f, slamCd = 8f, slamDmg = 2.5f },
             new() { recipe = "Orc3", displayName = "오크 대장", gStr = 2, gAgi = 1, gInt = 0, gWil = 2, bodyRadius = 0.45f, bodyMass = 2f, headHeight = 1.59f, str = 10, agi = 3, intel = 1, wil = 6,
                     traitText = "매우 단단함 · 맞으면 밀려나며 잠깐 굳음", hpMul = 1.5f, spdMul = 0.85f, kbResist = 0.5f, knockback = 7f, launch = 4f, hitStun = 0.25f, windup = 0.7f,
-                    slamRadius = 2.1f, slamCharge = 1.4f, slamCd = 7f, slamDmg = 2.8f },
+                    slamRadius = 2.1f, slamCharge = 1.4f, slamCd = 7f, slamDmg = 2.8f, slamStop = 15 },
             // 식인 식물: 체력이 낮은 대신 아프다. 뿌리 때문에 느리다
             new() { recipe = "Plant1", displayName = "식인초", gStr = 1, gAgi = 2, gInt = 0, gWil = 1, bodyRadius = 0.3f, bodyMass = 1f, headHeight = 1.0f, str = 5, agi = 7, intel = 0, wil = 2,
                     traitText = "약하지만 아프게 문다", hpMul = 0.5f, dmgMul = 1.8f, spdMul = 0.8f },
@@ -189,6 +191,7 @@ namespace IntoTheDungeon.Unity
                     def.SlamCharge = d.slamCharge > 0f ? d.slamCharge : 1.3f;
                     def.SlamCooldown = d.slamCd > 0f ? d.slamCd : 9f;
                     def.SlamDamageMul = d.slamDmg > 0f ? d.slamDmg : 2f;
+                    def.SlamStopRequired = d.slamStop > 0 ? d.slamStop : 10;
                     definitions[recipeTable.GetId(d.recipe)] = def;
                     catalog.Set(d.recipe, def);
                 }

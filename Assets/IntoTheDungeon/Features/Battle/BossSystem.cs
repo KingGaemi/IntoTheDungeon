@@ -38,6 +38,8 @@ namespace IntoTheDungeon.Features.Battle
         public float Timer;             // 힘 모으기 시작부터
         public float ImpactAge;         // 내려찍은 뒤 지난 시간(연출용, 아직이면 음수)
         public Vec2 Center;
+        public int StopRequired;        // 요구 저지력: 힘 모으는 동안 맞힌 필살기 저지력 합이 이 이상이면 끊김
+        public int StopAccum;           // 이번 힘 모으기 동안 쌓인 저지력
     }
 
     /// <summary>보스 수치(임시값)와 승격.</summary>
@@ -47,6 +49,7 @@ namespace IntoTheDungeon.Features.Battle
         public const float Scale = 1.6f;
         public const float HpMultiplier = 3f;
         public static readonly PrimaryStats StatBonus = new(6, 2, 0, 6);
+        public const int StopRequired = 20;   // 보스 내려찍기 요구 저지력(필살기 둘을 겹쳐 맞혀야 끊김)
 
         /// <summary>보스로 만든다: 스탯 보너스·몸집·내려찍기. 스탯 재계산 전에 부른다(체력 배율은 재계산 뒤 ApplyHp).</summary>
         public static void Promote(IEntityManager em, Entity e)
@@ -57,7 +60,8 @@ namespace IntoTheDungeon.Features.Battle
                 Cooldown = 7f, Remaining = 4f,
                 ChargeTime = 1.4f, RecoveryTime = 0.6f,
                 Radius = 2.4f, DamageMultiplier = 2.5f,
-                ImpactAge = -1f
+                ImpactAge = -1f,
+                StopRequired = StopRequired
             };
             // 원래 강타가 있던 몹(오크 등)이면 보스 내려찍기로 덮어쓴다
             if (em.HasComponent<BossSlamComponent>(e)) em.GetComponent<BossSlamComponent>(e) = slam;
@@ -159,6 +163,7 @@ namespace IntoTheDungeon.Features.Battle
                     s.Charging = true;
                     s.Fired = false;
                     s.Timer = 0f;
+                    s.StopAccum = 0;
                     s.Center = transforms[i].Position;
                     state.MoveDir = Vec2.Zero;
                     SetAction(e, ref state, ActionState.Skill, stopMoving: true);

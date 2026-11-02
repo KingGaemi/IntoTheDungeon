@@ -74,6 +74,7 @@ namespace IntoTheDungeon.Features.Attack
                         em.GetComponent<HpModificationQueue>(target.E).Enqueue(HpModification.Damage(dealt, hb.Owner));
                         ApplyHitReaction(em, target.E, hb);
                         TraitHitEffects.Apply(em, hitboxEntities[i], target.E, hb, dealt);
+                        if (hb.StopPower > 0) PatternBreak.Apply(em, target.E, hb.StopPower, flinch: false);
                         continue;
                     }
 
@@ -87,6 +88,7 @@ namespace IntoTheDungeon.Features.Attack
                         em.GetComponent<HpModificationQueue>(t.E).Enqueue(HpModification.Damage(dealt, hb.Owner));
                         ApplyHitReaction(em, t.E, hb);
                         TraitHitEffects.Apply(em, hitboxEntities[i], t.E, hb, dealt);
+                        if (hb.StopPower > 0) PatternBreak.Apply(em, t.E, hb.StopPower, flinch: false);   // 필살기 저지력
 
                         // 일반 화살: 첫 대상에 꽂히고 사라진다(수명을 0으로 → LifetimeSystem이 지움)
                         var self = hitboxEntities[i];

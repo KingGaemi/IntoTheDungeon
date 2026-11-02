@@ -15,6 +15,8 @@ namespace IntoTheDungeon.Unity.Hud
     {
         [SerializeField] Color attackColor = new(1f, 0.78f, 0.3f, 1f);
         [SerializeField] Color patternColor = new(1f, 0.93f, 0.55f, 1f);
+        [Tooltip("저지력이 아직 모자랄 때(「저지 10/20」)")]
+        [SerializeField] Color progressColor = new(0.75f, 0.88f, 1f, 1f);
         [SerializeField] float attackHitStop = 0.09f;
         [SerializeField] float patternHitStop = 0.25f;
         [SerializeField] int fontSize = 64;
@@ -26,7 +28,7 @@ namespace IntoTheDungeon.Unity.Hud
         {
             public GameObject Root;
             public float Born;
-            public bool Big;
+            public bool Big, Progress;
             public Color Col;
             public Transform TextRoot;
             public TextMesh Text, Shadow;
@@ -73,15 +75,16 @@ namespace IntoTheDungeon.Unity.Hud
         void Spawn(in InterruptInfo info, float now)
         {
             bool big = info.Kind == InterruptKind.PatternBroken;
-            var col = big ? patternColor : attackColor;
-            var f = new Fx { Born = now, Big = big, Col = col };
+            bool progress = info.Kind == InterruptKind.StopProgress;   // 저지력이 쌓였지만 아직 모자람: 작게, 멈칫 없이
+            var col = big ? patternColor : progress ? progressColor : attackColor;
+            var f = new Fx { Born = now, Big = big, Progress = progress, Col = col };
             f.Root = new GameObject(big ? "PatternBroken" : "AttackBroken");
             f.Root.transform.SetParent(transform, false);
             var chest = new Vector3(info.Position.X, info.Position.Y + info.Height * 0.55f, 0f);
             f.Root.transform.position = chest;
 
             const int order = 32650;
-            float s = big ? 1.8f : 1f;
+            float s = big ? 1.8f : progress ? 0.7f : 1f;
             f.Glow = Sprite(f.Root.transform, FxSprites.DotSprite, Vector3.zero, new Vector3(1.6f, 1.6f, 1f) * s, order);
             f.Ring = Sprite(f.Root.transform, FxSprites.RingSprite, Vector3.zero, Vector3.one, order + 1);
             f.Ring2 = Sprite(f.Root.transform, FxSprites.RingSprite, Vector3.zero, Vector3.one, order + 1);
@@ -91,7 +94,7 @@ namespace IntoTheDungeon.Unity.Hud
             f.SlashA.transform.localRotation = Quaternion.Euler(0f, 0f, 35f);
             f.SlashB.transform.localRotation = Quaternion.Euler(0f, 0f, -35f);
 
-            int shards = big ? 22 : 11;
+            int shards = big ? 22 : progress ? 5 : 11;
             for (int k = 0; k < shards; k++)
             {
                 float a = Random.Range(0f, Mathf.PI * 2f);
@@ -104,25 +107,26 @@ namespace IntoTheDungeon.Unity.Hud
             f.TextRoot = new GameObject("Text").transform;
             f.TextRoot.SetParent(f.Root.transform, false);
             f.TextRoot.position = new Vector3(info.Position.X, info.Position.Y + info.Height + 0.35f, 0f);
-            string label = big ? "패턴 파괴!" : "끊김!";
+            string label = big ? "패턴 파괴!" : progress ? $"저지 {info.Accum}/{info.Required}" : "끊김!";
             f.Shadow = MakeText(f.TextRoot, label, new Vector3(0.04f, -0.04f, 0f), order + 4);
             f.Shadow.color = new Color(0.25f, 0.12f, 0f, 0.9f);
             f.Text = MakeText(f.TextRoot, label, Vector3.zero, order + 5);
             f.Text.color = col;
 
             _fx.Add(f);
+            if (progress) return;
             SpeedControlHud.HitStop(big ? patternHitStop : attackHitStop);
             if (big) _flashA = Mathf.Max(_flashA, 0.5f);
         }
 
         void Animate(Fx f, float age, float dt)
         {
-            float big = f.Big ? 1.8f : 1f;
+            float big = f.Big ? 1.8f : f.Progress ? 0.7f : 1f;
             float t = age / Life;
 
             // 글자: 크게 튀어나왔다 자리 잡고 살짝 떠오른 뒤 사라짐
             float punch = age < 0.14f ? Mathf.Lerp(2.3f, 0.9f, age / 0.14f) : age < 0.24f ? Mathf.Lerp(0.9f, 1f, (age - 0.14f) / 0.1f) : 1f;
-            f.TextRoot.localScale = Vector3.one * punch * (f.Big ? 1.45f : 1f);
+            f.TextRoot.localScale = Vector3.one * punch * (f.Big ? 1.45f : f.Progress ? 0.8f : 1f);
             f.TextRoot.localPosition += new Vector3(0f, dt * (age < 0.3f ? 0f : 0.35f), 0f);
             float ta = t < 0.7f ? 1f : 1f - (t - 0.7f) / 0.3f;
             f.Text.color = new Color(f.Col.r, f.Col.g, f.Col.b, ta);
@@ -142,7 +146,7 @@ namespace IntoTheDungeon.Unity.Hud
             {
                 sl.transform.localScale = sc;
                 sl.transform.localPosition = sl.transform.localRotation * new Vector3(0f, -sc.y * 0.5f, 0f);   // 가운데 기준
-                sl.color = new Color(1f, 1f, 1f, slashA);
+                sl.color = new Color(1f, 1f, 1f, f.Progress ? 0f : slashA);   // 아직 못 끊었으면 X자 없음
             }
 
             // 빛 덩어리

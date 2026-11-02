@@ -34,6 +34,7 @@ namespace IntoTheDungeon.Features.Character
         public float MeleeHitStun;      // 근접 평타 경직(0이면 없음)
         // 강타(예고 후 범위 공격, BossSlamComponent): 힘 모으는 동안 도발로 끊을 수 있다. 반지름 0이면 없음
         public float SlamRadius, SlamCharge, SlamCooldown, SlamDamageMul;
+        public int SlamStopRequired;    // 강타 요구 저지력
 
         public static readonly CharacterDefinition Default = new()
         {

@@ -101,12 +101,12 @@ namespace IntoTheDungeon.Unity.Hud
                 s.CooldownMask.anchorMax = new Vector2(1f, sk.CooldownRatio);
                 s.CooldownText.text = sk.CooldownRemaining > 0f ? sk.CooldownRemaining.ToString(sk.CooldownRemaining < 1f ? "0.0" : "0") : "";
                 // 재사용 대기는 끝났는데 마나가 모자라면 그걸 알려 준다
-                s.Label.text = cooled && !enoughMana ? $"마나 부족\n{ds.Mana:0}/{sk.ManaCost:0}" : $"필살기\n마나 {sk.ManaCost:0}";
+                s.Label.text = cooled && !enoughMana ? $"마나 부족\n{ds.Mana:0}/{sk.ManaCost:0}" : $"필살기\n<size=16>마나 {sk.ManaCost:0} · 저지 {sk.StopPower}</size>";
                 s.Label.color = ready ? frameColor : new Color(1f, 1f, 1f, 0.5f);
                 s.Frame.color = ready ? frameColor : new Color(frameColor.r, frameColor.g, frameColor.b, 0.35f);
 
-                // 끊기 기회: 도발이 닿는 거리에서 적이 강타 힘을 모으는 중이면 버튼이 하얗게 맥동하며 "지금 끊기!"
-                bool chance = ready && sk.TauntRadius > 0f && ChargingNear(em, m.Position, sk.TauntRadius);
+                // 끊기 기회: 이 필살기가 닿는 곳에서 적이 강타 힘을 모으는 중이면 버튼이 하얗게 맥동하며 "지금 끊기!"
+                bool chance = ready && sk.StopPower > 0 && ChargingInReach(em, m.Position, sk);
                 float pulse = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 14f);
                 if (chance)
                 {
@@ -118,9 +118,13 @@ namespace IntoTheDungeon.Unity.Hud
             }
         }
 
-        // 적 강타(BossSlamComponent) 힘 모으기가 도발 범위(가로 반경, 깊이는 절반) 안에서 진행 중인가
-        static bool ChargingNear(IEntityManager em, Vec2 pos, float radius)
+        // 적 강타(BossSlamComponent) 힘 모으기가 이 필살기가 닿는 곳에서 진행 중인가
+        // 도발: 가로 반경(깊이는 절반) / 검기·화살: 같은 줄(깊이 판정 안)에서 사거리 안
+        static bool ChargingInReach(IEntityManager em, Vec2 pos, in SpecialSkillComponent sk)
         {
+            float rx, ry;
+            if (sk.TauntRadius > 0f) { rx = sk.TauntRadius; ry = sk.TauntRadius * 0.5f; }
+            else { rx = sk.WaveSpeed * sk.WaveLifetime + sk.WaveHalfExtents.X; ry = sk.WaveHalfExtents.Y + 0.25f; }
             foreach (var chunk in em.GetChunks(typeof(BossSlamComponent), typeof(TransformComponent)))
             {
                 var slams = chunk.GetComponentArray<BossSlamComponent>();
@@ -129,7 +133,7 @@ namespace IntoTheDungeon.Unity.Hud
                 {
                     if (!slams[k].Charging || slams[k].Fired) continue;
                     var d = transforms[k].Position - pos;
-                    if (System.MathF.Abs(d.X) <= radius && System.MathF.Abs(d.Y) <= radius * 0.5f) return true;
+                    if (System.MathF.Abs(d.X) <= rx && System.MathF.Abs(d.Y) <= ry) return true;
                 }
             }
             return false;

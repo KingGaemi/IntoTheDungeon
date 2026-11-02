@@ -109,6 +109,10 @@ namespace IntoTheDungeon.Unity.Hud
                 fx.Mark.transform.position = new Vector3(tr.Position.X, tr.Position.Y + head, 0f);
                 fx.Mark.transform.localScale = Vector3.one * (1f + 0.2f * blink);
                 fx.Mark.color = new Color(warnColor.r, warnColor.g * 1.5f, warnColor.b, 0.6f + 0.4f * blink);
+                // "!" 아래에 요구 저지력(쌓이는 중이면 진행도)
+                fx.Mark.text = s.StopRequired <= 0 ? "!"
+                    : s.StopAccum > 0 ? $"!\n<size=40>저지 {s.StopAccum}/{s.StopRequired}</size>"
+                    : $"!\n<size=40>저지 {s.StopRequired}</size>";
             }
             else
             {
@@ -145,6 +149,8 @@ namespace IntoTheDungeon.Unity.Hud
             fx.Mark.fontStyle = FontStyle.Bold;
             fx.Mark.anchor = TextAnchor.LowerCenter;
             fx.Mark.text = "!";
+            fx.Mark.alignment = TextAlignment.Center;
+            fx.Mark.richText = true;
             fx.MarkRenderer = mark.GetComponent<MeshRenderer>();
             fx.MarkRenderer.sharedMaterial = _font.material;
             fx.MarkRenderer.sortingLayerID = _layer;

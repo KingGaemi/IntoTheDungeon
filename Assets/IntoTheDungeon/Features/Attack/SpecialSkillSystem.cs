@@ -172,10 +172,10 @@ namespace IntoTheDungeon.Features.Attack
         }
 
         static void CreateWave(IEntityManager em, in WaveRequest r)
-            => CreateWave(em, r.Owner, r.Team, r.Damage, r.Pos, r.Height, r.FacingSign, r.Skill);
+            => CreateWave(em, r.Owner, r.Team, r.Damage, r.Pos, r.Height, r.FacingSign, r.Skill, r.Skill.StopPower);   // 필살기는 저지력으로 패턴을 끊는다
 
-        /// <summary>스킬 투사체(검기·강화 화살) 하나. 기본 스킬(BasicSkillSystem)도 쓴다.</summary>
-        public static void CreateWave(IEntityManager em, Entity owner, TeamFlag team, int damage, Vec2 pos, float height, float facingSign, in SpecialSkillComponent sk)
+        /// <summary>스킬 투사체(검기·강화 화살) 하나. 기본 스킬(BasicSkillSystem)도 쓴다(기본 스킬은 저지력 0).</summary>
+        public static void CreateWave(IEntityManager em, Entity owner, TeamFlag team, int damage, Vec2 pos, float height, float facingSign, in SpecialSkillComponent sk, int stopPower = 0)
         {
             var e = em.CreateEntity();
             em.AddComponent(e, new HitboxComponent
@@ -189,7 +189,8 @@ namespace IntoTheDungeon.Features.Attack
                 FacingSign = facingSign,
                 KnockbackSpeed = sk.WaveKnockback,
                 LaunchSpeed = sk.WaveLaunch,
-                HitStun = sk.WaveHitStun
+                HitStun = sk.WaveHitStun,
+                StopPower = stopPower
             });
             em.AddComponent(e, new ProjectileComponent { Velocity = new Vec2(facingSign * sk.WaveSpeed, 0f), DestroyOnHit = false });
             em.AddComponent(e, new LifetimeComponent { Remaining = sk.WaveLifetime });

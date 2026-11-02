@@ -24,6 +24,7 @@ namespace IntoTheDungeon.Features.Attack
         public float WaveLaunch;
         public float WaveHitStun;       // 맞은 쪽 경직(초). 필살기는 크게
         public ProjectileVisual Visual; // 투사체 그림
+        public int StopPower;           // 저지력: 강타·내려찍기의 요구 저지력과 같거나 높아야(쌓여서) 끊긴다. 필살기는 대부분 10
 
         // 도발 + 방패(TauntRadius > 0이면 투사체 대신 이것: TauntSystem)
         public float TauntRadius;       // 이 가로 반경(깊이는 절반) 안의 적이 시전자만 노린다
@@ -47,6 +48,7 @@ namespace IntoTheDungeon.Features.Attack
         // 케서린: 대시 공격 + 큰 검기 한 방
         public static readonly SpecialSkillComponent SwordWave = new()
         {
+            StopPower = PatternBreak.DefaultStopPower,
             Cooldown = 20f,                  // 평타 비중을 높이려고 길게(필살기는 노리는 순간에)
             CooldownRemaining = 8f,          // 전투 시작하자마자 쓰지 않게(첫 필살기는 8초 뒤)
             ManaCost = 60f,                  // 케서린 마나 70·초당 1.6 → 다시 찰 때까지 대략 40초
@@ -66,6 +68,7 @@ namespace IntoTheDungeon.Features.Attack
         // 중갑 전사: 칼을 치켜들고 외쳐 주변 적을 끌어모으고, 방패를 세워 받는 피해를 줄인다
         public static readonly SpecialSkillComponent TauntGuard = new()
         {
+            StopPower = PatternBreak.DefaultStopPower,
             Cooldown = 14f,                  // 오크 강타를 끊는 게 핵심이라 다른 필살기보다 자주
             CooldownRemaining = 1.5f,        // 전투 시작하자마자 첫 강타를 끊을 수 있게
             ManaCost = 25f,                  // 전사 마나 60·초당 1.3 → 약 19초마다(재사용 대기와 비슷)
@@ -80,6 +83,7 @@ namespace IntoTheDungeon.Features.Attack
         // 궁수: 제자리에서 빠르게 시위를 당겨 한 줄을 꿰뚫는 강화 화살(검기보다 가늘고 멀리)
         public static readonly SpecialSkillComponent PowerShot = new()
         {
+            StopPower = PatternBreak.DefaultStopPower,
             Cooldown = 20f,                  // 평타 비중을 높이려고 길게(필살기는 노리는 순간에)
             CooldownRemaining = 8f,          // 전투 시작하자마자 쓰지 않게
             ManaCost = 60f,                  // 궁수 마나 80·초당 1.9 → 대략 30초

@@ -58,6 +58,7 @@ namespace IntoTheDungeon.Features.Character
                     RecoveryTime = 0.5f,
                     Radius = _def.SlamRadius,
                     DamageMultiplier = _def.SlamDamageMul,
+                    StopRequired = _def.SlamStopRequired,
                     ImpactAge = -1f
                 });
             em.AddComponent(e, new PrimaryStatsComponent { Base = _def.Stats, Growth = _def.Growth, Level = 1 });

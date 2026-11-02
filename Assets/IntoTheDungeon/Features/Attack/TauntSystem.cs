@@ -78,33 +78,55 @@ namespace IntoTheDungeon.Features.Attack
             {
                 if (em.HasComponent<TauntedComponent>(e)) em.GetComponent<TauntedComponent>(e) = taunt;
                 else em.AddComponent(e, taunt);
-                Interrupt(em, e);
+                PatternBreak.Apply(em, e, sk.StopPower, flinch: true);
             }
 
             var guard = new GuardComponent { Remaining = sk.GuardDuration, Duration = sk.GuardDuration, DamageMul = sk.GuardDamageMul, Radius = sk.TauntRadius };
             if (em.HasComponent<GuardComponent>(owner)) em.GetComponent<GuardComponent>(owner) = guard;
             else em.AddComponent(owner, guard);
         }
+    }
 
-        // 패턴 끊기(임시값): 보스가 힘을 모으던 내려찍기는 취소 + 그로기, 휘두르려던 평타는 끊고 경직, 나머지는 움찔
+    /// <summary>
+    /// 저지(필살기 공용: 전사 도발·케서린 검기·궁수 강화 화살). 필살기마다 저지력(대부분 10)이 있고,
+    /// 강타·내려찍기 패턴은 요구 저지력이 있다. 한 번 힘을 모으는 동안 맞힌 저지력이 쌓여 요구치와 같거나 넘으면
+    /// 패턴 취소 + 그로기(모자라면 「저지 10/20」 진행도만). 휘두르려던 평타는 저지력이 있으면 끊고 경직.
+    /// CC 저항·슈퍼아머를 무시한다(HitStunComponent.PendingBreak). 결과는 InterruptFeed에 남겨 화면이 연출한다.
+    /// </summary>
+    public static class PatternBreak
+    {
         public const float PatternBreakStun = 2f, AttackBreakStun = 0.8f, FlinchStun = 0.35f;
+        public const int DefaultStopPower = 10;
 
-        static void Interrupt(IEntityManager em, Entity e)
+        public static InterruptKind Apply(IEntityManager em, Entity e, int power, bool flinch)
         {
-            if (!em.HasComponent<HitStunComponent>(e) || !em.TryGetComponent<StateComponent>(e, out var state)) return;
+            if (power <= 0 || !em.HasComponent<HitStunComponent>(e) || !em.TryGetComponent<StateComponent>(e, out var state)) return InterruptKind.Flinch;
             var kind = InterruptKind.Flinch;
-            float stun = FlinchStun;
+            float stun = flinch ? FlinchStun : 0f;
+            int accum = 0, required = 0;
 
             if (em.HasComponent<Battle.BossSlamComponent>(e))
             {
                 ref var slam = ref em.GetComponent<Battle.BossSlamComponent>(e);
                 if (slam.Charging && !slam.Fired)
                 {
-                    slam.Charging = false;
-                    slam.Remaining = slam.Cooldown;   // 다시 쓰려면 재사용 대기를 처음부터
-                    kind = InterruptKind.PatternBroken;
-                    stun = PatternBreakStun;
+                    slam.StopAccum += power;
+                    accum = slam.StopAccum;
+                    required = slam.StopRequired;
+                    if (slam.StopAccum >= slam.StopRequired)
+                    {
+                        slam.Charging = false;
+                        slam.Remaining = slam.Cooldown;   // 다시 쓰려면 재사용 대기를 처음부터
+                        kind = InterruptKind.PatternBroken;
+                        stun = PatternBreakStun;
+                    }
+                    else kind = InterruptKind.StopProgress;   // 아직 모자람: 패턴은 계속(경직도 안 걸림)
                 }
+            }
+            if (kind == InterruptKind.StopProgress)
+            {
+                Feed(em, e, kind, accum, required);
+                return kind;
             }
             if (kind == InterruptKind.Flinch && state.Current.Action == ActionState.Attack
                 && em.TryGetComponent<ActionPhaseComponent>(e, out var phase) && phase.ActionPhase == ActionPhase.Windup)
@@ -115,21 +137,27 @@ namespace IntoTheDungeon.Features.Attack
 
             ref var hs = ref em.GetComponent<HitStunComponent>(e);
             if (hs.PendingBreak < stun) hs.PendingBreak = stun;
-            if (kind == InterruptKind.Flinch) return;
+            if (kind == InterruptKind.Flinch) return kind;
+            Feed(em, e, kind, accum, required);
+            return kind;
+        }
 
+        static void Feed(IEntityManager em, Entity e, InterruptKind kind, int accum, int required)
+        {
             var pos = em.GetComponent<TransformComponent>(e);
             float head = em.TryGetComponent<Physics.Components.BodyComponent>(e, out var body) ? body.HeadHeight : 1.2f;
-            InterruptFeed.Pending.Add(new InterruptInfo { Kind = kind, Position = pos.Position, Height = pos.Height + head });
+            InterruptFeed.Pending.Add(new InterruptInfo { Kind = kind, Position = pos.Position, Height = pos.Height + head, Accum = accum, Required = required });
         }
     }
 
-    public enum InterruptKind : byte { Flinch, AttackBroken, PatternBroken }
+    public enum InterruptKind : byte { Flinch, AttackBroken, PatternBroken, StopProgress }
 
     public struct InterruptInfo
     {
         public InterruptKind Kind;
         public Vec2 Position;   // 바닥 위치(가로, 깊이)
         public float Height;    // 발 높이 + 머리 높이
+        public int Accum, Required;   // 패턴 저지: 쌓인 저지력 / 요구 저지력
     }
 
     /// <summary>패턴을 끊은 순간들(연출용). 게임 로직이 쌓고 화면(InterruptFxRenderer)이 꺼내 간다.</summary>

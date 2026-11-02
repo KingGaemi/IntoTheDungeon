@@ -24,5 +24,6 @@ namespace IntoTheDungeon.Features.Attack
         public float LaunchSpeed;
         public float HitStun;        // 맞은 쪽 경직(초). 0이면 안 굳음
         public int MaxTargets;       // 맞힐 수 있는 대상 수(0 = 겹치는 대상 전부, 1 = 가장 가까운 하나만)
+        public int StopPower;        // 저지력(필살기만, 0 = 없음): 맞은 적의 강타 충전·평타 준비를 끊는다(PatternBreak)
     }
 }
