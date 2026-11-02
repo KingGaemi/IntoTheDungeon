@@ -70,9 +70,10 @@ namespace IntoTheDungeon.Features.Attack
                         if (best < 0) continue;
                         var target = _targets[best];
                         hits.AddHit(target.E.Index);
-                        ref var tq = ref em.GetComponent<HpModificationQueue>(target.E);
-                        tq.Enqueue(HpModification.Damage(Mitigated(em, target.E, hb), hb.Owner));
+                        int dealt = Mitigated(em, target.E, hb);
+                        em.GetComponent<HpModificationQueue>(target.E).Enqueue(HpModification.Damage(dealt, hb.Owner));
                         ApplyHitReaction(em, target.E, hb);
+                        TraitHitEffects.Apply(em, hitboxEntities[i], target.E, hb, dealt);
                         continue;
                     }
 
@@ -82,9 +83,10 @@ namespace IntoTheDungeon.Features.Attack
                         if (!CanHit(hb, ref hits, min, max, t)) continue;
 
                         hits.AddHit(t.E.Index);
-                        ref var q = ref em.GetComponent<HpModificationQueue>(t.E);
-                        q.Enqueue(HpModification.Damage(Mitigated(em, t.E, hb), hb.Owner));
+                        int dealt = Mitigated(em, t.E, hb);
+                        em.GetComponent<HpModificationQueue>(t.E).Enqueue(HpModification.Damage(dealt, hb.Owner));
                         ApplyHitReaction(em, t.E, hb);
+                        TraitHitEffects.Apply(em, hitboxEntities[i], t.E, hb, dealt);
 
                         // 일반 화살: 첫 대상에 꽂히고 사라진다(수명을 0으로 → LifetimeSystem이 지움)
                         var self = hitboxEntities[i];

@@ -41,6 +41,12 @@ namespace IntoTheDungeon.Features.Character
             var status = new StatusComponent { IsAlive = true };
             var derived = new DerivedStatsComponent();
             StatFormula.Apply(_def.Stats, ref status, ref derived);
+            if (!_def.Trait.IsNone)
+            {
+                _def.Trait.ApplyStats(ref status, ref derived);
+                em.AddComponent(e, _def.Trait);
+            }
+            em.AddComponent(e, new PoisonComponent());
             em.AddComponent(e, new PrimaryStatsComponent { Base = _def.Stats, Growth = _def.Growth, Level = 1 });
             em.AddComponent(e, status);
             em.AddComponent(e, derived);
@@ -62,6 +68,9 @@ namespace IntoTheDungeon.Features.Character
             {
                 var melee = MeleeAttackComponent.Default;
                 melee.CleaveBase = melee.Cleave = _def.Cleave;
+                if (_def.MeleeKnockback > 0f) melee.KnockbackSpeed = _def.MeleeKnockback;
+                if (_def.MeleeLaunch > 0f) melee.LaunchSpeed = _def.MeleeLaunch;
+                melee.HitStun = _def.MeleeHitStun;
                 em.AddComponent(e, melee);
             }
         }

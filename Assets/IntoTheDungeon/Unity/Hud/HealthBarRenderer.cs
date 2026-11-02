@@ -29,6 +29,8 @@ namespace IntoTheDungeon.Unity.Hud
         [Header("색")]
         [SerializeField] Color partyColor = new(0.35f, 0.85f, 0.4f, 1f);
         [SerializeField] Color enemyColor = new(0.88f, 0.26f, 0.22f, 1f);
+        [Tooltip("중독 중(독꽃)")]
+        [SerializeField] Color poisonColor = new(0.62f, 0.35f, 0.85f, 1f);
         [SerializeField] Color trailColor = new(1f, 0.93f, 0.6f, 1f);
         [SerializeField] Color backColor = new(0.08f, 0.08f, 0.1f, 0.85f);
         [Tooltip("파티원 체력바 아래 마나바")]
@@ -160,7 +162,8 @@ namespace IntoTheDungeon.Unity.Hud
                                 bar.CdDots[d].color = c;
                             }
                         }
-                        bar.Fill.color = now < bar.FlashUntil ? Color.white : party ? partyColor : enemyColor;
+                        bool poisoned = _world.EntityManager.TryGetComponent<PoisonComponent>(e, out var poison) && poison.Active;
+                        bar.Fill.color = now < bar.FlashUntil ? Color.white : poisoned ? poisonColor : party ? partyColor : enemyColor;
                         SetWidth(bar.Fill, ratio);
                         SetWidth(bar.Trail, bar.Trail_);
 

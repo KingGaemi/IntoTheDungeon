@@ -31,3 +31,5 @@ MonoBehaviour:
     viewRecipe: {fileID: 11400000, guid: f495b6a8e9ad4cf192749f7bd8be4ddf, type: 2}
   - recipeIdString: Warrior
     viewRecipe: {fileID: 11400000, guid: ede2a00d18744f1481979562e4805672, type: 2}
+  - recipeIdString: Bat1
+    viewRecipe: {fileID: 11400000, guid: 0d5f810eaf644e2a9b30185d3fb4aa01, type: 2}

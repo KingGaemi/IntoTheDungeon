@@ -27,9 +27,15 @@ namespace IntoTheDungeon.Features.Character
         public bool Cleave;             // 근접 평타가 범위 공격(아니면 한 명만)
         public PrimaryStats Stats;      // 레벨 1의 힘·민첩·지능·정신력 → 체력·공격력·공속·이속 등은 StatFormula가 계산
         public PrimaryStats Growth;     // 레벨당 오르는 스탯
+        public IntoTheDungeon.Features.Attack.TraitComponent Trait;   // 종류별 특성(배율·흡혈·가시·독)
+        public string TraitText;        // 특성 한 줄 설명(화면 표시용)
+        public float MeleeKnockback;    // 근접 평타 넉백(0이면 기본)
+        public float MeleeLaunch;       // 근접 평타 띄우기(0이면 기본)
+        public float MeleeHitStun;      // 근접 평타 경직(0이면 없음)
 
         public static readonly CharacterDefinition Default = new()
         {
+            Trait = IntoTheDungeon.Features.Attack.TraitComponent.None,
             Stats = PrimaryStats.Default,
             Growth = PrimaryStats.DefaultGrowth,
             BodyRadius = 0.3f, BodyMass = 1f, HeadHeight = 1.2f,

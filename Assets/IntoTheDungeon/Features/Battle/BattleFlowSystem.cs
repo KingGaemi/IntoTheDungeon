@@ -189,6 +189,7 @@ namespace IntoTheDungeon.Features.Battle
                 if (slot < Party.NoSlot) ps.Level = run.LevelOf(slot);
                 ref var ds = ref em.GetComponent<DerivedStatsComponent>(e);
                 StatFormula.Apply(ps.Total, ref st, ref ds);
+                TraitComponent.ApplyIfAny(em, e, ref st, ref ds);
                 if (em.HasComponent<HitStunComponent>(e)) em.GetComponent<HitStunComponent>(e).Resistance = ds.CcResist;
             }
 
@@ -241,7 +242,9 @@ namespace IntoTheDungeon.Features.Battle
                 ps.Level = level;
                 if (!em.HasComponent<DerivedStatsComponent>(e)) continue;
                 ref var est = ref em.GetComponent<StatusComponent>(e);
-                StatFormula.Apply(ps.Total, ref est, ref em.GetComponent<DerivedStatsComponent>(e));
+                ref var eds = ref em.GetComponent<DerivedStatsComponent>(e);
+                StatFormula.Apply(ps.Total, ref est, ref eds);
+                TraitComponent.ApplyIfAny(em, e, ref est, ref eds);   // 몹 특성(단단함·유리 대포 등)
                 // 봉인석: 체력·공격력 배율
                 est.MaxHp = (int)System.MathF.Round(est.MaxHp * SealStone.EnemyHpMul(run.SealTier));
                 est.CurrentHp = est.MaxHp;
