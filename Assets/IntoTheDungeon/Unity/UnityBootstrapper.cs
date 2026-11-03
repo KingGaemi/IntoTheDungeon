@@ -80,7 +80,7 @@ namespace IntoTheDungeon.Unity
             World.BakeScene();
 
             // 전투 화면 UI(필살기 버튼·웨이브 진행·던전 지도·정비)와 투사체(검기·화살)·체력바·데미지 숫자·떨어진 아이템 그림: 씬 배치 없이 코드로 만든다(주입 전에 만들어야 Init을 받음)
-            new GameObject("BattleHud", typeof(Hud.SkillButtonHud), typeof(Hud.ProjectileRenderer), typeof(Hud.HealthBarRenderer), typeof(Hud.DamageNumberRenderer), typeof(Hud.LootRenderer), typeof(Hud.RewardFxRenderer), typeof(Hud.BossRenderer), typeof(Hud.GuardRenderer), typeof(Hud.DoorRenderer), typeof(Hud.SpeedControlHud), typeof(Hud.MeterHud), typeof(Hud.BattleStatusHud), typeof(Hud.DungeonMapHud), typeof(Hud.CampHud), typeof(Hud.GemHud), typeof(Hud.SealHud), typeof(Hud.DeployHud), typeof(Hud.InterruptFxRenderer), typeof(RunAutoSave));
+            new GameObject("BattleHud", typeof(Hud.SkillButtonHud), typeof(Hud.ProjectileRenderer), typeof(Hud.HealthBarRenderer), typeof(Hud.DamageNumberRenderer), typeof(Hud.LootRenderer), typeof(Hud.RewardFxRenderer), typeof(Hud.BossRenderer), typeof(Hud.GuardRenderer), typeof(Hud.DoorRenderer), typeof(Hud.SpeedControlHud), typeof(Hud.MeterHud), typeof(Hud.BattleStatusHud), typeof(Hud.DungeonMapHud), typeof(Hud.CampHud), typeof(Hud.GemHud), typeof(Hud.SealHud), typeof(Hud.DeployHud), typeof(Hud.InterruptFxRenderer), typeof(Hud.StopGuideHud), typeof(RunAutoSave));
 
             Debug.Log("[Bootstrapper] Calling ReinjectScene()");
             _bootstrap.ReinjectScene();

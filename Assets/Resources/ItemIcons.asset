@@ -45,3 +45,9 @@ MonoBehaviour:
     icon: {fileID: 375303978, guid: 3f2ecc463117410bad9ffe677406d645, type: 3}
   - itemId: red_greatsword
     icon: {fileID: 1426766448, guid: 3f2ecc463117410bad9ffe677406d645, type: 3}
+  - itemId: iron_hammer
+    icon: {fileID: 961724212, guid: 3f2ecc463117410bad9ffe677406d645, type: 3}
+  - itemId: gold_mace
+    icon: {fileID: 1512725069, guid: 3f2ecc463117410bad9ffe677406d645, type: 3}
+  - itemId: red_maul
+    icon: {fileID: 1118993278, guid: 3f2ecc463117410bad9ffe677406d645, type: 3}

@@ -15,8 +15,11 @@ namespace IntoTheDungeon.Unity.Hud
     {
         [SerializeField] Color attackColor = new(1f, 0.78f, 0.3f, 1f);
         [SerializeField] Color patternColor = new(1f, 0.93f, 0.55f, 1f);
-        [Tooltip("저지력이 아직 모자랄 때(「저지 10/20」)")]
-        [SerializeField] Color progressColor = new(0.75f, 0.88f, 1f, 1f);
+        [Tooltip("저지력이 모자랄 때(「저지력 부족 10/15」)")]
+        [SerializeField] Color progressColor = new(1f, 0.42f, 0.38f, 1f);   // StopPowerUi.ShortColor와 같은 빨강(부족 = 부정 신호)
+        [Tooltip("평타를 끊었을 때(글자 없이 충격파·먼지만)")]
+        [SerializeField] Color impactColor = new(1f, 0.9f, 0.75f, 1f);
+        [SerializeField] float impactHitStop = 0.06f;
         [SerializeField] float attackHitStop = 0.09f;
         [SerializeField] float patternHitStop = 0.25f;
         [SerializeField] int fontSize = 64;
@@ -28,7 +31,7 @@ namespace IntoTheDungeon.Unity.Hud
         {
             public GameObject Root;
             public float Born;
-            public bool Big, Progress;
+            public bool Big, Progress, Impact;
             public Color Col;
             public Transform TextRoot;
             public TextMesh Text, Shadow;
@@ -72,12 +75,17 @@ namespace IntoTheDungeon.Unity.Hud
             if (_flash.enabled != _flashA > 0f) _flash.enabled = _flashA > 0f;
         }
 
+        /// <summary>끊김·저지력 부족 연출이 나올 때(안내 HUD 등이 받음).</summary>
+        public static event System.Action<InterruptKind> Shown;
+
         void Spawn(in InterruptInfo info, float now)
         {
+            Shown?.Invoke(info.Kind);
             bool big = info.Kind == InterruptKind.PatternBroken;
-            bool progress = info.Kind == InterruptKind.StopProgress;   // 저지력이 쌓였지만 아직 모자람: 작게, 멈칫 없이
+            bool progress = info.Kind == InterruptKind.StopFailed;   // 저지력 부족: 작게, 멈칫 없이
             var col = big ? patternColor : progress ? progressColor : attackColor;
-            var f = new Fx { Born = now, Big = big, Progress = progress, Col = col };
+            bool impact = info.Kind == InterruptKind.AttackBroken;   // 평타 끊기: 글자·X자 없이 묵직하게 밀려나는 충격만
+            var f = new Fx { Born = now, Big = big, Progress = progress, Impact = impact, Col = impact ? impactColor : col };
             f.Root = new GameObject(big ? "PatternBroken" : "AttackBroken");
             f.Root.transform.SetParent(transform, false);
             var chest = new Vector3(info.Position.X, info.Position.Y + info.Height * 0.55f, 0f);
@@ -103,17 +111,23 @@ namespace IntoTheDungeon.Unity.Hud
                 f.Shards.Add((r, new Vector3(Mathf.Cos(a) * sp, Mathf.Sin(a) * sp * 0.75f + 1.2f, 0f)));
             }
 
+            _fx.Add(f);
+            if (impact)
+            {
+                SpeedControlHud.HitStop(impactHitStop);
+                return;
+            }
+
             // 글자(머리 위)
             f.TextRoot = new GameObject("Text").transform;
             f.TextRoot.SetParent(f.Root.transform, false);
             f.TextRoot.position = new Vector3(info.Position.X, info.Position.Y + info.Height + 0.35f, 0f);
-            string label = big ? "패턴 파괴!" : progress ? $"저지 {info.Accum}/{info.Required}" : "끊김!";
+            string label = big ? "패턴 파괴!" : progress ? $"저지력 부족 {info.Power}/{info.Required}" : "끊김!";
             f.Shadow = MakeText(f.TextRoot, label, new Vector3(0.04f, -0.04f, 0f), order + 4);
             f.Shadow.color = new Color(0.25f, 0.12f, 0f, 0.9f);
             f.Text = MakeText(f.TextRoot, label, Vector3.zero, order + 5);
             f.Text.color = col;
 
-            _fx.Add(f);
             if (progress) return;
             SpeedControlHud.HitStop(big ? patternHitStop : attackHitStop);
             if (big) _flashA = Mathf.Max(_flashA, 0.5f);
@@ -125,14 +139,17 @@ namespace IntoTheDungeon.Unity.Hud
             float t = age / Life;
 
             // 글자: 크게 튀어나왔다 자리 잡고 살짝 떠오른 뒤 사라짐
-            float punch = age < 0.14f ? Mathf.Lerp(2.3f, 0.9f, age / 0.14f) : age < 0.24f ? Mathf.Lerp(0.9f, 1f, (age - 0.14f) / 0.1f) : 1f;
-            f.TextRoot.localScale = Vector3.one * punch * (f.Big ? 1.45f : f.Progress ? 0.8f : 1f);
-            f.TextRoot.localPosition += new Vector3(0f, dt * (age < 0.3f ? 0f : 0.35f), 0f);
-            float ta = t < 0.7f ? 1f : 1f - (t - 0.7f) / 0.3f;
-            f.Text.color = new Color(f.Col.r, f.Col.g, f.Col.b, ta);
-            f.Shadow.color = new Color(0.25f, 0.12f, 0f, 0.9f * ta);
-            // 처음 한 순간은 하얗게
-            if (age < 0.08f) f.Text.color = new Color(1f, 1f, 1f, 1f);
+            if (f.TextRoot)
+            {
+                float punch = age < 0.14f ? Mathf.Lerp(2.3f, 0.9f, age / 0.14f) : age < 0.24f ? Mathf.Lerp(0.9f, 1f, (age - 0.14f) / 0.1f) : 1f;
+                f.TextRoot.localScale = Vector3.one * punch * (f.Big ? 1.45f : f.Progress ? 0.8f : 1f);
+                f.TextRoot.localPosition += new Vector3(0f, dt * (age < 0.3f ? 0f : 0.35f), 0f);
+                float ta = t < 0.7f ? 1f : 1f - (t - 0.7f) / 0.3f;
+                f.Text.color = new Color(f.Col.r, f.Col.g, f.Col.b, ta);
+                f.Shadow.color = new Color(0.25f, 0.12f, 0f, 0.9f * ta);
+                // 처음 한 순간은 하얗게
+                if (age < 0.08f) f.Text.color = new Color(1f, 1f, 1f, 1f);
+            }
 
             // 충격파 두 겹(두 번째는 조금 늦게)
             Ring(f.Ring, age, 0.45f, 0.3f, 2.4f * big, f.Col);
@@ -146,7 +163,7 @@ namespace IntoTheDungeon.Unity.Hud
             {
                 sl.transform.localScale = sc;
                 sl.transform.localPosition = sl.transform.localRotation * new Vector3(0f, -sc.y * 0.5f, 0f);   // 가운데 기준
-                sl.color = new Color(1f, 1f, 1f, f.Progress ? 0f : slashA);   // 아직 못 끊었으면 X자 없음
+                sl.color = new Color(1f, 1f, 1f, f.Progress || f.Impact ? 0f : slashA);   // 못 끊었거나 평타 끊기면 X자 없음
             }
 
             // 빛 덩어리

@@ -39,7 +39,8 @@ namespace IntoTheDungeon.Unity.Hud
         readonly List<Text> _names = new();
         GameObject _tileRoot, _ui;
         RectTransform _canvasRect;
-        Text _enemyLine;
+        Text _enemyLine, _stopLine;
+        RectTransform _stopIcon;
         readonly Text[] _rowLabels = new Text[Formation.Cols];
         Vector2 _grabOffset;
         float _time;
@@ -114,6 +115,9 @@ namespace IntoTheDungeon.Unity.Hud
             for (; n < _names.Count; n++) _names[n].gameObject.SetActive(false);
 
             _enemyLine.text = EnemyPreview();
+            _stopLine.text = PartyStopLine(run);
+            _stopIcon.anchoredPosition = new Vector2(16f - _stopLine.preferredWidth * 0.5f - 22f, 336f);   // 글자 바로 왼쪽
+            if (_stopIcon.gameObject.activeSelf != _stopLine.text.Length > 0) _stopIcon.gameObject.SetActive(_stopLine.text.Length > 0);
 
             if (_progress.DragSlot < 0 && (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)))
                 Confirm();
@@ -203,6 +207,13 @@ namespace IntoTheDungeon.Unity.Hud
             foreach (var s in _config.Waves[0])
             {
                 string name = (_catalog != null ? _catalog.DisplayName(s.Recipe) : s.Recipe) + (s.Boss ? "(보스)" : "");
+                // 강타를 쓰는 몹이면 요구 저지력도 함께(보스는 보스 내려찍기 기준)
+                if (_catalog != null)
+                {
+                    var def = _catalog.Get(s.Recipe);
+                    int req = s.Boss ? IntoTheDungeon.Features.Battle.Boss.StopRequired : def.SlamRadius > 0f ? def.SlamStopRequired : 0;
+                    if (req > 0) name += $"(강타 <color={StopPowerUi.Hex}>저지 {req}</color>)";
+                }
                 if (!counts.ContainsKey(name)) { counts[name] = 0; order.Add(name); }
                 counts[name] += s.Count;
             }
@@ -210,6 +221,22 @@ namespace IntoTheDungeon.Unity.Hud
             for (int i = 0; i < order.Count; i++) sb.Append(i > 0 ? " · " : "").Append(order[i]).Append(" ×").Append(counts[order[i]]);
             sb.Append($"     (웨이브 {_config.Waves.Count}개)");
             return sb.ToString();
+        }
+
+        // 파티원별 필살기 저지력(장비 포함): 적 강타의 「저지 N」과 바로 비교할 수 있게
+        string PartyStopLine(RunData run)
+        {
+            var em = _world.EntityManager;
+            var sb = new StringBuilder("필살기 저지력  ");
+            int n = 0;
+            foreach (var m in _party)
+            {
+                if (m.Slot >= Party.NoSlot || !m.Alive || m.Slot >= run.Members.Count) continue;
+                if (!em.TryGetComponent<IntoTheDungeon.Features.Attack.SpecialSkillComponent>(m.Entity, out var sk)) continue;
+                string who = _catalog != null ? _catalog.DisplayName(run.Members[m.Slot]) : run.Members[m.Slot];
+                sb.Append(n++ > 0 ? "   ·   " : "").Append(who).Append(' ').Append(sk.StopPower);
+            }
+            return n > 0 ? sb.ToString() : "";
         }
 
         Color RowColor(FormationRow r) => r switch { FormationRow.Front => frontColor, FormationRow.Middle => middleColor, _ => backColor };
@@ -269,6 +296,16 @@ namespace IntoTheDungeon.Unity.Hud
             _enemyLine = NewText(_ui.transform, "", 22);
             _enemyLine.color = new Color(1f, 0.72f, 0.6f, 1f);
             Place(_enemyLine.rectTransform, new Vector2(0f, 372f), new Vector2(1450f, 32f));
+            // 파티 저지력 줄(청록 망치 + 파티원별 숫자)
+            band.rectTransform.sizeDelta = new Vector2(1500f, 190f);
+            band.rectTransform.anchoredPosition = new Vector2(0f, 400f);
+            _stopLine = NewText(_ui.transform, "", 22);
+            _stopLine.color = StopPowerUi.Color;
+            Place(_stopLine.rectTransform, new Vector2(16f, 336f), new Vector2(1450f, 32f));
+            var stopIcon = NewImage(_ui.transform, StopPowerUi.Color);
+            stopIcon.sprite = StopPowerUi.Icon;
+            _stopIcon = stopIcon.rectTransform;
+            Place(_stopIcon, new Vector2(-300f, 336f), new Vector2(28f, 28f));
 
             for (int col = 0; col < Formation.Cols; col++)
             {

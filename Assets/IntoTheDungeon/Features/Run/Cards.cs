@@ -21,6 +21,7 @@ namespace IntoTheDungeon.Features.Run
         public float PostBattleHealAdd = 0f;   // 전투 후 회복(최대 체력 비율)에 더해짐
         public bool Cleave;                     // 근접 평타가 범위 공격(특수 장비)
         public float GoldMul = 1f;              // 처치 골드 배율(잼)
+        public int StopPowerAdd;                // 필살기 저지력 보너스(망치·철퇴 등 장비)
         public PrimaryStats StatBonus;          // 파티 전원 기본 스탯에 더해짐(세부 능력치는 다시 계산)
     }
 

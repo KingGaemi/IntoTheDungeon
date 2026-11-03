@@ -202,6 +202,7 @@ namespace IntoTheDungeon.Unity.Hud
                     $"마법저항 {d.MagicResist:0}\n" +
                     $"넉백·CC저항 {d.KnockbackResist * 100f:0}%·{d.CcResist * 100f:0}%\n" +
                     $"평타: {(def.Ranged ? "원거리" : def.Cleave || mods.Cleave ? "범위" : "한 명")}\n" +
+                    $"<color={StopPowerUi.Hex}><b>필살기 저지력 {IntoTheDungeon.Features.Attack.PatternBreak.DefaultStopPower + mods.StopPowerAdd}{(mods.StopPowerAdd > 0 ? $" (+{mods.StopPowerAdd})" : "")}</b></color>\n" +
                     $"기본 스킬: {IntoTheDungeon.Features.Attack.BasicSkills.Name(def.BasicSkill)}";
                 card.Stats.color = fallen ? new Color(1f, 1f, 1f, 0.45f) : Color.white;
             }
@@ -304,6 +305,17 @@ namespace IntoTheDungeon.Unity.Hud
                 var label = NewText(back.transform, def.Name, 16);
                 label.horizontalOverflow = HorizontalWrapMode.Wrap;
                 Stretch(label.rectTransform);
+            }
+
+            // 저지력 장비: 오른쪽 위 구석에 청록 망치 표시(가방·보관함에서 한눈에)
+            if (def.Description != null && def.Description.Contains("저지력"))
+            {
+                var mark = NewImage(back.transform, StopPowerUi.Color);
+                mark.sprite = StopPowerUi.Icon;
+                var mrt = mark.rectTransform;
+                mrt.anchorMin = mrt.anchorMax = mrt.pivot = new Vector2(1f, 1f);
+                mrt.anchoredPosition = new Vector2(-1f, -1f);
+                mrt.sizeDelta = new Vector2(20f, 20f);
             }
 
             var v = go.AddComponent<InventoryItemView>();
@@ -460,7 +472,7 @@ namespace IntoTheDungeon.Unity.Hud
             if (!_info) return;
             _info.text = def == null
                 ? "마우스 올리기: 효과 보기\n끌기: 옮기기(위에 놓으면 맞바꿈)\n끄는 중 우클릭: 회전\n우클릭: 빠른 장착 / 빼기\n장비 칸만 효과, 보관함은 보관만"
-                : $"{def.Name}\n[{ItemDef.RarityLabel(def.Rarity)} · {def.W}×{def.H}칸 · 판매가 {ShopPool.SellPrice(def)} 골드]\n\n{def.Description}";
+                : $"{def.Name}\n[{ItemDef.RarityLabel(def.Rarity)} · {def.W}×{def.H}칸 · 판매가 {ShopPool.SellPrice(def)} 골드]\n\n{StopPowerUi.Highlight(def.Description)}";
         }
 
         void Leave() => RunState.Current.LeaveCamp();   // 같은 씬에서 바로 지도 화면으로

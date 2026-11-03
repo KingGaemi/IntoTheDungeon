@@ -42,7 +42,7 @@ namespace IntoTheDungeon.Unity.Hud
                                  : new Color(1f, 1f, 1f, 0.3f);
                 tile.Kind.text = ShopPool.KindLabel(offer);
                 tile.Title.text = ShopPool.Title(offer);
-                tile.Desc.text = ShopPool.Description(offer);
+                tile.Desc.text = StopPowerUi.Highlight(ShopPool.Description(offer));
                 var sprite = item ? ItemIconTable.Icon(offer.Item.Id) : null;
                 tile.Icon.sprite = sprite;
                 tile.Icon.enabled = sprite;

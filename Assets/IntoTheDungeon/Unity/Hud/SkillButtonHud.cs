@@ -37,6 +37,8 @@ namespace IntoTheDungeon.Unity.Hud
             public RectTransform CooldownMask, HpFill;
             public Text Label, CooldownText;
             public Button Button;
+            public GameObject StopBadge;   // 오른쪽 위: 청록 망치 + 저지력 숫자
+            public Text StopText;
         }
 
         IWorld _world;
@@ -84,6 +86,7 @@ namespace IntoTheDungeon.Unity.Hud
 
                 if (!present || !m.Alive)
                 {
+                    if (s.StopBadge.activeSelf) s.StopBadge.SetActive(false);
                     s.CooldownMask.anchorMax = Vector2.one;
                     s.CooldownText.text = "";
                     s.Label.text = "쓰러짐";
@@ -101,12 +104,18 @@ namespace IntoTheDungeon.Unity.Hud
                 s.CooldownMask.anchorMax = new Vector2(1f, sk.CooldownRatio);
                 s.CooldownText.text = sk.CooldownRemaining > 0f ? sk.CooldownRemaining.ToString(sk.CooldownRemaining < 1f ? "0.0" : "0") : "";
                 // 재사용 대기는 끝났는데 마나가 모자라면 그걸 알려 준다
-                s.Label.text = cooled && !enoughMana ? $"마나 부족\n{ds.Mana:0}/{sk.ManaCost:0}" : $"필살기\n<size=16>마나 {sk.ManaCost:0} · 저지 {sk.StopPower}</size>";
+                s.Label.text = cooled && !enoughMana ? $"마나 부족\n{ds.Mana:0}/{sk.ManaCost:0}" : $"필살기\n<size=16>마나 {sk.ManaCost:0}</size>";
+                if (!s.StopBadge.activeSelf) s.StopBadge.SetActive(sk.StopPower > 0);
+                s.StopText.text = sk.StopPower.ToString();
+                s.StopText.color = StopPowerUi.Color;
                 s.Label.color = ready ? frameColor : new Color(1f, 1f, 1f, 0.5f);
                 s.Frame.color = ready ? frameColor : new Color(frameColor.r, frameColor.g, frameColor.b, 0.35f);
 
-                // 끊기 기회: 이 필살기가 닿는 곳에서 적이 강타 힘을 모으는 중이면 버튼이 하얗게 맥동하며 "지금 끊기!"
-                bool chance = ready && sk.StopPower > 0 && ChargingInReach(em, m.Position, sk);
+                // 끊기 기회: 이 필살기가 닿는 곳에서 적이 강타 힘을 모으는 중이면
+                // 저지력이 충분하면 버튼이 하얗게 맥동하며 "지금 끊기!", 모자라면 "저지력 부족 · 저지 N 필요"(배지 숫자도 빨갛게)
+                int req = sk.StopPower > 0 ? ChargingInReach(em, m.Position, sk) : -1;
+                bool chance = ready && req >= 0 && sk.StopPower >= req;
+                bool shortOf = req >= 0 && sk.StopPower < req;
                 float pulse = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 14f);
                 if (chance)
                 {
@@ -114,14 +123,21 @@ namespace IntoTheDungeon.Unity.Hud
                     s.Label.color = Color.Lerp(frameColor, Color.white, pulse);
                     s.Frame.color = Color.Lerp(frameColor, Color.white, pulse);
                 }
+                else if (shortOf)
+                {
+                    s.Label.text = $"저지력 부족\n<size=16>저지 {req} 필요</size>";
+                    s.Label.color = StopPowerUi.ShortColor;
+                    s.StopText.color = Color.Lerp(StopPowerUi.ShortColor, Color.white, 0.3f * pulse);
+                }
                 s.Frame.rectTransform.localScale = Vector3.one * (chance ? 1.04f + 0.06f * pulse : 1f);
             }
         }
 
-        // 적 강타(BossSlamComponent) 힘 모으기가 이 필살기가 닿는 곳에서 진행 중인가
+        // 이 필살기가 닿는 곳에서 힘을 모으는 적 강타(BossSlamComponent) 중 가장 낮은 요구 저지력(없으면 -1)
         // 도발: 가로 반경(깊이는 절반) / 검기·화살: 같은 줄(깊이 판정 안)에서 사거리 안
-        static bool ChargingInReach(IEntityManager em, Vec2 pos, in SpecialSkillComponent sk)
+        static int ChargingInReach(IEntityManager em, Vec2 pos, in SpecialSkillComponent sk)
         {
+            int best = -1;
             float rx, ry;
             if (sk.TauntRadius > 0f) { rx = sk.TauntRadius; ry = sk.TauntRadius * 0.5f; }
             else { rx = sk.WaveSpeed * sk.WaveLifetime + sk.WaveHalfExtents.X; ry = sk.WaveHalfExtents.Y + 0.25f; }
@@ -133,10 +149,11 @@ namespace IntoTheDungeon.Unity.Hud
                 {
                     if (!slams[k].Charging || slams[k].Fired) continue;
                     var d = transforms[k].Position - pos;
-                    if (System.MathF.Abs(d.X) <= rx && System.MathF.Abs(d.Y) <= ry) return true;
+                    if (System.MathF.Abs(d.X) <= rx && System.MathF.Abs(d.Y) <= ry && (best < 0 || slams[k].StopRequired < best))
+                        best = slams[k].StopRequired;
                 }
             }
-            return false;
+            return best;
         }
 
         void Build()
@@ -210,6 +227,29 @@ namespace IntoTheDungeon.Unity.Hud
             krt.sizeDelta = new Vector2(36f, 30f);
             key.alignment = TextAnchor.UpperLeft;
             key.color = new Color(1f, 1f, 1f, 0.7f);
+
+            // 저지력 배지(오른쪽 위): 어두운 바탕 + 청록 망치 아이콘 + 숫자
+            var badge = NewImage("StopBadge", s.Body.rectTransform, new Color(0.03f, 0.08f, 0.09f, 0.85f));
+            s.StopBadge = badge.gameObject;
+            var brt = badge.rectTransform;
+            brt.anchorMin = brt.anchorMax = brt.pivot = new Vector2(1f, 1f);
+            brt.anchoredPosition = new Vector2(-4f, -4f);
+            brt.sizeDelta = new Vector2(66f, 32f);
+            var bo = badge.gameObject.AddComponent<Outline>();
+            bo.effectColor = new Color(StopPowerUi.Color.r, StopPowerUi.Color.g, StopPowerUi.Color.b, 0.6f);
+            bo.effectDistance = new Vector2(1.5f, -1.5f);
+            var icon = NewImage("Icon", brt, StopPowerUi.Color);
+            icon.sprite = StopPowerUi.Icon;
+            var irt = icon.rectTransform;
+            irt.anchorMin = irt.anchorMax = irt.pivot = new Vector2(0f, 0.5f);
+            irt.anchoredPosition = new Vector2(3f, 0f);
+            irt.sizeDelta = new Vector2(26f, 26f);
+            s.StopText = NewText("Stop", brt, font, "10", 24);
+            var srt = s.StopText.rectTransform;
+            srt.anchorMin = new Vector2(0f, 0f); srt.anchorMax = new Vector2(1f, 1f);
+            srt.offsetMin = new Vector2(30f, 0f); srt.offsetMax = new Vector2(-2f, 0f);
+            s.StopText.alignment = TextAnchor.MiddleCenter;
+            s.StopText.color = StopPowerUi.Color;
 
             // 체력 바(버튼 아래쪽 안)
             var hpBack = NewImage("HpBack", s.Body.rectTransform, new Color(0f, 0f, 0f, 0.7f));

@@ -69,6 +69,12 @@ namespace IntoTheDungeon.Features.Run
 
             Add("red_shield", "진홍 연 방패", ItemRarity.Epic, "모든 스탯 +3", m => { m.StatBonus.Str += 3; m.StatBonus.Agi += 3; m.StatBonus.Int += 3; m.StatBonus.Wil += 3; });
             Add("red_greatsword", "진홍 대검", ItemRarity.Epic, "힘 +5, 민첩 +2, 근접 평타가 범위 공격", m => { m.StatBonus.Str += 5; m.StatBonus.Agi += 2; m.Cleave = true; });
+
+            // 저지력 장비: 같은 등급 무기보다 스탯은 낮지만 필살기 저지력을 올려 강한 패턴(오크 대장 15·보스 20)을 끊게 해 준다.
+            // 목록 끝에만 덧붙인다(이어하기 저장은 아이템 번호로 적음)
+            Add("iron_hammer", "철 전투 망치", ItemRarity.Uncommon, "필살기 저지력 +5, 힘 +1", m => { m.StopPowerAdd += 5; m.StatBonus.Str += 1; });
+            Add("gold_mace", "황금 철퇴", ItemRarity.Rare, "필살기 저지력 +5, 힘 +2, 정신력 +1", m => { m.StopPowerAdd += 5; m.StatBonus.Str += 2; m.StatBonus.Wil += 1; });
+            Add("red_maul", "진홍 파쇄 망치", ItemRarity.Epic, "필살기 저지력 +10, 힘 +2", m => { m.StopPowerAdd += 10; m.StatBonus.Str += 2; });
         }
 
         static void Add(string id, string name, ItemRarity r, string desc, System.Action<PartyModifiers> modify)

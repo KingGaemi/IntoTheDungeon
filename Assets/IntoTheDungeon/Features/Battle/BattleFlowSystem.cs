@@ -264,6 +264,13 @@ namespace IntoTheDungeon.Features.Battle
                 if (em.HasComponent<HitStunComponent>(e)) em.GetComponent<HitStunComponent>(e).Resistance = ds.CcResist;
             }
 
+            // 필살기 저지력 = 기본 + 장비(그 파티원 장비 칸·덱)
+            if (em.HasComponent<SpecialSkillComponent>(e))
+            {
+                ref var sk = ref em.GetComponent<SpecialSkillComponent>(e);
+                sk.StopPower = sk.StopPowerBase + mods.StopPowerAdd;
+            }
+
             // 범위 평타: 캐릭터 자체 또는 장비
             if (em.HasComponent<MeleeAttackComponent>(e))
             {

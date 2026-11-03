@@ -33,6 +33,8 @@ namespace IntoTheDungeon.Unity.Hud
         int _layer;
         readonly List<Fx> _pool = new();
         readonly Dictionary<Transform, Vector3> _baseScale = new();
+        readonly List<IntoTheDungeon.Features.Battle.Party.Member> _party = new(8);
+        int _bestStop;
 
         public void Init(IWorld world)
         {
@@ -57,6 +59,7 @@ namespace IntoTheDungeon.Unity.Hud
                 }
 
                 float t = Time.time;
+                _bestStop = StopPowerUi.BestPartyStop(em, _party);   // 파티가 끊을 수 있는 패턴인지(예고 표시 색)
                 foreach (var chunk in em.GetChunks(typeof(BossSlamComponent), typeof(TransformComponent)))
                 {
                     var slams = chunk.GetComponentArray<BossSlamComponent>();
@@ -109,10 +112,10 @@ namespace IntoTheDungeon.Unity.Hud
                 fx.Mark.transform.position = new Vector3(tr.Position.X, tr.Position.Y + head, 0f);
                 fx.Mark.transform.localScale = Vector3.one * (1f + 0.2f * blink);
                 fx.Mark.color = new Color(warnColor.r, warnColor.g * 1.5f, warnColor.b, 0.6f + 0.4f * blink);
-                // "!" 아래에 요구 저지력(쌓이는 중이면 진행도)
+                // "!" 아래에 요구 저지력(이 이상인 필살기 한 방이어야 끊김): 파티 최고 저지력으로 끊을 수 있으면 청록, 모자라면 빨강 + "부족"
+                bool canStop = _bestStop >= s.StopRequired;
                 fx.Mark.text = s.StopRequired <= 0 ? "!"
-                    : s.StopAccum > 0 ? $"!\n<size=40>저지 {s.StopAccum}/{s.StopRequired}</size>"
-                    : $"!\n<size=40>저지 {s.StopRequired}</size>";
+                    : $"!\n<size=40><color={(canStop ? StopPowerUi.Hex : StopPowerUi.ShortHex)}>저지 {s.StopRequired}{(canStop ? "" : " 부족")}</color></size>";
             }
             else
             {
