@@ -83,6 +83,36 @@ namespace IntoTheDungeon.Features.Run
             return waves;
         }
 
+        // ───────── 파티 인원 보정 ─────────
+        // 몹 구성·수치는 3인 파티 기준. 케서린 혼자 시작하므로 싸울 수 있는 인원이 적으면 마릿수·체력·공격력을 줄인다(4명이면 조금 더 많이).
+
+        /// <summary>인원별 마릿수 배율(1명 0.5 · 2명 0.75 · 3명 1 · 4명 1.2). 보스는 그대로.</summary>
+        public static float CountMul(int fighters) => fighters switch { <= 1 => 0.5f, 2 => 0.75f, 3 => 1f, _ => 1.2f };
+        /// <summary>인원별 몹 체력 배율.</summary>
+        public static float HpMul(int fighters) => fighters switch { <= 1 => 0.7f, 2 => 0.85f, _ => 1f };
+        /// <summary>인원별 몹 공격력 배율.</summary>
+        public static float DamageMul(int fighters) => fighters switch { <= 1 => 0.75f, 2 => 0.88f, _ => 1f };
+
+        /// <summary>웨이브 마릿수를 인원에 맞춘다(각 몹 최소 1마리, 보스는 그대로).</summary>
+        public static List<WaveSpawn[]> ForParty(List<WaveSpawn[]> waves, int fighters)
+        {
+            float mul = CountMul(fighters);
+            if (mul == 1f) return waves;
+            for (int w = 0; w < waves.Count; w++)
+            {
+                var src = waves[w];
+                var dst = new WaveSpawn[src.Length];
+                for (int i = 0; i < src.Length; i++)
+                {
+                    var s = src[i];
+                    int n = s.Boss ? s.Count : System.Math.Max(1, (int)System.MathF.Floor(s.Count * mul + 0.5f));
+                    dst[i] = new WaveSpawn(s.Recipe, n, s.Boss);
+                }
+                waves[w] = dst;
+            }
+            return waves;
+        }
+
         public static string Label(RoomType type) => type switch
         {
             RoomType.Battle => "전투",

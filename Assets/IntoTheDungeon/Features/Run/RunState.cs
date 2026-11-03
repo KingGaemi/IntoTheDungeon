@@ -54,7 +54,7 @@ namespace IntoTheDungeon.Features.Run
         public float LastHeal;   // 마지막 전투 후 기본 회복 비율(정비 화면 표시용, 장비 보너스 제외)
 
         /// <summary>파티원 레시피(슬롯 0번부터). 전투 때 이 순서로 스폰하고, 쓰러진 슬롯은 스폰하지 않는다. 영입하면 늘어난다.</summary>
-        public readonly List<string> Members = new() { "Warrior", "Catherine", "Archer" };
+        public readonly List<string> Members = new() { "Catherine" };   // 케서린 혼자 시작, 영입으로 최대 4명
         public int PartySize => Members.Count;
 
         /// <summary>파티원별 배치 칸(슬롯 순, Battle.Formation 칸 번호). -1이면 아직 없음 → 전투 전에 기본 자리로 채운다.</summary>

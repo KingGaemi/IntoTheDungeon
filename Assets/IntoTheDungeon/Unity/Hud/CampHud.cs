@@ -41,6 +41,7 @@ namespace IntoTheDungeon.Unity.Hud
             public Image Body, Portrait;
             public Text Name, Stats, XpText;
             public RectTransform XpFill;
+            public GameObject Empty;   // 아직 동료가 없는 칸(점선 + 「+」)
         }
 
         readonly RewardSlot[] _rewards = new RewardSlot[RewardSlots];
@@ -169,6 +170,7 @@ namespace IntoTheDungeon.Unity.Hud
                 var card = _members[i];
                 bool exists = i < run.PartySize;
                 if (card.Root.activeSelf != exists) card.Root.SetActive(exists);
+                if (card.Empty.activeSelf == exists) card.Empty.SetActive(!exists);
                 if (!exists) continue;
 
                 string recipe = run.Members[i];
@@ -656,6 +658,7 @@ namespace IntoTheDungeon.Unity.Hud
         MemberCard BuildMemberCard(RectTransform parent, Vector2 pos, Vector2 size)
         {
             var card = new MemberCard();
+            card.Empty = EmptySlotUi.Build(parent, _font, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, size, "정예·보스 보상이나\n상점에서 동료 영입", 72);
             card.Body = NewImage(parent, cardColor);
             card.Root = card.Body.gameObject;
             Place(card.Body.rectTransform, new Vector2(0.5f, 0.5f), pos, size);

@@ -39,6 +39,7 @@ namespace IntoTheDungeon.Unity.Hud
             public Button Button;
             public GameObject StopBadge;   // 오른쪽 위: 청록 망치 + 저지력 숫자
             public Text StopText;
+            public GameObject Empty;       // 아직 동료가 없는 칸(점선 + 「+」): 최대 4명까지 늘어난다는 표시
         }
 
         IWorld _world;
@@ -74,6 +75,7 @@ namespace IntoTheDungeon.Unity.Hud
                 bool present = Party.TryGetSlot(_party, i, out var m) && em.HasComponent<SpecialSkillComponent>(m.Entity);
                 bool exists = present || i < partySize;
                 if (s.Root.activeSelf != exists) s.Root.SetActive(exists);
+                if (s.Empty.activeSelf == exists) s.Empty.SetActive(!exists);
                 if (!exists) continue;
 
                 var portrait = i < partySize ? PortraitTable.Of(RunState.Current.Members[i]) : null;
@@ -189,6 +191,7 @@ namespace IntoTheDungeon.Unity.Hud
         Slot BuildSlot(Transform parent, Font font, int index, Vector2 pos)
         {
             var s = new Slot();
+            s.Empty = EmptySlotUi.Build(parent, font, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), pos, size, "동료 영입", 56);
             s.Frame = NewImage($"Skill{index + 1}", parent, frameColor);
             s.Root = s.Frame.gameObject;
             var frt = s.Frame.rectTransform;

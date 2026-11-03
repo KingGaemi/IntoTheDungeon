@@ -129,7 +129,7 @@ namespace IntoTheDungeon.Features.Battle
         {
             CombatMeter.Reset();   // 딜 미터는 방마다 새로
             _config.Waves.Clear();
-            _config.Waves.AddRange(Encounters.For(node.Type, node.Layer, RunState.Current.Stage));
+            _config.Waves.AddRange(Encounters.ForParty(Encounters.For(node.Type, node.Layer, RunState.Current.Stage), Fighters(RunState.Current)));
             _progress.TotalWaves = _config.Waves.Count;
             _progress.Wave = 0;
             _progress.DeployConfirmed = false;
@@ -303,6 +303,15 @@ namespace IntoTheDungeon.Features.Battle
             return lv;
         }
 
+        // 이번 방에 싸우러 나가는 인원(쓰러진 파티원 제외). 몹 마릿수·체력·공격력 보정에 쓴다
+        static int Fighters(RunData run)
+        {
+            int n = 0;
+            for (int s = 0; s < run.PartySize; s++)
+                if (s >= run.PartyHp.Count || run.PartyHp[s] > 0f) n++;
+            return System.Math.Max(1, n);
+        }
+
         // 새로 나온 적에게 이 방의 레벨을 입히고 스탯을 다시 계산
         void ApplyEnemyLevels(RunData run)
         {
@@ -316,6 +325,7 @@ namespace IntoTheDungeon.Features.Battle
                     if (teams[i].TeamFlag == TeamFlag.Enemy && !em.HasComponent<EnemyLeveledTag>(entities[i])) _leveled.Add(entities[i]);
             }
             int level = EnemyLevel(run);
+            int fighters = Fighters(run);
             NameId bossName = default;
             bool hasBossName = _names != null && _names.TryGetId(Boss.SpawnName, out bossName);
             foreach (var e in _leveled)
@@ -333,6 +343,9 @@ namespace IntoTheDungeon.Features.Battle
                 // 몹 전체 기본 강화(유저: 몹이 너무 약하다)
                 est.MaxHp = (int)System.MathF.Round(est.MaxHp * EnemyHpBase);
                 est.Damage = (int)System.MathF.Round(est.Damage * EnemyDamageBase);
+                // 파티 인원 보정(혼자·둘이면 약하게)
+                est.MaxHp = (int)System.MathF.Round(est.MaxHp * Encounters.HpMul(fighters));
+                est.Damage = System.Math.Max(1, (int)System.MathF.Round(est.Damage * Encounters.DamageMul(fighters)));
                 // 봉인석: 체력·공격력 배율
                 est.MaxHp = (int)System.MathF.Round(est.MaxHp * SealStone.EnemyHpMul(run.SealTier));
                 est.CurrentHp = est.MaxHp;
