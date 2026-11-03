@@ -50,7 +50,7 @@ namespace IntoTheDungeon.Unity.Hud
 
             var run = RunState.Current;
             string room = run.Current != null ? $"스테이지 {run.Stage} · {run.CurrentLayer + 1}층 {Encounters.Label(run.Current.Type)}   ·   " : "";
-            _status.text = p.Wave > 0 && p.Phase != BattlePhase.Map ? $"{room}웨이브 {p.Wave} / {p.TotalWaves}   ·   남은 적 {p.EnemiesAlive}   ·   골드 {run.Gold}{(run.SealTier > 0 ? $"   ·   봉인석 {run.SealTier}단계" : "")}" : "";
+            _status.text = p.Wave > 0 && p.Phase != BattlePhase.Map ? $"{room}웨이브 {p.Wave} / {p.TotalWaves}   ·   남은 적 {p.EnemiesAlive}" : "";   // 골드는 오른쪽 위(RunInfoHud)
 
             string banner = "";
             Color color = Color.white;
@@ -69,7 +69,7 @@ namespace IntoTheDungeon.Unity.Hud
             _banner.text = banner;
             _banner.color = color;
             bool runOverNow = p.IsOver && run.Phase is RunPhase.Cleared or RunPhase.Failed;
-            _gemLine.text = runOverNow && run.GemsFound.Count > 0 ? $"이번 판에 얻은 잼: {string.Join(", ", run.GemsFound)}  (판이 끝나도 남습니다)" : "";
+            _gemLine.text = "";   // 이번 판 잼은 GemRevealHud가 획득 연출 + 아이콘 줄로 보여 준다
             // 버튼은 아이템이 모두 가방에 들어간 뒤 잠깐 있다가 나온다(누르면 화면이 어두워지며 넘어감)
             bool flying = _world != null && LootDropSystem.AnyFlying(_world.EntityManager);
             _settled = p.IsOver && !flying ? _settled + Time.deltaTime : 0f;
@@ -152,7 +152,7 @@ namespace IntoTheDungeon.Unity.Hud
             img.color = new Color(0.16f, 0.22f, 0.45f, 0.95f);
             Place((RectTransform)_retry.transform, new Vector2(0.5f, 0.5f), new Vector2(0f, -10f), new Vector2(320f, 90f));
             var btn = _retry.GetComponent<Button>();
-            btn.targetGraphic = img;
+            UiKit.Button(btn, img, new Color(0.2f, 0.28f, 0.55f, 1f));
             btn.onClick.AddListener(Retry);
             var label = NewText("Label", _retry.transform, font, 40);
             var lrt = label.rectTransform;
@@ -168,7 +168,7 @@ namespace IntoTheDungeon.Unity.Hud
             timg.color = new Color(0.12f, 0.12f, 0.18f, 0.95f);
             Place((RectTransform)_toTitle.transform, new Vector2(0.5f, 0.5f), new Vector2(0f, -120f), new Vector2(320f, 90f));
             var tbtn = _toTitle.GetComponent<Button>();
-            tbtn.targetGraphic = timg;
+            UiKit.Button(tbtn, timg, new Color(0.16f, 0.16f, 0.24f, 1f));
             tbtn.onClick.AddListener(ToTitle);
             var tlabel = NewText("Label", _toTitle.transform, font, 40);
             var trt = tlabel.rectTransform;

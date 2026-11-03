@@ -51,15 +51,15 @@ namespace IntoTheDungeon.Features.Attack
         {
             StopPower = PatternBreak.DefaultStopPower, StopPowerBase = PatternBreak.DefaultStopPower,
             Cooldown = 20f,                  // 평타 비중을 높이려고 길게(필살기는 노리는 순간에)
-            CooldownRemaining = 8f,          // 전투 시작하자마자 쓰지 않게(첫 필살기는 8초 뒤)
-            ManaCost = 60f,                  // 케서린 마나 70·초당 1.6 → 다시 찰 때까지 대략 40초
+            CooldownRemaining = 0f,          // 방마다 준비된 채로 시작(첫 강타부터 끊을 기회)
+            ManaCost = 50f,                  // 케서린 마나 70: 필살기 몫(50)을 남기고도 기본 스킬(12)을 쓸 수 있게 60 → 50
             CastTime = 0.3f,
             Duration = 0.7f,                 // Catherine Dash_Attack.anim 길이
             DashSpeed = 6f,
             DamageMultiplier = 4f,           // 기본 공격력이 오른 만큼 낮춤(한 방 피해는 예전과 비슷)
             WaveSpeed = 10f,
             WaveLifetime = 0.6f,             // 사거리 약 6
-            WaveHalfExtents = new Vec2(0.6f, 0.5f),
+            WaveHalfExtents = new Vec2(0.6f, 1.1f),   // 깊이(위아래)를 넓게: 줄이 조금 어긋난 적도 맞게(0.5 → 1.1)
             WaveKnockback = 7f,
             WaveLaunch = 4f,
             WaveHitStun = 0.8f,
@@ -71,7 +71,7 @@ namespace IntoTheDungeon.Features.Attack
         {
             StopPower = PatternBreak.DefaultStopPower, StopPowerBase = PatternBreak.DefaultStopPower,
             Cooldown = 14f,                  // 오크 강타를 끊는 게 핵심이라 다른 필살기보다 자주
-            CooldownRemaining = 1.5f,        // 전투 시작하자마자 첫 강타를 끊을 수 있게
+            CooldownRemaining = 0f,          // 방마다 준비된 채로 시작(첫 강타부터 끊을 기회)
             ManaCost = 25f,                  // 전사 마나 60·초당 1.3 → 약 19초마다(재사용 대기와 비슷)
             CastTime = 0.25f,
             Duration = 0.75f,                // Warrior_Taunt(칼 들기) 동안 멈춤
@@ -86,7 +86,7 @@ namespace IntoTheDungeon.Features.Attack
         {
             StopPower = PatternBreak.DefaultStopPower, StopPowerBase = PatternBreak.DefaultStopPower,
             Cooldown = 20f,                  // 평타 비중을 높이려고 길게(필살기는 노리는 순간에)
-            CooldownRemaining = 8f,          // 전투 시작하자마자 쓰지 않게
+            CooldownRemaining = 0f,          // 방마다 준비된 채로 시작(첫 강타부터 끊을 기회)
             ManaCost = 60f,                  // 궁수 마나 80·초당 1.9 → 대략 30초
             CastTime = 0.58f,                // Archer_Skill(24fps) 14번째 프레임 = 시위를 놓는 순간
             Duration = 0.71f,                // Archer_Skill 길이(17프레임/24fps)

@@ -20,6 +20,7 @@ namespace IntoTheDungeon.Features.Attack
         public float PendingBreak; // 패턴 끊기(도발 등): CC 저항을 무시하고 시전 중(슈퍼아머)이어도 건다
         public float Remaining;    // 남은 경직(초)
         public float Resistance;   // 0 = 그대로, 0.5 = 절반, 1 = 경직 안 걸림(보스·버프용)
+        public float GroggyTotal;  // 저지(패턴·평타 끊기)로 걸린 기절의 전체 길이(0 = 기절 아님). 머리 위 별 연출용
 
         public static readonly HitStunComponent Default = new() { Resistance = 0f };
     }
@@ -61,11 +62,12 @@ namespace IntoTheDungeon.Features.Attack
                     stun.Pending = 0f;
                     stun.PendingBreak = 0f;
 
-                    if (cur.Control == ControlState.Dead) { stun.Remaining = 0f; continue; }
+                    if (cur.Control == ControlState.Dead) { stun.Remaining = 0f; stun.GroggyTotal = 0f; continue; }
 
                     if (incoming > 0f && (cur.Action != ActionState.Skill || breaking))
                     {
                         if (incoming > stun.Remaining) stun.Remaining = incoming;
+                        if (breaking && stun.Remaining >= PatternBreak.AttackBreakStun) stun.GroggyTotal = stun.Remaining;   // 저지 기절(살짝 움찔은 제외)
                         if (cur.Control != ControlState.Stunned)
                         {
                             // 휘두르던 평타는 끊는다(히트박스도 안 나가게). AI는 풀리면 쉬지 않고 바로 다시 공격
@@ -89,6 +91,7 @@ namespace IntoTheDungeon.Features.Attack
                         if (stun.Remaining <= 0f)
                         {
                             stun.Remaining = 0f;
+                            stun.GroggyTotal = 0f;
                             SetControl(entities[i], ref state, ControlState.Normal);
                         }
                     }

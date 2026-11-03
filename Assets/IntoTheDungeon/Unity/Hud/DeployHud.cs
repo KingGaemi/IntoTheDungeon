@@ -14,6 +14,8 @@ namespace IntoTheDungeon.Unity.Hud
 {
     /// <summary>
     /// 전투 전 배치 화면(BattlePhase.Deploy): 바닥에 3열×3줄 칸을 깔고, 파티원을 끌어 칸에 놓는다(다른 파티원이 있으면 자리 바꿈).
+    /// 끌지 않고 눌러서도 옮긴다: 캐릭터를 누르면 선택(발밑 칸이 하얗게 깜빡), 다른 캐릭터를 누르면 자리 바꿈, 빈 칸을 누르면 그리로 이동.
+    /// 같은 캐릭터를 다시 누르거나 빈 바닥·우클릭·Esc면 선택 취소.
     /// 열마다 보정(전열 받는 피해↓ · 중열 공속↑ · 후열 공격력↑·받는 피해↑)을 칸 위에 보여 주고, 이번 방 첫 웨이브 적을 미리 알려 준다.
     /// 「전투 시작」(Space·Enter)을 누르면 BattleFlowSystem이 Intro로 넘어간다. 정한 배치는 판에 남아 다음 방에도 이어진다.
     /// </summary>
@@ -45,6 +47,12 @@ namespace IntoTheDungeon.Unity.Hud
         Vector2 _grabOffset;
         float _time;
 
+        // 눌러서 옮기기: 누른 캐릭터(아직 끌기인지 클릭인지 모름) · 선택된 캐릭터
+        const float DragStartPixels = 12f;   // 이만큼 움직여야 끌기로 본다(그 전에 떼면 클릭)
+        int _pressSlot = -1, _selectedSlot = -1;
+        Vector2 _pressScreen;
+        Vec2 _pressFeet;
+
         public void Init(IWorld world)
         {
             _world = world;
@@ -73,8 +81,11 @@ namespace IntoTheDungeon.Unity.Hud
 
             HandleInput(run, cam, middle);
 
-            // 칸: 열 색, 누가 서 있으면 진하게, 끄는 중이면 놓일 칸이 깜빡
-            int target = _progress.DragSlot >= 0 ? NearestCell(_progress.DragPos, middle) : -1;
+            // 칸: 열 색, 누가 서 있으면 진하게, 끄는 중이면 놓일 칸이 깜빡. 눌러서 고른 캐릭터의 칸은 하얗게, 마우스 아래 칸이 놓일 곳
+            if (_selectedSlot >= run.Members.Count) _selectedSlot = -1;
+            int selectedCell = _selectedSlot >= 0 ? run.CellOf(_selectedSlot) : -1;
+            int target = _progress.DragSlot >= 0 ? NearestCell(_progress.DragPos, middle)
+                       : _selectedSlot >= 0 ? TileAt(MouseWorld(cam), middle) : -1;
             for (int c = 0; c < Formation.Cells; c++)
             {
                 var p = Formation.CellPos(c, middle, _area);
@@ -87,7 +98,8 @@ namespace IntoTheDungeon.Unity.Hud
                 bool hot = c == target;
                 t.Fill.color = new Color(col.r, col.g, col.b, hot ? 0.35f + 0.25f * pulse : occupied ? 0.28f : 0.12f);
                 t.Ring.color = hot ? Color.Lerp(col, Color.white, pulse) : new Color(col.r, col.g, col.b, occupied ? 0.9f : 0.45f);
-                float s = hot ? 1.08f : 1f;
+                if (c == selectedCell) { t.Ring.color = Color.Lerp(Color.white, col, 0.3f * pulse); t.Fill.color = new Color(1f, 1f, 1f, 0.3f + 0.2f * pulse); }
+                float s = hot || c == selectedCell ? 1.08f : 1f;
                 t.Fill.transform.localScale = new Vector3(tileSize.x * s, tileSize.y * s, 1f);
                 t.Ring.transform.localScale = new Vector3(tileSize.x * 1.05f * s, tileSize.y * 1.05f * s, 1f);
             }
@@ -123,21 +135,66 @@ namespace IntoTheDungeon.Unity.Hud
                 Confirm();
         }
 
+        Vec2 MouseWorld(Camera cam)
+        {
+            if (!cam) return default;
+            var w = cam.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, -cam.transform.position.z));
+            return new Vec2(w.x, w.y);   // 화면 y = 깊이(높이 0)
+        }
+
         void HandleInput(RunData run, Camera cam, Vec2 middle)
         {
             if (!cam) return;
-            var w = cam.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, -cam.transform.position.z));
-            var mouse = new Vec2(w.x, w.y);   // 화면 y = 깊이(높이 0)
+            var mouse = MouseWorld(cam);
 
             if (_progress.DragSlot < 0)
             {
-                if (!Input.GetMouseButtonDown(0)) return;
-                if (EventSystem.current && EventSystem.current.IsPointerOverGameObject()) return;   // 버튼 위 클릭
-                int slot = Pick(mouse, middle, run, out var feet);
-                if (slot < 0) return;
-                _progress.DragSlot = slot;
-                _grabOffset = new Vector2(feet.X - mouse.X, feet.Y - mouse.Y);
-                _progress.DragPos = feet;
+                if (Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.Escape)) { _selectedSlot = -1; _pressSlot = -1; return; }
+
+                if (Input.GetMouseButtonDown(0))
+                {
+                    if (EventSystem.current && EventSystem.current.IsPointerOverGameObject()) return;   // 버튼 위 클릭
+                    int slot = Pick(mouse, middle, run, out var feet);
+                    if (slot >= 0)
+                    {
+                        _pressSlot = slot;   // 끌기인지 클릭인지는 움직임으로
+                        _pressScreen = Input.mousePosition;
+                        _pressFeet = feet;
+                        _grabOffset = new Vector2(feet.X - mouse.X, feet.Y - mouse.Y);
+                        return;
+                    }
+                    // 캐릭터가 없는 곳: 고른 캐릭터가 있으면 그 칸으로, 아니면 선택 취소
+                    int tile = TileAt(mouse, middle);
+                    if (_selectedSlot >= 0 && tile >= 0) run.PlaceInCell(_selectedSlot, tile);
+                    _selectedSlot = -1;
+                    return;
+                }
+
+                if (_pressSlot < 0) return;
+                if (Input.GetMouseButton(0))
+                {
+                    // 충분히 움직이면 끌기 시작(선택은 풀림)
+                    if (((Vector2)Input.mousePosition - _pressScreen).magnitude >= DragStartPixels)
+                    {
+                        _progress.DragSlot = _pressSlot;
+                        _progress.DragPos = _pressFeet;
+                        _pressSlot = -1;
+                        _selectedSlot = -1;
+                    }
+                    return;
+                }
+
+                // 움직이지 않고 뗐다 = 클릭: 고르기 / 같은 캐릭터면 취소 / 다른 캐릭터면 자리 바꿈
+                int clicked = _pressSlot;
+                _pressSlot = -1;
+                if (_selectedSlot < 0) _selectedSlot = clicked;
+                else if (_selectedSlot == clicked) _selectedSlot = -1;
+                else
+                {
+                    int cell = run.CellOf(clicked);
+                    if (cell >= 0) run.PlaceInCell(_selectedSlot, cell);   // 그 칸에 놓으면 둘이 자리를 바꾼다
+                    _selectedSlot = -1;
+                }
                 return;
             }
 
@@ -146,9 +203,17 @@ namespace IntoTheDungeon.Unity.Hud
             _progress.DragPos = drag;
             if (Input.GetMouseButton(0)) return;
 
-            int cell = NearestCell(drag, middle);
-            if (cell >= 0) run.PlaceInCell(_progress.DragSlot, cell);   // 칸 밖에 놓으면 원래 자리로
+            int dropCell = NearestCell(drag, middle);
+            if (dropCell >= 0) run.PlaceInCell(_progress.DragSlot, dropCell);   // 칸 밖에 놓으면 원래 자리로
             _progress.DragSlot = -1;
+        }
+
+        // 그 점이 들어 있는 칸(없으면 -1)
+        int TileAt(Vec2 p, Vec2 middle)
+        {
+            for (int c = 0; c < Formation.Cells; c++)
+                if (InTile(p, Formation.CellPos(c, middle, _area))) return c;
+            return -1;
         }
 
         // 캐릭터 몸(발에서 GrabHeight까지)이나 그 캐릭터가 선 칸을 누르면 집는다
@@ -196,6 +261,7 @@ namespace IntoTheDungeon.Unity.Hud
         {
             if (!Active) return;
             _progress.DragSlot = -1;
+            _selectedSlot = _pressSlot = -1;
             _progress.DeployConfirmed = true;
         }
 
@@ -213,6 +279,7 @@ namespace IntoTheDungeon.Unity.Hud
                     var def = _catalog.Get(s.Recipe);
                     int req = s.Boss ? IntoTheDungeon.Features.Battle.Boss.StopRequired : def.SlamRadius > 0f ? def.SlamStopRequired : 0;
                     if (req > 0) name += $"(강타 <color={StopPowerUi.Hex}>저지 {req}</color>)";
+                    if (def.ReviveCharges > 0) name += $"(되살아남 · 분쇄 <color={StopPowerUi.Hex}>저지 {def.ReviveStopRequired}</color>)";
                 }
                 if (!counts.ContainsKey(name)) { counts[name] = 0; order.Add(name); }
                 counts[name] += s.Count;
@@ -285,12 +352,12 @@ namespace IntoTheDungeon.Unity.Hud
             urt.sizeDelta = Vector2.zero;
 
             // 위: 제목·안내·적 미리보기
-            var band = NewImage(_ui.transform, new Color(0.03f, 0.03f, 0.07f, 0.78f));
+            var band = UiKit.Panel(NewImage(_ui.transform, Color.white), new Color(0.05f, 0.055f, 0.09f, 0.86f));
             Place(band.rectTransform, new Vector2(0f, 420f), new Vector2(1500f, 150f));
-            var title = NewText(_ui.transform, "전투 배치", 44);
+            var title = UiKit.Soft(NewText(_ui.transform, "전투 배치", 44));
             title.color = new Color(1f, 0.86f, 0.45f, 1f);
             Place(title.rectTransform, new Vector2(0f, 455f), new Vector2(800f, 56f));
-            var hint = NewText(_ui.transform, "캐릭터를 끌어 칸에 놓으세요 (다른 캐릭터가 있으면 자리 바꿈)   ·   전투가 시작되면 이 자리에서 출발해 적을 찾아갑니다", 21);
+            var hint = NewText(_ui.transform, "", 21);
             hint.color = new Color(1f, 1f, 1f, 0.7f);
             Place(hint.rectTransform, new Vector2(0f, 410f), new Vector2(1450f, 32f));
             _enemyLine = NewText(_ui.transform, "", 22);
@@ -324,13 +391,10 @@ namespace IntoTheDungeon.Unity.Hud
             var btnImg = NewImage(_ui.transform, new Color(0.62f, 0.4f, 0.12f, 1f));
             btnImg.raycastTarget = true;
             Place(btnImg.rectTransform, new Vector2(0f, -430f), new Vector2(420f, 88f));
-            var outline = btnImg.gameObject.AddComponent<Outline>();
-            outline.effectColor = new Color(1f, 0.85f, 0.4f, 0.8f);
-            outline.effectDistance = new Vector2(2f, -2f);
             var btn = btnImg.gameObject.AddComponent<Button>();
-            btn.targetGraphic = btnImg;
+            UiKit.Button(btn, btnImg, new Color(0.62f, 0.4f, 0.12f, 1f), new Color(1f, 0.85f, 0.4f, 1f));
             btn.onClick.AddListener(Confirm);
-            var bt = NewText(btnImg.transform, "전투 시작  <size=20>(Space)</size>", 36);
+            var bt = UiKit.Soft(NewText(btnImg.transform, "전투 시작  <size=20>Space</size>", 36));
             var brt = bt.rectTransform;
             brt.anchorMin = Vector2.zero; brt.anchorMax = Vector2.one; brt.offsetMin = brt.offsetMax = Vector2.zero;
 

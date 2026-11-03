@@ -58,7 +58,7 @@ namespace IntoTheDungeon.Unity.Hud
 
                         r.sprite = _sprites[kind];
                         r.transform.position = new Vector3(hb.Center.X, hb.Center.Y + hb.Height + (wave ? waveHeight : arrowHeight), 0f);
-                        r.transform.localScale = Vector3.one * (wave ? Mathf.Lerp(1.2f, 1f, life) : 1f);   // 검기는 날아가며 조금 커진다
+                        r.transform.localScale = wave ? new Vector3(1f, Mathf.Max(1f, Mathf.Lerp(1f, hb.HalfExtents.Y / 0.5f, 0.55f)), 1f) * Mathf.Lerp(1.2f, 1f, life) : Vector3.one;   // 검기는 날아가며 조금 커지고, 판정 깊이가 넓을수록(케서린 필살기) 세로로 길다
                         r.flipX = hb.FacingSign < 0f;
                         r.color = new Color(1f, 1f, 1f, wave ? Mathf.Clamp01(life * 2.5f) : 1f);       // 검기만 마지막 40%에서 사라짐
                         r.sortingLayerID = _sortingLayer;

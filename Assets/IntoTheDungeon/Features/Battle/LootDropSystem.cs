@@ -73,6 +73,7 @@ namespace IntoTheDungeon.Features.Battle
                 {
                     if (statuses[i].IsAlive || teams[i].TeamFlag == Party.Team) continue;
                     if (em.HasComponent<LootRolledTag>(entities[i])) continue;
+                    if (Revive.IsDowned(em, entities[i])) continue;   // 무너진 해골: 완전히 부서져야 드랍
                     _dead.Add((entities[i], transforms[i].Position, statuses[i].MaxHp));
                 }
             }

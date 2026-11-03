@@ -350,7 +350,7 @@ namespace IntoTheDungeon.Unity.Bridge.View
             var start = new float[renderers.Length];
             for (int i = 0; i < renderers.Length; i++) start[i] = renderers[i] ? renderers[i].color.a : 0f;
 
-            for (float t = 0f; t < duration && go; t += Time.deltaTime)
+            for (float t = 0f; t < duration && go; t += Time.unscaledDeltaTime)   // 배속과 무관하게
             {
                 float k = 1f - t / duration;
                 for (int i = 0; i < renderers.Length; i++)

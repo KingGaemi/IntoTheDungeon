@@ -4,6 +4,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using IntoTheDungeon.Features.Run;
 using IntoTheDungeon.Features.Settings;
+using IntoTheDungeon.Unity.Hud;
 
 namespace IntoTheDungeon.Unity.Title
 {
@@ -107,9 +108,6 @@ namespace IntoTheDungeon.Unity.Title
             var title = NewText(_titleGroup.transform, "Into The Dungeon", 110);
             title.color = accent;
             Place(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 250f), new Vector2(1400f, 140f));
-            var sub = NewText(_titleGroup.transform, "파티를 꾸려 던전 끝까지", 34);
-            sub.color = new Color(1f, 1f, 1f, 0.6f);
-            Place(sub.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 160f), new Vector2(1000f, 50f));
 
             // 메인 메뉴
             _menu = NewGroup(root);
@@ -139,8 +137,10 @@ namespace IntoTheDungeon.Unity.Title
             NewButton(_settings.transform, "돌아가기", new Vector2(0f, -240f), () => ShowSettings(false));
             _settings.SetActive(false);
 
+            var gems = gameObject.AddComponent<Hud.GemHud>();   // 잼 세팅 창(봉인석 고르기 화면에서 연다)
+            gems.Setup();
             _seal = gameObject.AddComponent<SealSelectScreen>();
-            _seal.Build(root, _font, StartRun, () => ShowSeal(false));
+            _seal.Build(root, _font, StartRun, () => ShowSeal(false), gems);
         }
 
         GameObject NewGroup(Transform parent)
@@ -157,9 +157,9 @@ namespace IntoTheDungeon.Unity.Title
             img.raycastTarget = true;
             Place(img.rectTransform, new Vector2(0.5f, 0.5f), pos, new Vector2(420f, 86f));
             var btn = img.gameObject.AddComponent<Button>();
-            btn.targetGraphic = img;
+            UiKit.Button(btn, img, buttonColor, UiKit.Rim);   // 둥근 판 + 청동 테두리
             btn.onClick.AddListener(onClick);
-            var t = NewText(img.transform, text, 38);
+            var t = UiKit.Soft(NewText(img.transform, text, 38));
             Stretch(t.rectTransform);
             return btn;
         }
@@ -172,11 +172,14 @@ namespace IntoTheDungeon.Unity.Title
 
             var bg = NewImage(go.transform, new Color(1f, 1f, 1f, 0.15f));
             Stretch(bg.rectTransform);
+            UiKit.Style(bg, new Color(0.1f, 0.1f, 0.15f, 1f), UiKit.RimDim, shadow: false);
 
             var fillArea = new GameObject("Fill Area", typeof(RectTransform));
             fillArea.transform.SetParent(go.transform, false);
             Stretch((RectTransform)fillArea.transform);
             var fill = NewImage(fillArea.transform, accent);
+            fill.sprite = UiKit.FillSprite;
+            fill.type = Image.Type.Sliced;
             var frt = fill.rectTransform;
             frt.anchorMin = Vector2.zero; frt.anchorMax = new Vector2(0f, 1f); frt.offsetMin = frt.offsetMax = Vector2.zero;
 
@@ -184,6 +187,7 @@ namespace IntoTheDungeon.Unity.Title
             handleArea.transform.SetParent(go.transform, false);
             Stretch((RectTransform)handleArea.transform);
             var handle = NewImage(handleArea.transform, Color.white);
+            UiKit.Style(handle, Color.white, UiKit.Rim, shadow: true);
             handle.raycastTarget = true;
             var hrt = handle.rectTransform;
             hrt.anchorMin = new Vector2(0f, 0f); hrt.anchorMax = new Vector2(0f, 1f);

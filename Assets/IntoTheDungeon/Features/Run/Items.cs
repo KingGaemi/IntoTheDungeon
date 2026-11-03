@@ -83,13 +83,17 @@ namespace IntoTheDungeon.Features.Run
         public static ItemDef Get(int index) => index >= 0 && index < All.Count ? All[index] : null;
 
         /// <summary>등급을 뽑고 그 등급 안에서 하나. rareBonus가 클수록 높은 등급이 잘 나온다(정예·보스).</summary>
-        public static ItemDef Roll(System.Random rng, float rareBonus)
+        /// <param name="maxRarity">이보다 높은 등급은 안 나옴(상점 티어)</param>
+        public static ItemDef Roll(System.Random rng, float rareBonus, ItemRarity maxRarity = ItemRarity.Epic)
         {
             // 기본 가중치: 일반 60 · 고급 28 · 희귀 10 · 영웅 2 (보너스만큼 위 등급으로 옮김)
             float common = System.MathF.Max(5f, 60f - 40f * rareBonus);
             float uncommon = 28f + 10f * rareBonus;
             float rare = 10f + 20f * rareBonus;
             float epic = 2f + 10f * rareBonus;
+            if (maxRarity < ItemRarity.Epic) epic = 0f;
+            if (maxRarity < ItemRarity.Rare) rare = 0f;
+            if (maxRarity < ItemRarity.Uncommon) uncommon = 0f;
             double roll = rng.NextDouble() * (common + uncommon + rare + epic);
             var rarity = roll < common ? ItemRarity.Common
                        : roll < common + uncommon ? ItemRarity.Uncommon

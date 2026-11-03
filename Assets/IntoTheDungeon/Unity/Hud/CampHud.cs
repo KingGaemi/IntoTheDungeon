@@ -12,7 +12,7 @@ namespace IntoTheDungeon.Unity.Hud
 {
     /// <summary>
     /// 전투에서 이긴 뒤의 정비 화면(임시 UI, 코드로 만든다).
-    /// 왼쪽: 보상 카드 3장(고른 뒤 「선택 확정」), 파티원별 스탯 카드, 덱 요약.
+    /// 왼쪽: 보상 카드 3장(첫 동료·스테이지 유물, 고른 뒤 「선택 확정」), 파티원별 스탯 카드(유물 줄은 화면 왼쪽 맨 위 RunInfoHud).
     /// 오른쪽: 파티원별 장비 칸(4×3, 끼운 파티원에게만 적용), 파티 보관함(6×3, 효과 없음), 이번 전투에서 주운 아이템.
     /// 아이템은 칸 사이를 끌어서 옮기고(끄는 중 우클릭 = 회전), 버리기 칸에 놓으면 버린다. 방을 고르면 못 넣은 아이템은 사라진다.
     /// </summary>
@@ -33,6 +33,8 @@ namespace IntoTheDungeon.Unity.Hud
             public Text Kind, Title, Desc;
             public Button Button;
             public CardDef Card;
+            public Image Icon;   // 동료 영입 초상화 자리(유물은 Medal)
+            public RelicMedallion Medal;   // 유물: 둥근 금테 메달
         }
 
         sealed class MemberCard
@@ -42,9 +44,30 @@ namespace IntoTheDungeon.Unity.Hud
             public Text Name, Stats, XpText;
             public RectTransform XpFill;
             public GameObject Empty;   // 아직 동료가 없는 칸(점선 + 「+」)
+            public readonly StatCell[] Cells = new StatCell[StatCount];
+            public GameObject Fallen;  // 쓰러짐 표시(카드 위)
         }
 
+        // 능력치 칸: 아이콘 + 숫자(보너스가 있으면 초록). 이름·설명은 마우스를 올리면 오른쪽 안내 칸에
+        sealed class StatCell
+        {
+            public Image Icon;
+            public Text Value;
+            public string Tip;
+        }
+        const int StatCount = 14;
+
         readonly RewardSlot[] _rewards = new RewardSlot[RewardSlots];
+
+        Text _rewardTitle, _title;
+
+        // 맨 위 결과 줄: 아이콘 + 숫자 칩(경험치·골드·회복·레벨 업)
+        sealed class Chip
+        {
+            public GameObject Root;
+            public Text Value;
+        }
+        Chip _xpChip, _goldChip, _healChip, _lvChip;
         readonly MemberCard[] _members = new MemberCard[CardPool.MaxPartySize];
         readonly List<InventoryItemView> _views = new();
 
@@ -68,7 +91,7 @@ namespace IntoTheDungeon.Unity.Hud
         Button _sellAll;
         GameObject _confirmBox;
         Text _confirmText;
-        Text _partyTitle, _header, _deck, _info, _toMapLabel;
+        Text _partyTitle, _header, _info, _toMapLabel;
         Button _confirm;
         Font _font;
         int _selected = -1;
@@ -92,33 +115,33 @@ namespace IntoTheDungeon.Unity.Hud
             // 상점에서 산 아이템·영입한 동료가 보이게(끄는 중이 아닐 때)
             if (_itemsVersion != run.InventoryVersion && _dragLayer.childCount == 0) RebuildItems();
 
-            var head = run.InShopRoom
-                ? $"스테이지 {run.Stage} · {run.CurrentLayer + 1}층 상점   ·   산 아이템은 주운 아이템 칸에 들어갑니다"
-                : run.Current != null
-                ? $"스테이지 {run.Stage} · {run.CurrentLayer + 1}층 {Encounters.Label(run.Current.Type)} 클리어   ·   경험치 +{run.LastXp}   ·   골드 +{run.LastGold}   ·   전투 후 회복 +{Mathf.RoundToInt(run.LastHeal * 100f)}%"
-                : "";
-            if (run.LastLevelUps.Count > 0)
+            // 제목: 어디서 무엇을 깼는지만, 나머지는 아이콘 칩으로
+            _title.text = run.Current != null
+                ? $"스테이지 {run.Stage} · {run.CurrentLayer + 1}층 {(run.InShopRoom ? "상점" : Encounters.Label(run.Current.Type))}"
+                : "정비";
+            bool result = !run.InShopRoom && run.Current != null;
+            _header.text = "";
+            SetChip(_xpChip, result, $"+{run.LastXp}");
+            SetChip(_goldChip, result, $"+{run.LastGold}");
+            SetChip(_healChip, result, $"+{Mathf.RoundToInt(run.LastHeal * 100f)}%");
+            var ups = new System.Text.StringBuilder();
+            for (int i = 0; i < run.LastLevelUps.Count; i++)
             {
-                var ups = new System.Text.StringBuilder("   ·   레벨 업! ");
-                for (int i = 0; i < run.LastLevelUps.Count; i++)
-                {
-                    int slot = run.LastLevelUps[i];
-                    ups.Append(i == 0 ? "" : ", ").Append(NameOf(run, slot)).Append($" Lv.{run.LevelOf(slot)}");
-                }
-                head += ups;
+                int slot = run.LastLevelUps[i];
+                ups.Append(i == 0 ? "" : ", ").Append(NameOf(run, slot)).Append($" Lv{run.LevelOf(slot)}");
             }
-            _header.text = head;
-            _partyTitle.text = $"파티 ({run.PartySize} / {CardPool.MaxPartySize})   ·   골드 {run.Gold}";
+            SetChip(_lvChip, result && run.LastLevelUps.Count > 0, ups.ToString());
+            _partyTitle.text = $"파티  <size=20>{run.PartySize}/{CardPool.MaxPartySize}</size>";
             string next = run.StageCleared ? $"스테이지 {run.Stage + 1}로" : "지도로";
             _toMapLabel.text = run.Loot.Count > 0 ? $"{next} (방을 고르면 못 넣은 아이템 {run.Loot.Count}개는 버려짐)" : next;
 
-            bool rewards = run.PendingRewards.Count > 0;   // 지금은 전투 보상 카드가 없어 늘 숨김
+            bool rewards = run.PendingRewards.Count > 0;   // 첫 층 전투 뒤 첫 동료 고르기 때만 보임
             if (_rewardPanel.gameObject.activeSelf != rewards) _rewardPanel.gameObject.SetActive(rewards);
             UpdateRewards(run);
             UpdateMembers(run);
             UpdateShop(run);
             _sellAll.interactable = run.Loot.Count > 0;
-            UpdateDeck(run);
+            UpdateRelics(run);
         }
 
         // ───────── 보상 ─────────
@@ -134,13 +157,19 @@ namespace IntoTheDungeon.Unity.Hud
                 slot.Frame.gameObject.SetActive(card != null);
                 if (card == null) continue;
 
-                bool mine = taken && run.Deck.Count > 0 && run.Deck[^1] == card;
+                bool relic = card.Kind == CardKind.Relic;
+                bool mine = taken && (relic ? run.Relics.Contains(card) : run.Deck.Count > 0 && run.Deck[^1] == card);
                 bool chosen = !taken && i == _selected;
-                slot.Kind.text = card.Kind == CardKind.Recruit ? "동료 영입" : "패시브";
+                slot.Kind.text = relic ? $"유물 · {ItemDef.RarityLabel(card.Rarity)}" : "동료 영입";
+                slot.Kind.color = relic ? LootRenderer.RarityColor(card.Rarity) : accent;
                 slot.Title.text = card.Title;
-                slot.Desc.text = mine ? $"{card.Description}\n(받음)" : card.Description;
-                slot.Body.color = card.Kind == CardKind.Recruit ? recruitColor : cardColor;
-                slot.Frame.color = mine || chosen ? accent : taken ? new Color(0f, 0f, 0f, 0.6f) : new Color(1f, 1f, 1f, 0.3f);
+                slot.Icon.enabled = false;
+                if (slot.Medal.Relic != (relic ? card : null)) slot.Medal.Set(relic ? card : null);
+                string desc = StopPowerUi.Highlight(card.Description);
+                slot.Desc.text = mine ? $"{desc}\n(받음)" : desc;
+                slot.Body.color = relic ? cardColor : recruitColor;
+                var idle = relic ? new Color(UiKit.Rim.r, UiKit.Rim.g, UiKit.Rim.b, 0.7f) : new Color(1f, 1f, 1f, 0.3f);   // 유물은 금테(등급은 메달 보석 점)
+                UiKit.SetRim(slot.Body, mine || chosen ? accent : taken ? new Color(0.2f, 0.2f, 0.25f, 1f) : idle);
                 float a = taken && !mine ? 0.4f : 1f;
                 slot.Title.color = new Color(1f, 1f, 1f, a);
                 slot.Desc.color = new Color(1f, 1f, 1f, 0.8f * a);
@@ -162,7 +191,7 @@ namespace IntoTheDungeon.Unity.Hud
 
         // ───────── 파티 ─────────
 
-        // 정비 화면엔 캐릭터가 없으므로 캐릭터 정의(레벨 성장 포함) + 덱·장비 보너스로 전투 때와 같은 계산을 해서 보여 준다
+        // 정비 화면엔 캐릭터가 없으므로 캐릭터 정의(레벨 성장 포함) + 유물·장비 보너스로 전투 때와 같은 계산을 해서 보여 준다
         void UpdateMembers(RunData run)
         {
             for (int i = 0; i < _members.Length; i++)
@@ -175,7 +204,7 @@ namespace IntoTheDungeon.Unity.Hud
 
                 string recipe = run.Members[i];
                 var def = _catalog != null ? _catalog.Get(recipe) : CharacterDefinition.Default;
-                var mods = run.BuildModifiers(i);   // 덱 + 이 파티원 장비
+                var mods = run.BuildModifiers(i);   // 유물 + 이 파티원 장비
                 int level = run.LevelOf(i);
                 var leveled = PrimaryStats.AtLevel(def.Stats, def.Growth, level);
                 var st = new StatusComponent();
@@ -184,29 +213,36 @@ namespace IntoTheDungeon.Unity.Hud
 
                 float ratio = i < run.PartyHp.Count ? run.PartyHp[i] : 1f;
                 bool fallen = ratio <= 0f;
-                card.Name.text = $"{i + 1}. {NameOf(run, i)}";
+                card.Name.text = NameOf(run, i);
                 var portrait = PortraitTable.Of(recipe);
                 if (card.Portrait.sprite != portrait) card.Portrait.sprite = portrait;
                 card.Portrait.enabled = portrait;
                 card.Portrait.color = fallen ? new Color(0.45f, 0.45f, 0.45f, 1f) : Color.white;
-                card.Body.color = fallen ? new Color(0.14f, 0.12f, 0.14f, 1f) : cardColor;
+                card.Body.color = fallen ? new Color(0.1f, 0.09f, 0.11f, 1f) : UiKit.CardFill;
+                if (card.Fallen.activeSelf != fallen) card.Fallen.SetActive(fallen);
                 int xp = run.XpOf(i), need = RunData.XpToNext(level);
                 card.XpFill.anchorMax = new Vector2(Mathf.Clamp01((float)xp / need), 1f);
-                card.XpText.text = $"Lv.{level}   경험치 {xp} / {need}";
-                card.Stats.text =
-                    (fallen ? "쓰러짐 (휴식 방에서 회복)\n" : $"체력 {Mathf.RoundToInt(st.MaxHp * ratio)} / {st.MaxHp}\n") +
-                    $"힘 {Stat(leveled.Str, mods.StatBonus.Str)}  민첩 {Stat(leveled.Agi, mods.StatBonus.Agi)}\n" +
-                    $"지능 {Stat(leveled.Int, mods.StatBonus.Int)}  정신 {Stat(leveled.Wil, mods.StatBonus.Wil)}\n" +
-                    $"공격 {st.Damage}  공속 {st.AttackSpeed:0.00}\n" +
-                    $"방어 {d.Armor:0}  이속 {st.MovementSpeed:0.0}\n" +
-                    $"마나 {d.MaxMana:0} (+{d.ManaRegen:0.0}/초)\n" +
-                    $"체력회복 {d.HpRegen:0.0}/초\n" +
-                    $"마법저항 {d.MagicResist:0}\n" +
-                    $"넉백·CC저항 {d.KnockbackResist * 100f:0}%·{d.CcResist * 100f:0}%\n" +
-                    $"평타: {(def.Ranged ? "원거리" : def.Cleave || mods.Cleave ? "범위" : "한 명")}\n" +
-                    $"<color={StopPowerUi.Hex}><b>필살기 저지력 {IntoTheDungeon.Features.Attack.PatternBreak.DefaultStopPower + mods.StopPowerAdd}{(mods.StopPowerAdd > 0 ? $" (+{mods.StopPowerAdd})" : "")}</b></color>\n" +
-                    $"기본 스킬: {IntoTheDungeon.Features.Attack.BasicSkills.Name(def.BasicSkill)}";
-                card.Stats.color = fallen ? new Color(1f, 1f, 1f, 0.45f) : Color.white;
+                card.XpText.text = $"Lv.{level}  <size=13>{xp}/{need}</size>";
+
+                var sb = mods.StatBonus;
+                int stop = IntoTheDungeon.Features.Attack.PatternBreak.DefaultStopPower + mods.StopPowerAdd;
+                SetStat(card, 0, fallen ? "0" : $"{Mathf.RoundToInt(st.MaxHp * ratio)}", false, $"체력 {Mathf.RoundToInt(st.MaxHp * ratio)} / {st.MaxHp}" + (fallen ? "\n쓰러짐: 휴식 방에서 회복" : ""));
+                SetStat(card, 1, $"{d.HpRegen:0.0}", false, $"체력 회복 초당 {d.HpRegen:0.0}");
+                SetStat(card, 2, $"{st.Damage}", false, $"공격력 {st.Damage}\n평타: {(def.Ranged ? "원거리" : def.Cleave || mods.Cleave ? "범위" : "한 명")}");
+                SetStat(card, 3, $"{st.AttackSpeed:0.00}", false, $"공격 속도 {st.AttackSpeed:0.00}");
+                SetStat(card, 4, $"{d.Armor:0}", false, $"방어력 {d.Armor:0} (물리 피해 감소)");
+                SetStat(card, 5, $"{st.MovementSpeed:0.0}", false, $"이동 속도 {st.MovementSpeed:0.0}");
+                SetStat(card, 6, $"{d.MaxMana:0}", false, $"마나 {d.MaxMana:0}, 초당 +{d.ManaRegen:0.0}");
+                SetStat(card, 7, $"{d.MagicResist:0}", false, $"마법 저항 {d.MagicResist:0}");
+                SetStat(card, 8, $"{leveled.Str + sb.Str}", sb.Str > 0, StatTip("힘", leveled.Str, sb.Str, "공격력·체력·체력 회복"));
+                SetStat(card, 9, $"{leveled.Agi + sb.Agi}", sb.Agi > 0, StatTip("민첩", leveled.Agi, sb.Agi, "공격 속도·방어력·이동 속도"));
+                SetStat(card, 10, $"{leveled.Int + sb.Int}", sb.Int > 0, StatTip("지능", leveled.Int, sb.Int, "마나·마나 회복·마법 공격력"));
+                SetStat(card, 11, $"{leveled.Wil + sb.Wil}", sb.Wil > 0, StatTip("정신력", leveled.Wil, sb.Wil, "마법 저항·넉백 저항·CC 저항"));
+                SetStat(card, 12, $"{d.KnockbackResist * 100f:0}%", false, $"넉백 저항 {d.KnockbackResist * 100f:0}% · CC 저항 {d.CcResist * 100f:0}%");
+                SetStat(card, 13, $"{stop}", mods.StopPowerAdd > 0, $"필살기 저지력 {stop}{(mods.StopPowerAdd > 0 ? $" (+{mods.StopPowerAdd})" : "")}\n적 강타 패턴의 요구 저지력 이상이면 끊는다");
+                card.Cells[13].Value.color = StopPowerUi.Color;
+                card.Stats.text = IntoTheDungeon.Features.Attack.BasicSkills.Name(def.BasicSkill);   // 기본 스킬 이름만 짧게
+                card.Stats.color = new Color(1f, 1f, 1f, fallen ? 0.35f : 0.55f);
             }
         }
 
@@ -216,22 +252,57 @@ namespace IntoTheDungeon.Unity.Hud
             return _catalog != null ? _catalog.DisplayName(recipe) : recipe;
         }
 
-        // 기본값에 보너스가 있으면 "8 (+3)"처럼
-        static string Stat(int baseValue, int bonus) => bonus != 0 ? $"{baseValue + bonus} (+{bonus})" : baseValue.ToString();
+        static string StatTip(string name, int baseValue, int bonus, string effect)
+            => $"{name} {baseValue + bonus}{(bonus != 0 ? $" (기본 {baseValue} +{bonus})" : "")}\n{effect}";
 
-        void UpdateDeck(RunData run)
+        static readonly Color BonusColor = new(0.55f, 1f, 0.55f, 1f);
+
+        void SetStat(MemberCard card, int index, string value, bool bonus, string tip)
         {
-            var counts = new Dictionary<string, int>();
-            var order = new List<CardDef>();
-            foreach (var c in run.Deck)
-            {
-                if (!counts.ContainsKey(c.Id)) { counts[c.Id] = 0; order.Add(c); }
-                counts[c.Id]++;
-            }
-            var sb = new System.Text.StringBuilder("덱: ");
-            for (int i = 0; i < order.Count; i++)
-                sb.Append(i == 0 ? "" : ", ").Append(order[i].Title).Append(counts[order[i].Id] > 1 ? $" ×{counts[order[i].Id]}" : "");
-            _deck.text = order.Count > 0 ? sb.ToString() : "덱: 아직 카드가 없습니다";
+            var c = card.Cells[index];
+            c.Value.text = value;
+            c.Value.color = bonus ? BonusColor : UiKit.TextMain;
+            c.Tip = tip;
+        }
+
+        Chip BuildChip(RectTransform parent, Sprite icon, Color color)
+        {
+            var bg = UiKit.Card(NewImage(parent, UiKit.CardFill));
+            var hl = bg.gameObject.AddComponent<HorizontalLayoutGroup>();
+            hl.padding = new RectOffset(10, 14, 4, 4);
+            hl.spacing = 6f;
+            hl.childAlignment = TextAnchor.MiddleLeft;
+            hl.childControlWidth = hl.childControlHeight = true;
+            hl.childForceExpandWidth = hl.childForceExpandHeight = false;
+            var ic = NewImage(bg.transform, Color.white);
+            ic.sprite = icon;
+            var le = ic.gameObject.AddComponent<LayoutElement>();
+            le.preferredWidth = le.preferredHeight = 28f;
+            var t = UiKit.Soft(NewText(bg.transform, "", 24));
+            t.color = color;
+            t.horizontalOverflow = HorizontalWrapMode.Overflow;
+            bg.transform.Find("Rim").gameObject.AddComponent<LayoutElement>().ignoreLayout = true;   // 테두리는 칩 전체를 덮게
+            return new Chip { Root = bg.gameObject, Value = t };
+        }
+
+        static void SetChip(Chip chip, bool on, string text)
+        {
+            if (chip.Root.activeSelf != on) chip.Root.SetActive(on);
+            if (on) chip.Value.text = text;
+        }
+
+        void ShowText(string text)
+        {
+            if (_info) _info.text = text;
+        }
+
+        void UpdateRelics(RunData run)
+        {
+            // 유물 아이콘 칸은 RunInfoHud(공용 HUD)가 이 패널 위에 그린다
+            // 유물 아이콘 줄은 RunInfoHud(공용 HUD)가 화면 왼쪽 맨 위에 그린다(상점 판을 가리지 않게)
+            // 보상 칸 제목: 첫 동료 고르기 / 스테이지 유물 보상
+            bool relicReward = run.PendingRewards.Count > 0 && run.PendingRewards[0].Kind == CardKind.Relic;
+            _rewardTitle.text = relicReward ? "유물" : "동료";
         }
 
         // ───────── 장비 칸·보관함·주운 아이템 ─────────
@@ -473,7 +544,7 @@ namespace IntoTheDungeon.Unity.Hud
         {
             if (!_info) return;
             _info.text = def == null
-                ? "마우스 올리기: 효과 보기\n끌기: 옮기기(위에 놓으면 맞바꿈)\n끄는 중 우클릭: 회전\n우클릭: 빠른 장착 / 빼기\n장비 칸만 효과, 보관함은 보관만"
+                ? ""
                 : $"{def.Name}\n[{ItemDef.RarityLabel(def.Rarity)} · {def.W}×{def.H}칸 · 판매가 {ShopPool.SellPrice(def)} 골드]\n\n{StopPowerUi.Highlight(def.Description)}";
         }
 
@@ -513,11 +584,8 @@ namespace IntoTheDungeon.Unity.Hud
             dim.raycastTarget = true;   // 뒤를 못 누르게
             Stretch(dim.rectTransform);
             _confirmBox = dim.gameObject;
-            var box = NewImage(dim.transform, panelColor);
+            var box = UiKit.Panel(NewImage(dim.transform, panelColor), rim: accent);
             Place(box.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(620f, 300f));
-            var frame = box.gameObject.AddComponent<Outline>();
-            frame.effectColor = accent;
-            frame.effectDistance = new Vector2(3f, -3f);
             var title = NewText(box.rectTransform, "전부 판매", 32);
             title.color = accent;
             Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -36f), new Vector2(560f, 44f));
@@ -548,13 +616,31 @@ namespace IntoTheDungeon.Unity.Hud
             bg.raycastTarget = true;
             Stretch(bg.rectTransform);
 
-            Place(NewText(_root.transform, "정비", 52).rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -30f), new Vector2(600f, 64f));
-            _header = NewText(_root.transform, "", 26);
-            _header.color = accent;
-            Place(_header.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -92f), new Vector2(1200f, 36f));
+            _title = UiKit.Soft(NewText(_root.transform, "정비", 44));
+            _title.color = UiKit.Gold;
+            Place(_title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -24f), new Vector2(900f, 56f));
+            _header = NewText(_root.transform, "", 22);
+            _header.color = UiKit.TextDim;
+            Place(_header.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -86f), new Vector2(1200f, 36f));
+            // 결과 칩 줄(가운데 정렬)
+            var chips = new GameObject("Chips", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(ContentSizeFitter));
+            chips.transform.SetParent(_root.transform, false);
+            var crt = (RectTransform)chips.transform;
+            Place(crt, new Vector2(0.5f, 1f), new Vector2(0f, -84f), new Vector2(0f, 40f));
+            var hl = chips.GetComponent<HorizontalLayoutGroup>();
+            hl.spacing = 12f;
+            hl.childAlignment = TextAnchor.MiddleCenter;
+            hl.childControlWidth = hl.childControlHeight = true;
+            hl.childForceExpandWidth = hl.childForceExpandHeight = false;
+            chips.GetComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            _xpChip = BuildChip(crt, UiIcons.Of(UiIcons.Xp), new Color(0.75f, 0.9f, 1f, 1f));
+            _goldChip = BuildChip(crt, RelicIcons.Of("coin"), UiKit.Gold);
+            _healChip = BuildChip(crt, UiIcons.Of(UiIcons.Heal), new Color(0.6f, 1f, 0.6f, 1f));
+            _lvChip = BuildChip(crt, UiIcons.Of(UiIcons.LvUp), new Color(0.6f, 1f, 0.6f, 1f));
 
             // 왼쪽: 보상
             var reward = _rewardPanel = Panel(new Vector2(-480f, 255f), new Vector2(900f, 290f), "보상 (카드를 고른 뒤 확정)");
+            _rewardTitle = reward.GetComponentInChildren<Text>();
             for (int i = 0; i < RewardSlots; i++)
                 _rewards[i] = BuildRewardSlot(reward, i, new Vector2((i - 1) * 285f, -12f), new Vector2(265f, 170f));
             _confirm = NewButton(reward, "선택 확정", new Vector2(0f, -120f), new Vector2(260f, 40f), accent, Confirm);
@@ -564,13 +650,10 @@ namespace IntoTheDungeon.Unity.Hud
             _partyTitle = party.GetComponentInChildren<Text>();
             for (int i = 0; i < _members.Length; i++)
                 _members[i] = BuildMemberCard(party, new Vector2(-330f + i * 220f, -2f), new Vector2(212f, 320f));
-            _deck = NewText(party, "", 18);
-            _deck.alignment = TextAnchor.MiddleLeft;
-            _deck.horizontalOverflow = HorizontalWrapMode.Wrap;
-            Place(_deck.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, 18f), new Vector2(860f, 30f));
+
 
             // 오른쪽: 파티원별 장비 칸
-            var gear = Panel(new Vector2(480f, 205f), new Vector2(900f, 370f), "장비 (끼운 파티원에게만 적용)");
+            var gear = Panel(new Vector2(480f, 205f), new Vector2(900f, 370f), "장비");
             for (int i = 0; i < _gear.Length; i++)
             {
                 var block = new GameObject($"Gear{i + 1}", typeof(RectTransform)).GetComponent<RectTransform>();
@@ -587,7 +670,7 @@ namespace IntoTheDungeon.Unity.Hud
             }
 
             // 오른쪽: 보관함 + 아이템 정보
-            var stash = Panel(new Vector2(480f, -95f), new Vector2(900f, 210f), "보관함 (효과 없음)");
+            var stash = Panel(new Vector2(480f, -95f), new Vector2(900f, 210f), "보관함");
             _stash = BuildGrid(stash, new Vector2(-130f, -20f), Inventory.StashCols, Inventory.StashRows);
             _stash.Block = _stash.Rect.gameObject;
             _stash.Slot = -1;
@@ -597,7 +680,7 @@ namespace IntoTheDungeon.Unity.Hud
             Place(_info.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(315f, -20f), new Vector2(250f, 160f));
 
             // 오른쪽: 주운 아이템 + 버리기
-            var loot = Panel(new Vector2(480f, -330f), new Vector2(900f, 220f), "주운 아이템 (끌어서 장비 칸이나 보관함에)");
+            var loot = Panel(new Vector2(480f, -330f), new Vector2(900f, 220f), "주운 아이템");
             _lootArea = NewImage(loot, new Color(0f, 0f, 0f, 0.35f)).rectTransform;
             _lootArea.GetComponent<Image>().raycastTarget = true;
             Place(_lootArea, new Vector2(0.5f, 0.5f), new Vector2(-95f, -20f), new Vector2(660f, 155f));
@@ -647,10 +730,10 @@ namespace IntoTheDungeon.Unity.Hud
             img.raycastTarget = true;
             Place(img.rectTransform, new Vector2(0.5f, 0.5f), pos, size);
             var btn = img.gameObject.AddComponent<Button>();
-            btn.targetGraphic = img;
+            UiKit.Button(btn, img, color);
             btn.onClick.AddListener(onClick);
             var t = NewText(img.transform, text, 24);
-            t.color = new Color(0.1f, 0.1f, 0.15f, 1f);
+            t.color = new Color(0.1f, 0.08f, 0.05f, 1f);
             Stretch(t.rectTransform);
             return btn;
         }
@@ -658,8 +741,8 @@ namespace IntoTheDungeon.Unity.Hud
         MemberCard BuildMemberCard(RectTransform parent, Vector2 pos, Vector2 size)
         {
             var card = new MemberCard();
-            card.Empty = EmptySlotUi.Build(parent, _font, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, size, "정예·보스 보상이나\n상점에서 동료 영입", 72);
-            card.Body = NewImage(parent, cardColor);
+            card.Empty = EmptySlotUi.Build(parent, _font, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), pos, size, "첫 전투 보상이나\n상점에서 동료 영입", 72);
+            card.Body = UiKit.Card(NewImage(parent, cardColor));
             card.Root = card.Body.gameObject;
             Place(card.Body.rectTransform, new Vector2(0.5f, 0.5f), pos, size);
             // 초상화(왼쪽 위 네모)
@@ -686,16 +769,57 @@ namespace IntoTheDungeon.Unity.Hud
             card.XpFill.anchorMin = Vector2.zero; card.XpFill.anchorMax = new Vector2(0f, 1f);
             card.XpFill.offsetMin = card.XpFill.offsetMax = Vector2.zero;
             card.XpText = NewText(xpBack.rectTransform, "", 16);
+            card.XpText.supportRichText = true;
+            UiKit.Soft(card.XpText);
             var xrt = card.XpText.rectTransform;
             xrt.anchorMin = Vector2.zero; xrt.anchorMax = Vector2.one;
             xrt.offsetMin = xrt.offsetMax = Vector2.zero;
 
+            // 능력치 칸(2열 × 7줄): 체력·체력회복 / 공격·공속 / 방어·이속 / 마나·마법저항 / 힘·민첩 / 지능·정신 / 저항·저지력
+            string[] icons = { UiIcons.Hp, UiIcons.Regen, UiIcons.Atk, UiIcons.Aspd, UiIcons.Def, UiIcons.Spd, UiIcons.Mana, UiIcons.MRes,
+                               UiIcons.Str, UiIcons.Agi, UiIcons.Int, UiIcons.Wil, UiIcons.Res, null };
+            for (int k = 0; k < StatCount; k++)
+            {
+                var cell = new StatCell();
+                var hit = NewImage(card.Body.rectTransform, new Color(0f, 0f, 0f, k / 2 % 2 == 0 ? 0.18f : 0.08f));   // 줄무늬
+                var hrt = hit.rectTransform;
+                hrt.anchorMin = hrt.anchorMax = hrt.pivot = new Vector2(0f, 1f);
+                hrt.anchoredPosition = new Vector2(8f + (k % 2) * 99f, -78f - (k / 2) * 30f);
+                hrt.sizeDelta = new Vector2(97f, 28f);
+                cell.Icon = NewImage(hrt, Color.white);
+                cell.Icon.sprite = icons[k] != null ? UiIcons.Of(icons[k]) : StopPowerUi.Icon;
+                if (icons[k] == null) cell.Icon.color = StopPowerUi.Color;
+                var irt2 = cell.Icon.rectTransform;
+                irt2.anchorMin = irt2.anchorMax = irt2.pivot = new Vector2(0f, 0.5f);
+                irt2.anchoredPosition = new Vector2(4f, 0f);
+                irt2.sizeDelta = new Vector2(22f, 22f);
+                cell.Value = NewText(hrt, "", 17);
+                cell.Value.alignment = TextAnchor.MiddleLeft;
+                var vrt = cell.Value.rectTransform;
+                vrt.anchorMin = Vector2.zero; vrt.anchorMax = Vector2.one;
+                vrt.offsetMin = new Vector2(30f, 0f); vrt.offsetMax = new Vector2(-2f, 0f);
+                UiKit.Soft(cell.Value);
+                var captured = cell;
+                HoverHook.On(hit.gameObject, () => ShowText(captured.Tip), () => ShowInfo(null));
+                card.Cells[k] = cell;
+            }
+            // 맨 아래: 기본 스킬 이름(작게)
             card.Stats = NewText(card.Body.rectTransform, "", 14);
-            card.Stats.alignment = TextAnchor.UpperLeft;
-            card.Stats.lineSpacing = 1f;
-            var srt = card.Stats.rectTransform;
-            srt.anchorMin = Vector2.zero; srt.anchorMax = Vector2.one;
-            srt.offsetMin = new Vector2(12f, 8f); srt.offsetMax = new Vector2(-6f, -74f);
+            card.Stats.alignment = TextAnchor.MiddleCenter;
+            Band(card.Stats.rectTransform, 0f, 6f, 20f);
+            card.Stats.rectTransform.pivot = new Vector2(0.5f, 0f);
+            card.Stats.rectTransform.anchorMin = new Vector2(0f, 0f); card.Stats.rectTransform.anchorMax = new Vector2(1f, 0f);
+            card.Stats.rectTransform.anchoredPosition = new Vector2(0f, 6f);
+            card.Stats.rectTransform.sizeDelta = new Vector2(-12f, 20f);
+            // 쓰러짐 덮개
+            var fallenCover = NewImage(card.Body.rectTransform, new Color(0.05f, 0f, 0f, 0.55f));
+            Stretch(fallenCover.rectTransform);
+            var ft = NewText(fallenCover.rectTransform, "쓰러짐", 30);
+            ft.color = new Color(1f, 0.45f, 0.4f, 1f);
+            Stretch(ft.rectTransform);
+            UiKit.Soft(ft);
+            card.Fallen = fallenCover.gameObject;
+            card.Fallen.SetActive(false);
             card.Root.SetActive(false);
             return card;
         }
@@ -703,14 +827,24 @@ namespace IntoTheDungeon.Unity.Hud
         RewardSlot BuildRewardSlot(RectTransform parent, int index, Vector2 pos, Vector2 size)
         {
             var slot = new RewardSlot();
-            slot.Frame = NewImage(parent, Color.white);
+            slot.Frame = NewImage(parent, new Color(0f, 0f, 0f, 0f));   // 자리·버튼만(테두리는 Body의 둥근 테)
             Place(slot.Frame.rectTransform, new Vector2(0.5f, 0.5f), pos, size);
-            slot.Body = NewImage(slot.Frame.rectTransform, cardColor);
+            slot.Body = UiKit.Card(NewImage(slot.Frame.rectTransform, cardColor));
             var brt = slot.Body.rectTransform;
             brt.anchorMin = Vector2.zero; brt.anchorMax = Vector2.one;
             brt.offsetMin = new Vector2(5f, 5f); brt.offsetMax = new Vector2(-5f, -5f);
             slot.Body.raycastTarget = true;
 
+            slot.Icon = NewImage(brt, Color.white);
+            var icrt = slot.Icon.rectTransform;
+            icrt.anchorMin = icrt.anchorMax = icrt.pivot = new Vector2(0f, 1f);
+            icrt.anchoredPosition = new Vector2(8f, -6f);
+            icrt.sizeDelta = new Vector2(44f, 44f);
+            slot.Icon.enabled = false;
+            slot.Medal = RelicMedallion.Build(brt, 58f);
+            var mrt = (RectTransform)slot.Medal.transform;
+            mrt.anchorMin = mrt.anchorMax = new Vector2(0f, 1f);
+            mrt.anchoredPosition = new Vector2(38f, -36f);
             slot.Kind = NewText(brt, "", 18);
             slot.Kind.color = accent;
             Band(slot.Kind.rectTransform, 1f, -8f, 26f);
@@ -739,11 +873,11 @@ namespace IntoTheDungeon.Unity.Hud
 
         RectTransform Panel(Vector2 pos, Vector2 size, string title)
         {
-            var panel = NewImage(_root.transform, panelColor);
+            var panel = UiKit.Panel(NewImage(_root.transform, panelColor));
             var rt = panel.rectTransform;
             Place(rt, new Vector2(0.5f, 0.5f), pos, size);
-            var t = NewText(rt, title, 26);
-            t.color = accent;
+            var t = UiKit.Soft(NewText(rt, title, 26));
+            t.color = UiKit.Gold;
             t.alignment = TextAnchor.UpperLeft;
             var trt = t.rectTransform;
             trt.anchorMin = new Vector2(0f, 1f); trt.anchorMax = new Vector2(1f, 1f); trt.pivot = new Vector2(0.5f, 1f);

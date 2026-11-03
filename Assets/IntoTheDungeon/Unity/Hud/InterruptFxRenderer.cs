@@ -81,8 +81,8 @@ namespace IntoTheDungeon.Unity.Hud
         void Spawn(in InterruptInfo info, float now)
         {
             Shown?.Invoke(info.Kind);
-            bool big = info.Kind == InterruptKind.PatternBroken;
-            bool progress = info.Kind == InterruptKind.StopFailed;   // 저지력 부족: 작게, 멈칫 없이
+            bool big = info.Kind is InterruptKind.PatternBroken or InterruptKind.Shattered;
+            bool progress = info.Kind is InterruptKind.StopFailed or InterruptKind.Revived;   // 저지력 부족·부활: 작게, 멈칫 없이
             var col = big ? patternColor : progress ? progressColor : attackColor;
             bool impact = info.Kind == InterruptKind.AttackBroken;   // 평타 끊기: 글자·X자 없이 묵직하게 밀려나는 충격만
             var f = new Fx { Born = now, Big = big, Progress = progress, Impact = impact, Col = impact ? impactColor : col };
@@ -122,7 +122,9 @@ namespace IntoTheDungeon.Unity.Hud
             f.TextRoot = new GameObject("Text").transform;
             f.TextRoot.SetParent(f.Root.transform, false);
             f.TextRoot.position = new Vector3(info.Position.X, info.Position.Y + info.Height + 0.35f, 0f);
-            string label = big ? "패턴 파괴!" : progress ? $"저지력 부족 {info.Power}/{info.Required}" : "끊김!";
+            string label = info.Kind == InterruptKind.Shattered ? "분쇄!"
+                : info.Kind == InterruptKind.Revived ? "부활!"
+                : big ? $"패턴 파괴!\n<size=40>기절 {PatternBreak.PatternStun(info.Power, info.Required):0.0}초</size>" : progress ? $"저지력 부족 {info.Power}/{info.Required}" : "끊김!";   // 저지력이 남은 만큼 기절이 길다
             f.Shadow = MakeText(f.TextRoot, label, new Vector3(0.04f, -0.04f, 0f), order + 4);
             f.Shadow.color = new Color(0.25f, 0.12f, 0f, 0.9f);
             f.Text = MakeText(f.TextRoot, label, Vector3.zero, order + 5);

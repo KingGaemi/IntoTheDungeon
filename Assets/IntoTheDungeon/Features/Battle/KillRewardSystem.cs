@@ -14,6 +14,15 @@ namespace IntoTheDungeon.Features.Battle
     /// <summary>처치 보상 판정을 이미 한 시체 표시.</summary>
     public struct KillRewardedTag : IComponentData { }
 
+    /// <summary>
+    /// 이 몹만 주는 잼(보스 잼): 보스로 나오면 BossGem 확정, 아니면 Gem을 Chance 확률로. GemPool 번호(-1 = 없음).
+    /// </summary>
+    public struct GemDropComponent : IComponentData
+    {
+        public int Gem, BossGem;
+        public float Chance;
+    }
+
     /// <summary>적 하나를 처치해 경험치·골드가 나왔다(이펙트용).</summary>
     public struct KillRewardEvent
     {
@@ -70,6 +79,7 @@ namespace IntoTheDungeon.Features.Battle
                     if (statuses[i].IsAlive || teams[i].TeamFlag == Party.Team) continue;
                     var e = entities[i];
                     if (em.HasComponent<KillRewardedTag>(e)) continue;
+                    if (Revive.IsDowned(em, e)) continue;   // 무너진 해골: 완전히 부서져야 보상
                     float head = em.TryGetComponent<BodyComponent>(e, out var body) ? body.HeadHeight : 1.2f;
                     int level = em.TryGetComponent<PrimaryStatsComponent>(e, out var ps) ? ps.Level : 1;
                     var evt = new KillRewardEvent { Position = transforms[i].Position, Height = transforms[i].Height + head };
@@ -82,17 +92,27 @@ namespace IntoTheDungeon.Features.Battle
             Party.Collect(em, _party);
             float goldMul = run.BuildModifiers(-1).GoldMul;   // 잼(황수정)
             bool elite = run.Current != null && run.Current.Type == RoomType.Elite;
+            int fighters = Encounters.Fighters(run);
 
             // 청크 순회가 끝난 뒤 구조 변경
             foreach (var (e, evt0, maxHp, level, boss) in _dead)
             {
                 em.AddComponent(e, new KillRewardedTag());
                 var evt = evt0;
-                evt.Xp = (int)System.MathF.Round(RunData.KillXp(maxHp, level) * SealStone.RewardMul(run.SealTier));   // 봉인석 보상
-                evt.Gold = System.Math.Max(1, (int)System.MathF.Round(run.KillGold(evt.Xp) * goldMul));
-                if (boss || (elite && run.Rng.NextDouble() < EliteGemChance))
+                // 파티 인원 보정으로 줄어든 체력·마릿수만큼 보상이 줄지 않게 되돌린다(혼자여도 방 하나 보상은 3인과 비슷)
+                int baseHp = (int)System.MathF.Round(maxHp / Encounters.HpMul(fighters));
+                evt.Xp = (int)System.MathF.Round(RunData.KillXp(baseHp, level) * SealStone.RewardMul(run.SealTier));   // 봉인석 보상
+                float countBack = boss ? 1f : 1f / Encounters.CountMul(fighters);
+                evt.Gold = System.Math.Max(1, (int)System.MathF.Round(run.KillGold(evt.Xp) * goldMul * countBack));
+                // 보스 잼: 그 보스는 확정, 지정 몹(해골 기사)은 확률. 없으면 예전처럼 보스·정예 무작위
+                GemDef gem = null;
+                em.TryGetComponent<GemDropComponent>(e, out var drop);
+                bool hasDrop = em.HasComponent<GemDropComponent>(e);
+                if (boss && hasDrop && drop.BossGem >= 0) gem = run.FindGem(GemPool.All[drop.BossGem]);
+                else if (hasDrop && drop.Gem >= 0 && run.Rng.NextDouble() < drop.Chance) gem = run.FindGem(GemPool.All[drop.Gem]);
+                else if (boss || (elite && run.Rng.NextDouble() < EliteGemChance)) gem = run.FindGem();
+                if (gem != null)
                 {
-                    var gem = run.FindGem();
                     evt.Gem = gem.Name;
                     evt.GemR = gem.R; evt.GemG = gem.G; evt.GemB = gem.B;
                 }

@@ -113,9 +113,7 @@ namespace IntoTheDungeon.Unity.Hud
             bg.raycastTarget = false;
             _group = _panel.GetComponent<CanvasGroup>();
             _group.blocksRaycasts = false;
-            var outline = _panel.AddComponent<Outline>();
-            outline.effectColor = StopPowerUi.Color;
-            outline.effectDistance = new Vector2(2f, -2f);
+            UiKit.Style(bg, new Color(0.04f, 0.09f, 0.11f, 0.95f), StopPowerUi.Color, shadow: true);
             var rt = (RectTransform)_panel.transform;
             rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
             rt.anchoredPosition = new Vector2(0f, 300f);

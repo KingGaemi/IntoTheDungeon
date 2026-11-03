@@ -35,6 +35,11 @@ namespace IntoTheDungeon.Features.Character
         // 강타(예고 후 범위 공격, BossSlamComponent): 힘 모으는 동안 도발로 끊을 수 있다. 반지름 0이면 없음
         public float SlamRadius, SlamCharge, SlamCooldown, SlamDamageMul;
         public int SlamStopRequired;    // 강타 요구 저지력
+        // 되살아남(해골 기사, ReviveComponent): 쓰러지면 뼈 무더기가 됐다가 다시 일어난다. 무더기일 때 이 저지력 이상 필살기면 부서짐
+        public int ReviveCharges, ReviveStopRequired;
+        // 이 몹만 주는 잼(GemPool 번호 + 1, 0 = 없음): 보스로 나오면 BossGem 확정, 아니면 DropGem을 DropGemChance 확률로
+        public int BossGem, DropGem;
+        public float DropGemChance;
 
         public static readonly CharacterDefinition Default = new()
         {

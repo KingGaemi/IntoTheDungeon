@@ -68,8 +68,15 @@ namespace IntoTheDungeon.Features.Attack
                 var entities = chunk.GetEntities();
                 for (int i = 0; i < chunk.Count; i++)
                 {
-                    if (teams[i].TeamFlag == team || teams[i].TeamFlag == TeamFlag.None || !statuses[i].IsAlive) continue;
+                    if (teams[i].TeamFlag == team || teams[i].TeamFlag == TeamFlag.None) continue;
                     var d = transforms[i].Position - pos;
+                    if (!statuses[i].IsAlive)
+                    {
+                        // 무너진 해골(뼈 무더기)도 도발 범위 안이면 저지력으로 부술 수 있다
+                        if (Battle.Revive.IsDowned(em, entities[i]) && System.MathF.Abs(d.X) <= sk.TauntRadius && System.MathF.Abs(d.Y) <= sk.TauntRadius * 0.5f)
+                            Battle.Revive.ShatterRequests.Add((entities[i], sk.StopPower));
+                        continue;
+                    }
                     if (System.MathF.Abs(d.X) <= sk.TauntRadius && System.MathF.Abs(d.Y) <= sk.TauntRadius * 0.5f) s_hits.Add(entities[i]);
                 }
             }
@@ -91,7 +98,7 @@ namespace IntoTheDungeon.Features.Attack
 
     /// <summary>
     /// 저지(필살기 공용: 전사 도발·케서린 검기·궁수 강화 화살). 필살기마다 저지력(대부분 10)이 있고,
-    /// 강타·내려찍기 패턴은 요구 저지력이 있다. 한 방의 저지력이 요구치와 같거나 높아야 패턴 취소 + 그로기
+    /// 강타·내려찍기 패턴은 요구 저지력이 있다. 한 방의 저지력이 요구치와 같거나 높아야 패턴 취소 + 그로기(넘은 만큼 길게)
     /// (여러 번 맞혀도 합산하지 않음, 모자라면 「저지력 부족 10/15」만). 휘두르려던 평타는 저지력이 있으면 끊고 경직.
     /// 저지력은 장비(망치·철퇴 등)로 올린다 → 성능이 조금 낮아도 저지력 높은 장비·동료를 고를 이유가 생긴다.
     /// CC 저항·슈퍼아머를 무시한다(HitStunComponent.PendingBreak). 결과는 InterruptFeed에 남겨 화면이 연출한다.
@@ -99,6 +106,12 @@ namespace IntoTheDungeon.Features.Attack
     public static class PatternBreak
     {
         public const float PatternBreakStun = 2f, AttackBreakStun = 0.8f, FlinchStun = 0.35f;
+        // 패턴 파괴 그로기는 저지력이 요구치를 넘은 만큼 길어진다: 기본 2초 + 1 넘을 때마다 0.15초(최대 5초)
+        public const float StunPerExcess = 0.15f, MaxPatternBreakStun = 5f;
+
+        /// <summary>패턴을 깼을 때 그로기 시간(저지력 power, 요구치 required).</summary>
+        public static float PatternStun(int power, int required)
+            => System.MathF.Min(MaxPatternBreakStun, PatternBreakStun + StunPerExcess * System.Math.Max(0, power - required));
         public const int DefaultStopPower = 10;
 
         public const float AttackBreakPush = 8f, AttackBreakLaunch = 2.5f;
@@ -122,7 +135,7 @@ namespace IntoTheDungeon.Features.Attack
                         slam.Charging = false;
                         slam.Remaining = slam.Cooldown;   // 다시 쓰려면 재사용 대기를 처음부터
                         kind = InterruptKind.PatternBroken;
-                        stun = PatternBreakStun;
+                        stun = PatternStun(power, slam.StopRequired);   // 저지력이 남을수록 오래 기절
                     }
                     else kind = InterruptKind.StopFailed;   // 저지력 부족: 패턴은 계속(경직도 안 걸림)
                 }
@@ -174,7 +187,7 @@ namespace IntoTheDungeon.Features.Attack
         }
     }
 
-    public enum InterruptKind : byte { Flinch, AttackBroken, PatternBroken, StopFailed }
+    public enum InterruptKind : byte { Flinch, AttackBroken, PatternBroken, StopFailed, Shattered, Revived }   // Shattered: 되살아나는 몹을 부숨, Revived: 다시 일어남
 
     public struct InterruptInfo
     {

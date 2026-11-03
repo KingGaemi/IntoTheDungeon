@@ -11,12 +11,14 @@ namespace IntoTheDungeon.Features.Run
         public readonly string Id;
         public readonly string Name;
         public readonly float R, G, B;                      // 화면 색
+        public readonly string Source;                      // 보스 잼이면 얻는 곳(「오크 대장 처치 시 확정」), 일반 잼은 null
+        public bool IsBoss => Source != null;
         readonly System.Func<int, string> _desc;            // 등급별 설명
         readonly System.Action<PartyModifiers, int> _apply; // 등급별 효과
 
-        public GemDef(string id, string name, (float r, float g, float b) color, System.Func<int, string> desc, System.Action<PartyModifiers, int> apply)
+        public GemDef(string id, string name, (float r, float g, float b) color, System.Func<int, string> desc, System.Action<PartyModifiers, int> apply, string source = null)
         {
-            Id = id; Name = name; (R, G, B) = color; _desc = desc; _apply = apply;
+            Id = id; Name = name; (R, G, B) = color; _desc = desc; _apply = apply; Source = source;
         }
 
         public string Describe(int level) => _desc(System.Math.Clamp(level, 1, GemPool.MaxLevel));
@@ -53,6 +55,19 @@ namespace IntoTheDungeon.Features.Run
                 lv => $"처치 골드 +{Pick(lv, 20, 40, 60)}%", (m, lv) => m.GoldMul *= 1f + Pick(lv, 20, 40, 60) / 100f),
             new("moonstone", "월장석", (0.75f, 0.9f, 1f),
                 lv => $"파티 이동 속도 +{Pick(lv, 8, 15, 22)}%", (m, lv) => m.MoveSpeedMul *= 1f + Pick(lv, 8, 15, 22) / 100f),
+
+            // 보스 잼: 그 보스·정예를 잡아야만 나온다(무작위 보상엔 안 나옴). 일반 잼보다 강하고 개성 있다
+            new("warlord", "전쟁군주의 혈석", (0.95f, 0.15f, 0.12f),
+                lv => $"파티 공격력 +{Pick(lv, 12, 20, 30)}%" + (lv >= 3 ? ", 근접 평타 범위 공격" : ""),
+                (m, lv) => { m.DamageMul *= 1f + Pick(lv, 12, 20, 30) / 100f; if (lv >= 3) m.Cleave = true; },
+                source: "오크 대장"),
+            new("bonecrown", "망자의 왕관석", (0.85f, 0.6f, 1f),
+                lv => $"파티 필살기 저지력 +{Pick(lv, 3, 5, 8)}", (m, lv) => m.StopPowerAdd += (int)Pick(lv, 3, 5, 8),
+                source: "해골 기사"),
+            new("bloom", "독꽃의 정수", (0.85f, 0.35f, 0.9f),
+                lv => $"파티 최대 체력 +{Pick(lv, 10, 18, 28)}%, 전투 후 회복 +{Pick(lv, 5, 10, 15)}%p",
+                (m, lv) => { m.MaxHpMul *= 1f + Pick(lv, 10, 18, 28) / 100f; m.PostBattleHealAdd += Pick(lv, 5, 10, 15) / 100f; },
+                source: "독꽃"),
         };
 
         public static GemDef Find(string id)
@@ -61,7 +76,19 @@ namespace IntoTheDungeon.Features.Run
             return null;
         }
 
-        public static GemDef Roll(System.Random rng) => All[rng.Next(All.Length)];
+        /// <summary>무작위 잼(보스 잼은 빼고).</summary>
+        public static GemDef Roll(System.Random rng)
+        {
+            GemDef g;
+            do g = All[rng.Next(All.Length)]; while (g.IsBoss);
+            return g;
+        }
+
+        public static int IndexOf(string id)
+        {
+            for (int i = 0; i < All.Length; i++) if (All[i].Id == id) return i;
+            return -1;
+        }
 
         public static int LevelOf(int count)
         {

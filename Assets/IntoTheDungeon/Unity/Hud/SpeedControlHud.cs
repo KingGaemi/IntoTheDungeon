@@ -49,7 +49,7 @@ namespace IntoTheDungeon.Unity.Hud
 
             bool stopped = battle && Time.unscaledTime < s_hitStopUntil;
             Time.timeScale = !battle ? 1f : stopped ? HitStopScale : Speeds[_index];
-            _label.text = $"{Speeds[_index]}배속 (Tab)";
+            _label.text = $"×{Speeds[_index]}  <size=18><color=#FFFFFF99>Tab</color></size>";
             _image.color = speedColors[Mathf.Min(_index, speedColors.Length - 1)];
         }
 
@@ -81,7 +81,7 @@ namespace IntoTheDungeon.Unity.Hud
             rt.sizeDelta = new Vector2(210f, 64f);
             _image = _button.GetComponent<Image>();
             var btn = _button.GetComponent<Button>();
-            btn.targetGraphic = _image;
+            UiKit.Button(btn, _image, speedColors[0]);
             btn.onClick.AddListener(Next);
 
             var go = new GameObject("Label", typeof(RectTransform), typeof(Text), typeof(Outline));

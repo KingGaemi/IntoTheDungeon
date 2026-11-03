@@ -9,12 +9,13 @@ using IntoTheDungeon.Features.Run;
 namespace IntoTheDungeon.Unity.Hud
 {
     /// <summary>
-    /// 잼 화면(임시 UI, 코드로 만든다): 지도·정비 화면 왼쪽 위 "잼" 버튼(G키)으로 연다.
+    /// 잼 세팅 창(임시 UI, 코드로 만든다): 새 게임 직전 봉인석 고르기 화면의 「잼 세팅」 버튼(G키)으로 연다.
+    /// 봉인석처럼 판에 들어가기 전에만 바꾸고, 판 도중엔 봉인석 배지에 마우스를 올려 보기만 한다.
     /// 위에 금속 테 소켓(잠긴 칸은 여는 조건), 아래에 가진 잼. 잼을 끌어다 소켓에 놓으면 "딸깍" 끼워지고(번쩍 + 튀어 오름),
     /// 소켓의 잼을 밖으로 끌어내면 빠진다. 소켓끼리 끌면 맞바꾼다. 누르기만 해도 끼우기(빈 소켓)/빼기가 된다.
-    /// 끼운 잼은 판이 끝나도 그대로이고, 효과는 다음 전투부터(정비 화면 능력치엔 바로) 파티 전원에게 걸린다.
+    /// 끼운 잼은 판이 끝나도 그대로이고, 효과는 판 내내 파티 전원에게 걸린다. 닫을 때 저장한다.
     /// </summary>
-    public sealed class GemHud : MonoBehaviour, IWorldInjectable
+    public sealed class GemHud : MonoBehaviour
     {
         [SerializeField] KeyCode toggleKey = KeyCode.G;
         [SerializeField] Color panelColor = new(0.09f, 0.1f, 0.17f, 1f);
@@ -49,11 +50,10 @@ namespace IntoTheDungeon.Unity.Hud
             public Text Name, Stars, Count, Desc, Badge;
         }
 
-        BattleProgress _progress;
         Font _font;
-        GameObject _button, _panel;
+        GameObject _panel;
         RectTransform _dragLayer;
-        Text _buttonLabel, _stats, _info, _message;
+        Text _stats, _info, _message;
         Image _ghost;
         readonly SocketView[] _sockets = new SocketView[MetaProgress.MaxSlots];
         readonly GemTile[] _tiles = new GemTile[GemPool.All.Length];
@@ -66,10 +66,18 @@ namespace IntoTheDungeon.Unity.Hud
         int _hoverSocket = -1;   // 끄는 중 포인터 아래 소켓
         Grip _hovered;
 
-        public void Init(IWorld world)
+        public bool IsOpen => _open;
+        /// <summary>창이 열리거나 닫힌 프레임(같은 키 입력이 여는 쪽·닫는 쪽에서 두 번 처리되지 않게).</summary>
+        public int ToggledFrame { get; private set; } = -1;
+
+        public void Setup()
         {
-            world.TryGet(out _progress);
-            if (!_button) Build();
+            if (!_panel) Build();
+        }
+
+        public void SetOpen(bool on)
+        {
+            if (_open != on) Toggle();
         }
 
         Sprite Icon(string id)
@@ -84,29 +92,24 @@ namespace IntoTheDungeon.Unity.Hud
 
         void Update()
         {
-            if (_progress == null || !_button) return;
-            var run = RunState.Current;
-            bool usable = _progress.Phase == BattlePhase.Map && run.Phase is RunPhase.ChoosingRoom or RunPhase.Camp;
-            if (_button.activeSelf != usable) _button.SetActive(usable);
-            if (!usable) { _open = false; CancelDrag(); }
-            else if (Input.GetKeyDown(toggleKey)) Toggle();
+            if (!_panel) return;
+            if (_open && ToggledFrame != Time.frameCount && (Input.GetKeyDown(toggleKey) || Input.GetKeyDown(KeyCode.Escape))) Toggle();
             if (_panel.activeSelf != _open) _panel.SetActive(_open);
-
-            var meta = MetaProgress.Current;
-            _buttonLabel.text = $"잼 {meta.EquippedCount}/{meta.SlotCount} (G)";
-            if (_open) Refresh(meta);
+            if (_open) Refresh(MetaProgress.Current);
         }
 
         void Toggle()
         {
             _open = !_open;
+            ToggledFrame = Time.frameCount;
             _message.text = "";
             CancelDrag();
+            if (!_open) MetaStore.SaveIfChanged();   // 바꾼 잼 세팅을 바로 남긴다
         }
 
         void Refresh(MetaProgress meta)
         {
-            _stats.text = $"보스 처치 {meta.BossKills}   ·   던전 클리어 {meta.Clears}   ·   끝낸 판 {meta.Runs}";
+            _stats.text = "";
             float t = Time.unscaledTime;
 
             for (int s = 0; s < _sockets.Length; s++)
@@ -136,12 +139,12 @@ namespace IntoTheDungeon.Unity.Hud
                 if (!unlocked)
                 {
                     v.Name.text = "잠김";
-                    v.Desc.text = $"{MetaProgress.SlotUnlockText(s)} 시 열림";
+                    v.Desc.text = "";   // 여는 조건은 마우스를 올리면
                 }
                 else if (gem == null || hidden)
                 {
-                    v.Name.text = $"소켓 {s + 1}";
-                    v.Desc.text = "잼을 끌어다 놓으세요";
+                    v.Name.text = "";
+                    v.Desc.text = "";
                 }
                 else
                 {
@@ -162,18 +165,19 @@ namespace IntoTheDungeon.Unity.Hud
                 var c = GemColor(gem);
                 tile.Icon.sprite = Icon(gem.Id);
                 tile.Icon.color = owned ? (equipped ? new Color(1f, 1f, 1f, 0.45f) : Color.white) : new Color(0f, 0f, 0f, 0.55f);   // 없으면 실루엣
-                tile.Frame.color = equipped ? accent : owned ? c * 0.8f : new Color(0f, 0f, 0f, 0.6f);
+                UiKit.SetRim(tile.Body, equipped ? accent : owned ? c * 0.8f : new Color(0.2f, 0.2f, 0.25f, 1f));
                 tile.Body.color = owned ? Color.Lerp(panelColor, c, 0.18f) : new Color(0.12f, 0.12f, 0.16f, 1f);
-                tile.Name.text = owned ? gem.Name : "???";
+                tile.Name.text = owned || gem.IsBoss ? gem.Name : "???";   // 보스 잼은 못 얻었어도 이름을 보여 준다(기대하게)
                 tile.Stars.text = owned ? new string('★', lv) + new string('☆', GemPool.MaxLevel - lv) : "";
                 int next = GemPool.NextThreshold(count);
                 tile.Count.text = !owned ? "" : next > 0 ? $"{count} / {next}개" : $"{count}개 (최고)";
-                tile.Desc.text = owned ? gem.Describe(lv) : "보스·정예 처치나\n판 끝 보상으로 얻는다";
+                tile.Desc.text = owned ? gem.Describe(lv) : gem.IsBoss ? gem.Source : "";
+                if (gem.IsBoss) UiKit.SetRim(tile.Body, owned ? (equipped ? accent : UiKit.Gold) : new Color(0.6f, 0.45f, 0.2f, 1f));   // 보스 잼은 금테
                 tile.Badge.enabled = equipped;
             }
 
             if (_dragId == null && _hovered != null) _info.text = Detail(_hovered, meta);
-            else if (_dragId == null) _info.text = "잼을 끌어 위 소켓에 넣으세요. 소켓의 잼을 밖으로 끌어내면 빠집니다. 같은 잼 3개 Lv.2 · 9개 Lv.3";
+            else if (_dragId == null) _info.text = "";
         }
 
         string Detail(Grip g, MetaProgress meta)
@@ -181,7 +185,7 @@ namespace IntoTheDungeon.Unity.Hud
             string id = g.Socket >= 0 ? meta.InSlot(g.Socket) : GemPool.All[g.Gem].Id;
             var gem = GemPool.Find(id);
             if (gem == null) return g.Socket >= 0 && g.Socket >= meta.SlotCount ? $"잠긴 소켓: {MetaProgress.SlotUnlockText(g.Socket)} 시 열림" : "빈 소켓";
-            if (meta.Count(id) <= 0) return "아직 얻지 못한 잼";
+            if (meta.Count(id) <= 0) return gem.IsBoss ? $"보스 잼 · {gem.Name}: {gem.Source}   ·   Lv.1 {gem.Describe(1)}" : "아직 얻지 못한 잼";
             return $"{gem.Name}   Lv.1 {gem.Describe(1)}   ·   Lv.2 {gem.Describe(2)}   ·   Lv.3 {gem.Describe(3)}";
         }
 
@@ -288,18 +292,13 @@ namespace IntoTheDungeon.Unity.Hud
             _socketSprite = Resources.Load<Sprite>("GemSocket");
             var root = canvasGo.transform;
 
-            // 열기 버튼(왼쪽 위 구석, 정비 화면 상점 패널 위)
-            var btn = NewButton(root, "", new Vector2(-800f, 478f), new Vector2(240f, 52f), new Color(0.55f, 0.75f, 1f, 1f), Toggle);
-            _button = btn.gameObject;
-            _buttonLabel = btn.GetComponentInChildren<Text>();
-
             var dim = NewImage(root, new Color(0f, 0f, 0f, 0.72f));
             dim.raycastTarget = true;
             Stretch(dim.rectTransform);
             _panel = dim.gameObject;
-            var panel = NewImage(dim.transform, panelColor);
+            var panel = UiKit.Panel(NewImage(dim.transform, panelColor));
             panel.raycastTarget = true;
-            Place(panel.rectTransform, new Vector2(0f, -10f), new Vector2(1320f, 900f));
+            Place(panel.rectTransform, new Vector2(0f, -10f), new Vector2(1320f, 960f));
             var prt = panel.rectTransform;
 
             var title = NewText(prt, "잼", 40);
@@ -310,7 +309,7 @@ namespace IntoTheDungeon.Unity.Hud
             Place(_stats.rectTransform, new Vector2(0f, 368f), new Vector2(1260f, 30f));
 
             // 소켓 줄(받침 위에 금속 테 소켓 4개)
-            var shelf = NewImage(prt, new Color(0f, 0f, 0f, 0.35f));
+            var shelf = UiKit.Card(NewImage(prt, Color.white), fill: new Color(0f, 0f, 0f, 0.35f));
             Place(shelf.rectTransform, new Vector2(0f, 205f), new Vector2(1240f, 290f));
             for (int s = 0; s < _sockets.Length; s++) _sockets[s] = BuildSocket(prt, s, new Vector2(-465f + s * 310f, 235f));
 
@@ -319,16 +318,16 @@ namespace IntoTheDungeon.Unity.Hud
             label.color = accent;
             Place(label.rectTransform, new Vector2(0f, 38f), new Vector2(1240f, 30f));
             for (int i = 0; i < _tiles.Length; i++)
-                _tiles[i] = BuildTile(prt, i, new Vector2(-465f + (i % 4) * 310f, -50f - (i / 4) * 160f));
+                _tiles[i] = BuildTile(prt, i, new Vector2(-465f + (i % 4) * 310f, -40f - (i / 4) * 134f));
 
             _info = NewText(prt, "", 20);
             _info.color = new Color(1f, 1f, 1f, 0.8f);
             _info.horizontalOverflow = HorizontalWrapMode.Wrap;
-            Place(_info.rectTransform, new Vector2(0f, -300f), new Vector2(1240f, 50f));
+            Place(_info.rectTransform, new Vector2(0f, -392f), new Vector2(1240f, 44f));
             _message = NewText(prt, "", 24);
             _message.color = accent;
-            Place(_message.rectTransform, new Vector2(0f, -345f), new Vector2(1240f, 32f));
-            NewButton(prt, "닫기 (G)", new Vector2(0f, -400f), new Vector2(300f, 56f), accent, Toggle);
+            Place(_message.rectTransform, new Vector2(0f, -426f), new Vector2(1240f, 32f));
+            NewButton(prt, "완료", new Vector2(0f, -462f), new Vector2(300f, 56f), accent, Toggle);
 
             // 끄는 잼(맨 위)
             _dragLayer = new GameObject("DragLayer", typeof(RectTransform)).GetComponent<RectTransform>();
@@ -381,17 +380,17 @@ namespace IntoTheDungeon.Unity.Hud
         GemTile BuildTile(RectTransform parent, int index, Vector2 pos)
         {
             var t = new GemTile();
-            t.Frame = NewImage(parent, Color.white);
+            t.Frame = NewImage(parent, new Color(0f, 0f, 0f, 0f));   // 마우스 받는 자리(테두리는 Body의 둥근 테)
             t.Frame.raycastTarget = true;
-            Place(t.Frame.rectTransform, pos, new Vector2(290f, 145f));
-            t.Body = NewImage(t.Frame.rectTransform, panelColor);
+            Place(t.Frame.rectTransform, pos, new Vector2(290f, 126f));
+            t.Body = UiKit.Card(NewImage(t.Frame.rectTransform, panelColor));
             var brt = t.Body.rectTransform;
             brt.anchorMin = Vector2.zero; brt.anchorMax = Vector2.one;
             brt.offsetMin = new Vector2(3f, 3f); brt.offsetMax = new Vector2(-3f, -3f);
 
             t.Icon = NewImage(brt, Color.white);
             t.Icon.preserveAspect = true;
-            Corner(t.Icon.rectTransform, new Vector2(10f, -12f), new Vector2(96f, 96f));
+            Corner(t.Icon.rectTransform, new Vector2(10f, -8f), new Vector2(84f, 84f));
             t.Name = NewText(brt, "", 24);
             t.Name.alignment = TextAnchor.MiddleLeft;
             Corner(t.Name.rectTransform, new Vector2(118f, -10f), new Vector2(165f, 30f));
@@ -406,10 +405,10 @@ namespace IntoTheDungeon.Unity.Hud
             t.Desc = NewText(brt, "", 16);
             t.Desc.alignment = TextAnchor.UpperLeft;
             t.Desc.horizontalOverflow = HorizontalWrapMode.Wrap;
-            Corner(t.Desc.rectTransform, new Vector2(118f, -68f), new Vector2(165f, 66f));
+            Corner(t.Desc.rectTransform, new Vector2(118f, -66f), new Vector2(165f, 54f));
             t.Badge = NewText(brt, "장착 중", 18);
             t.Badge.color = accent;
-            Corner(t.Badge.rectTransform, new Vector2(10f, -110f), new Vector2(96f, 24f));
+            Corner(t.Badge.rectTransform, new Vector2(10f, -96f), new Vector2(84f, 22f));
 
             var grip = t.Frame.gameObject.AddComponent<Grip>();
             grip.Owner = this;
@@ -423,7 +422,7 @@ namespace IntoTheDungeon.Unity.Hud
             img.raycastTarget = true;
             Place(img.rectTransform, pos, size);
             var btn = img.gameObject.AddComponent<Button>();
-            btn.targetGraphic = img;
+            UiKit.Button(btn, img, color);
             btn.onClick.AddListener(onClick);
             var t = NewText(img.transform, text, 24);
             t.color = new Color(0.1f, 0.1f, 0.15f, 1f);

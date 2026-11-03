@@ -111,7 +111,7 @@ namespace IntoTheDungeon.Unity.Hud
 
             if (!hidden)
             {
-                float now = Time.time;
+                float now = Time.unscaledTime;   // 깎인 체력 꼬리는 배속과 무관하게
                 bool snap = _progress != null && _progress.Phase is BattlePhase.Intro or BattlePhase.Deploy;
                 foreach (var chunk in _world.EntityManager.GetChunks(typeof(StatusComponent), typeof(TransformComponent), typeof(TeamComponent)))
                 {
@@ -129,12 +129,12 @@ namespace IntoTheDungeon.Unity.Hud
                         bar.Used = true;
 
                         float ratio = Mathf.Clamp01((float)st.CurrentHp / st.MaxHp);
-                        // 처음 보일 때와 전투 시작 연출 중(이전 방 체력·덱 효과를 입히는 때)은 맞은 게 아니므로 잔상 없이 바로
+                        // 처음 보일 때와 전투 시작 연출 중(이전 방 체력·유물 효과를 입히는 때)은 맞은 게 아니므로 잔상 없이 바로
                         if (bar.Shown < 0f || snap) { bar.Shown = ratio; bar.Trail_ = ratio; bar.FlashUntil = 0f; }
                         if (ratio < bar.Shown - 1e-4f) { bar.HoldUntil = now + trailHold; bar.FlashUntil = now + flashTime; }
                         bar.Shown = ratio;
                         if (bar.Trail_ < ratio) bar.Trail_ = ratio;                          // 회복은 바로
-                        else if (now >= bar.HoldUntil) bar.Trail_ = Mathf.MoveTowards(bar.Trail_, ratio, trailSpeed * Time.deltaTime);
+                        else if (now >= bar.HoldUntil) bar.Trail_ = Mathf.MoveTowards(bar.Trail_, ratio, trailSpeed * Time.unscaledDeltaTime);
 
                         float head = _world.EntityManager.TryGetComponent<BodyComponent>(e, out var body) ? body.HeadHeight : 1.2f;
                         var t = transforms[i];

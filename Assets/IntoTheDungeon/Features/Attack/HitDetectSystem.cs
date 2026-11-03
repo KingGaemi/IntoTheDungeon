@@ -50,6 +50,14 @@ namespace IntoTheDungeon.Features.Attack
                     ref var hits = ref hitLists[i];
                     var min = hb.Center - hb.HalfExtents;
                     var max = hb.Center + hb.HalfExtents;
+                    // 날아가는 히트박스(검기·화살)는 이번 프레임에 지나온 구간 전체로 판정한다.
+                    // 프레임마다 한 점만 보면 배속(큰 dt)·낮은 프레임에서 바로 앞이나 지나친 적을 건너뛴다
+                    if (em.TryGetComponent<ProjectileComponent>(hitboxEntities[i], out var flying))
+                    {
+                        float back = flying.Velocity.X * dt;   // ProjectileMotionSystem이 이번 프레임에 옮긴 거리
+                        if (back > 0f) min = new Vec2(min.X - back, min.Y);
+                        else if (back < 0f) max = new Vec2(max.X - back, max.Y);
+                    }
 #if UNITY_EDITOR
                     DrawBox(min, max, hb.Height, UnityEngine.Color.red);
 #endif

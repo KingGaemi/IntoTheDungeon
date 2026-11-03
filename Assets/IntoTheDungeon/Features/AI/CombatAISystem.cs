@@ -27,6 +27,7 @@ namespace IntoTheDungeon.Features.AI
             public Entity E;
             public TeamFlag Team;
             public Vec2 Pos;
+            public bool Pile;   // 무너진 해골(뼈 무더기): 살아 있는 적이 없을 때만 그 곁으로 간다(필살기로 부수라고)
         }
 
         readonly List<Target> _targets = new(32);
@@ -36,6 +37,8 @@ namespace IntoTheDungeon.Features.AI
         Vec2 _partyCenter;
 
         BattleProgress _progress;
+        IWalkArea _area;
+        const float DoorArriveRadius = 1.1f, DoorStayRadius = 2.2f;   // 문 앞 도착 판정 / 멈춘 뒤 다시 걷기 시작하는 거리
 
         public override void Initialize(IWorld world)
         {
@@ -51,6 +54,10 @@ namespace IntoTheDungeon.Features.AI
             // 웨이브 진행 중엔 방이 넓어도(마지막 웨이브는 문 앞에서 나옴) 거리와 상관없이 가장 가까운 적과 붙는다
             bool fighting = _progress == null || _progress.Phase == BattlePhase.Fighting;
             CollectTargets(em);
+            // 방을 깨면 파티는 문으로 달려간다(문이 있는 방만)
+            if (_area == null) _world.TryGet(out _area);
+            bool toDoor = _progress != null && _progress.Phase == BattlePhase.Victory && _area is RectWalkArea;
+            var door = toDoor ? BattleFlowSystem.DoorPosition((RectWalkArea)_area) : default;
             _hasPartyCenter = Party.TryGetCenter(em, out _partyCenter, out _);
 
             foreach (var chunk in em.GetChunks(typeof(CombatAIComponent),
@@ -85,6 +92,26 @@ namespace IntoTheDungeon.Features.AI
                     if (attacking) continue;   // 휘두르는 중엔 건드리지 않는다
 
                     var self = transforms[i].Position;
+                    if (toDoor && teams[i].TeamFlag == Party.Team)
+                    {
+                        // 문 앞 일정 범위 안에 들어오면 그 자리에 멈춘다(정확한 점을 맞추려 서로 밀며 뱅글뱅글 돌지 않게).
+                        // 멈춘 뒤엔 꽤 밀려나야 다시 걷는다
+                        int k = entities[i].Index & 3;
+                        var spot = new Vec2(door.X - 0.9f - (k & 1) * 0.9f, door.Y - 0.3f - (k >> 1) * 0.7f);
+                        float reach = ai.State == CombatAIState.Idle ? DoorStayRadius : DoorArriveRadius;
+                        if ((spot - self).Magnitude > reach)
+                        {
+                            MoveIfChanged(ref buf, states[i], (spot - self).Normalized);
+                            ai.State = CombatAIState.Follow;
+                        }
+                        else
+                        {
+                            if (cur.Facing != Facing2D.Right) { buf.Add(CharacterIntent.Move(Facing2D.Right)); buf.Add(CharacterIntent.Stop()); }
+                            else StopIfMoving(ref buf, cur);
+                            ai.State = CombatAIState.Idle;
+                        }
+                        continue;
+                    }
                     bool hasTarget = TryTaunter(em, entities[i], self, out var target, out float dist)
                                   || TryFindNearest(entities[i], teams[i].TeamFlag, self, out target, out dist);
 
@@ -223,8 +250,9 @@ namespace IntoTheDungeon.Features.AI
                 var entities = chunk.GetEntities();
                 for (int i = 0; i < chunk.Count; i++)
                 {
-                    if (!statuses[i].IsAlive) continue;
-                    _targets.Add(new Target { E = entities[i], Team = teams[i].TeamFlag, Pos = transforms[i].Position });
+                    bool pile = !statuses[i].IsAlive && Revive.IsDowned(em, entities[i]);
+                    if (!statuses[i].IsAlive && !pile) continue;
+                    _targets.Add(new Target { E = entities[i], Team = teams[i].TeamFlag, Pos = transforms[i].Position, Pile = pile });
                 }
             }
         }
@@ -249,12 +277,14 @@ namespace IntoTheDungeon.Features.AI
         {
             best = default;
             bestDist = float.MaxValue;
-            bool found = false;
+            bool found = false, foundPile = false;
             foreach (var t in _targets)
             {
                 if (t.E == self || t.Team == myTeam || t.Team == TeamFlag.None) continue;
                 float d = (t.Pos - selfPos).Magnitude;   // 바닥 평면 거리
-                if (d < bestDist) { bestDist = d; best = t; found = true; }
+                // 살아 있는 적이 뼈 무더기보다 먼저
+                if (found && !foundPile && t.Pile) continue;
+                if ((foundPile && !t.Pile) || d < bestDist) { bestDist = d; best = t; found = true; foundPile = t.Pile; }
             }
             return found;
         }

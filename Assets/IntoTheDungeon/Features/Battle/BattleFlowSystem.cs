@@ -129,7 +129,7 @@ namespace IntoTheDungeon.Features.Battle
         {
             CombatMeter.Reset();   // 딜 미터는 방마다 새로
             _config.Waves.Clear();
-            _config.Waves.AddRange(Encounters.ForParty(Encounters.For(node.Type, node.Layer, RunState.Current.Stage), Fighters(RunState.Current)));
+            _config.Waves.AddRange(Encounters.ForParty(Encounters.For(node.Type, node.Layer, RunState.Current.Stage), Encounters.Fighters(RunState.Current)));
             _progress.TotalWaves = _config.Waves.Count;
             _progress.Wave = 0;
             _progress.DeployConfirmed = false;
@@ -141,7 +141,7 @@ namespace IntoTheDungeon.Features.Battle
         {
             if (!_partySpawned) { SpawnParty(run); _partySpawned = true; return; }
             if (!HasPartyMember()) return;                                   // 스폰 대기
-            if (!_hpApplied) { ApplyRunToParty(run); _hpApplied = true; }   // 슬롯·덱·체력(스폰된 다음 프레임)
+            if (!_hpApplied) { ApplyRunToParty(run); _hpApplied = true; }   // 슬롯·유물·체력(스폰된 다음 프레임)
             PlaceParty(run, Formation.MiddleOf(_area), deploying: true);
             if (!_progress.DeployConfirmed) return;
 
@@ -205,7 +205,7 @@ namespace IntoTheDungeon.Features.Battle
             }
         }
 
-        // 판의 덱(패시브 보정)과 슬롯별 체력 비율을 파티에 입힌다(쓰러졌던 파티원은 다시 쓰러뜨림)
+        // 판의 유물(파티 보정)과 슬롯별 체력 비율을 파티에 입힌다(쓰러졌던 파티원은 다시 쓰러뜨림)
         void ApplyRunToParty(RunData run)
         {
             var em = _world.EntityManager;
@@ -244,12 +244,12 @@ namespace IntoTheDungeon.Features.Battle
         }
 
         /// <summary>
-        /// 파티원 능력치를 판 기록(레벨·덱·그 파티원 장비)으로 다시 계산한다. 체력·마나는 가득으로 바뀌므로 필요하면 호출한 쪽이 되돌린다.
+        /// 파티원 능력치를 판 기록(레벨·유물·그 파티원 장비)으로 다시 계산한다. 체력·마나는 가득으로 바뀌므로 필요하면 호출한 쪽이 되돌린다.
         /// 방 시작과 전투 중 레벨 업에 쓴다.
         /// </summary>
         public static PartyModifiers RecalculatePartyStats(IEntityManager em, Entity e, RunData run, int slot)
         {
-            var mods = run.BuildModifiers(slot < Party.NoSlot ? slot : -1);   // 덱 + 그 파티원 장비
+            var mods = run.BuildModifiers(slot < Party.NoSlot ? slot : -1);   // 유물 + 그 파티원 장비
             ref var st = ref em.GetComponent<StatusComponent>(e);
 
             // 스탯 보너스·레벨로 세부 능력치를 다시 계산(체력·공격력·공속·이속·방어·저항·회복)
@@ -264,7 +264,7 @@ namespace IntoTheDungeon.Features.Battle
                 if (em.HasComponent<HitStunComponent>(e)) em.GetComponent<HitStunComponent>(e).Resistance = ds.CcResist;
             }
 
-            // 필살기 저지력 = 기본 + 장비(그 파티원 장비 칸·덱)
+            // 필살기 저지력 = 기본 + 장비(그 파티원 장비 칸·유물)
             if (em.HasComponent<SpecialSkillComponent>(e))
             {
                 ref var sk = ref em.GetComponent<SpecialSkillComponent>(e);
@@ -303,15 +303,6 @@ namespace IntoTheDungeon.Features.Battle
             return lv;
         }
 
-        // 이번 방에 싸우러 나가는 인원(쓰러진 파티원 제외). 몹 마릿수·체력·공격력 보정에 쓴다
-        static int Fighters(RunData run)
-        {
-            int n = 0;
-            for (int s = 0; s < run.PartySize; s++)
-                if (s >= run.PartyHp.Count || run.PartyHp[s] > 0f) n++;
-            return System.Math.Max(1, n);
-        }
-
         // 새로 나온 적에게 이 방의 레벨을 입히고 스탯을 다시 계산
         void ApplyEnemyLevels(RunData run)
         {
@@ -325,7 +316,7 @@ namespace IntoTheDungeon.Features.Battle
                     if (teams[i].TeamFlag == TeamFlag.Enemy && !em.HasComponent<EnemyLeveledTag>(entities[i])) _leveled.Add(entities[i]);
             }
             int level = EnemyLevel(run);
-            int fighters = Fighters(run);
+            int fighters = Encounters.Fighters(run);
             NameId bossName = default;
             bool hasBossName = _names != null && _names.TryGetId(Boss.SpawnName, out bossName);
             foreach (var e in _leveled)
@@ -343,6 +334,10 @@ namespace IntoTheDungeon.Features.Battle
                 // 몹 전체 기본 강화(유저: 몹이 너무 약하다)
                 est.MaxHp = (int)System.MathF.Round(est.MaxHp * EnemyHpBase);
                 est.Damage = (int)System.MathF.Round(est.Damage * EnemyDamageBase);
+                // 스테이지·정예 보정(뒤로 갈수록 템·레벨이 쌓이므로 더 단단하고 아프게)
+                bool eliteRoom = run.Current != null && run.Current.Type == RoomType.Elite;
+                est.MaxHp = (int)System.MathF.Round(est.MaxHp * Encounters.StageHpMul(run.Stage, eliteRoom));
+                est.Damage = (int)System.MathF.Round(est.Damage * Encounters.StageDamageMul(run.Stage, eliteRoom));
                 // 파티 인원 보정(혼자·둘이면 약하게)
                 est.MaxHp = (int)System.MathF.Round(est.MaxHp * Encounters.HpMul(fighters));
                 est.Damage = System.Math.Max(1, (int)System.MathF.Round(est.Damage * Encounters.DamageMul(fighters)));
@@ -553,8 +548,9 @@ namespace IntoTheDungeon.Features.Battle
             {
                 var teams = chunk.GetComponentArray<TeamComponent>();
                 var statuses = chunk.GetComponentArray<StatusComponent>();
+                var entities = chunk.GetEntities();
                 for (int i = 0; i < chunk.Count; i++)
-                    if (teams[i].TeamFlag == TeamFlag.Enemy && statuses[i].IsAlive) n++;
+                    if (teams[i].TeamFlag == TeamFlag.Enemy && (statuses[i].IsAlive || Revive.IsDowned(_world.EntityManager, entities[i]))) n++;   // 무너진 해골도 아직 남은 적
             }
             return n;
         }

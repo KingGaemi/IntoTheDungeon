@@ -36,7 +36,7 @@ namespace IntoTheDungeon.Features.Stats
         public PrimaryStats Base;     // 레벨 1 기준
         public PrimaryStats Growth;   // 레벨이 하나 오를 때마다 더해지는 값
         public int Level;
-        public PrimaryStats Bonus;    // 카드(덱)·장비
+        public PrimaryStats Bonus;    // 유물·장비
         public readonly PrimaryStats Total => PrimaryStats.AtLevel(Base, Growth, Level) + Bonus;
     }
 

@@ -96,7 +96,7 @@ namespace IntoTheDungeon.Unity.Hud
 
         void LateUpdate()
         {
-            float dt = Time.deltaTime;
+            float dt = Time.unscaledDeltaTime;   // 배속·히트스톱과 무관하게 같은 속도로(보여 주기용 연출)
             foreach (var n in _numbers)
             {
                 if (!n.Active) continue;

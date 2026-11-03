@@ -23,7 +23,7 @@ namespace IntoTheDungeon.Features.Run
         public List<int> Levels = new(), Xp = new(), LastLevelUps = new();
         public List<ItemSave> Items = new();
         public List<int> Loot = new();
-        public List<string> Deck = new(), PendingRewards = new();
+        public List<string> Deck = new(), PendingRewards = new(), Relics = new();
         public List<OfferSave> Shop = new();
     }
 

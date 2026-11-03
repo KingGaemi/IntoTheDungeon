@@ -93,6 +93,11 @@ namespace IntoTheDungeon.Unity
             public float slamRadius, slamCharge, slamCd, slamDmg;
             [Tooltip("강타 요구 저지력(0이면 10). 필살기 저지력(대부분 10)이 쌓여 이 이상이면 끊김")]
             public int slamStop;
+            [Tooltip("되살아남: 횟수(0이면 없음)·무더기를 부수는 데 필요한 저지력")]
+            public int revive, reviveStop;
+            [Tooltip("보스 잼: 보스로 나오면 확정(bossGem), 아니면 dropGem을 dropGemChance 확률로(GemPool Id, 비우면 없음)")]
+            public string bossGem, dropGem;
+            public float dropGemChance;
         }
 
         [Header("캐릭터 종류별 정의(없는 이름은 반지름 0.3·무게 1)")]
@@ -109,18 +114,23 @@ namespace IntoTheDungeon.Unity
                     slamRadius = 1.8f, slamCharge = 1.3f, slamCd = 8f, slamDmg = 2.5f },
             new() { recipe = "Orc3", displayName = "오크 대장", gStr = 2, gAgi = 1, gInt = 0, gWil = 2, bodyRadius = 0.45f, bodyMass = 2f, headHeight = 1.59f, str = 10, agi = 3, intel = 1, wil = 6,
                     traitText = "매우 단단함 · 맞으면 밀려나며 잠깐 굳음", hpMul = 1.5f, spdMul = 0.85f, kbResist = 0.5f, knockback = 7f, launch = 4f, hitStun = 0.25f, windup = 0.7f,
-                    slamRadius = 2.1f, slamCharge = 1.4f, slamCd = 7f, slamDmg = 2.8f, slamStop = 15 },
+                    slamRadius = 2.1f, slamCharge = 1.4f, slamCd = 7f, slamDmg = 2.8f, slamStop = 15, bossGem = "warlord" },
             // 식인 식물: 체력이 낮은 대신 아프다. 뿌리 때문에 느리다
             new() { recipe = "Plant1", displayName = "식인초", gStr = 1, gAgi = 2, gInt = 0, gWil = 1, bodyRadius = 0.3f, bodyMass = 1f, headHeight = 1.0f, str = 5, agi = 7, intel = 0, wil = 2,
                     traitText = "약하지만 아프게 문다", hpMul = 0.5f, dmgMul = 1.8f, spdMul = 0.8f },
             new() { recipe = "Plant2", displayName = "가시 덩굴", gStr = 2, gAgi = 1, gInt = 0, gWil = 2, bodyRadius = 0.38f, bodyMass = 1.6f, headHeight = 1.05f, str = 8, agi = 3, intel = 0, wil = 5,
                     traitText = "가시: 근접으로 때리면 피해 30%를 돌려받음", hpMul = 0.65f, dmgMul = 1.5f, spdMul = 0.7f, thorns = 0.3f },
             new() { recipe = "Plant3", displayName = "독꽃", gStr = 2, gAgi = 1, gInt = 1, gWil = 1, bodyRadius = 0.4f, bodyMass = 1.8f, headHeight = 1.1f, str = 10, agi = 5, intel = 2, wil = 5,
-                    traitText = "독: 맞으면 4초 동안 지속 피해", hpMul = 0.6f, dmgMul = 1.4f, spdMul = 0.75f, poison = 0.2f, poisonTime = 4f },
+                    traitText = "독: 맞으면 4초 동안 지속 피해", hpMul = 0.6f, dmgMul = 1.4f, spdMul = 0.75f, poison = 0.2f, poisonTime = 4f, bossGem = "bloom" },
             // 흡혈 박쥐(FreeAssets craftpix Bat01): 떼로 나오는 빠르고 가벼운 몹. 약하지만 문 만큼 회복하고, 맞으면 멀리 날아간다
             new() { recipe = "Bat1", displayName = "흡혈 박쥐", gStr = 1, gAgi = 2, gInt = 0, gWil = 0, bodyRadius = 0.22f, bodyMass = 0.5f, headHeight = 1.45f, str = 3, agi = 10, intel = 0, wil = 0,
                     attackRange = 0.9f, windup = 0.25f, recovery = 0.35f,
                     traitText = "빠른 떼 · 흡혈 · 잘 날아감", hpMul = 0.4f, dmgMul = 0.7f, spdMul = 1.35f, atkSpdMul = 1.3f, kbResist = -0.6f, lifesteal = 0.5f },
+            // 해골 기사(FreeAssets craftpix Skeleton01, 정예): 단단하고 아프다. 쓰러지면 뼈 무더기가 됐다가 다시 일어난다(2번).
+            // 무더기일 때 저지력 15 이상 필살기를 맞혀야 완전히 부서진다 → "해골 나오면 필살기를 아껴라"
+            new() { recipe = "Skeleton1", displayName = "해골 기사", gStr = 2, gAgi = 1, gInt = 0, gWil = 2, bodyRadius = 0.38f, bodyMass = 1.8f, headHeight = 1.5f, str = 9, agi = 5, intel = 0, wil = 6,
+                    windup = 0.7f, recovery = 0.5f, traitText = "되살아남(2번) · 뼈 무더기일 때 저지력 15 필살기로 분쇄", hpMul = 1.25f, dmgMul = 1.4f, spdMul = 0.8f, kbResist = 0.45f,
+                    knockback = 4f, launch = 2f, hitStun = 0.2f, revive = 2, reviveStop = 15, dropGem = "bonecrown", dropGemChance = 0.4f },
             // 중갑 전사(탱커): 체력·방어·넉백 저항이 높고 무겁다. 대신 휘두르는 게 느려 평타 피해는 낮다. 평타는 범위, 필살기는 도발 + 방패
             new() { recipe = "Warrior", displayName = "중갑 전사", gStr = 4, gAgi = 3, gInt = 1, gWil = 3, bodyRadius = 0.36f, bodyMass = 2.2f, headHeight = 1.3f,
                     windup = 0.7f, recovery = 0.8f, skill = SkillPreset.TauntGuard, basic = BasicSkillPreset.ShieldBash, cleave = true, str = 13, agi = 8, intel = 1, wil = 10 },
@@ -192,6 +202,11 @@ namespace IntoTheDungeon.Unity
                     def.SlamCooldown = d.slamCd > 0f ? d.slamCd : 9f;
                     def.SlamDamageMul = d.slamDmg > 0f ? d.slamDmg : 2f;
                     def.SlamStopRequired = d.slamStop > 0 ? d.slamStop : 10;
+                    def.ReviveCharges = d.revive;
+                    def.ReviveStopRequired = d.reviveStop > 0 ? d.reviveStop : 10;
+                    def.BossGem = string.IsNullOrEmpty(d.bossGem) ? 0 : IntoTheDungeon.Features.Run.GemPool.IndexOf(d.bossGem) + 1;   // 번호 + 1(0 = 없음)
+                    def.DropGem = string.IsNullOrEmpty(d.dropGem) ? 0 : IntoTheDungeon.Features.Run.GemPool.IndexOf(d.dropGem) + 1;
+                    def.DropGemChance = d.dropGemChance;
                     definitions[recipeTable.GetId(d.recipe)] = def;
                     catalog.Set(d.recipe, def);
                 }
@@ -291,6 +306,7 @@ namespace IntoTheDungeon.Unity
             world.SystemManager.AddUnique(new PoisonSystem());          // 독 지속 피해(피해 처리 전에 큐에 넣음)
             world.SystemManager.AddUnique(new DamageProcessingSystem());
             world.SystemManager.AddUnique(new DeathStateSystem());
+            world.SystemManager.AddUnique(new ReviveSystem());      // 해골 기사: 무너졌다 다시 일어남·필살기로 부숨(보상·드랍·시체 정리보다 먼저)
             world.SystemManager.AddUnique(new LootDropSystem());    // 쓰러진 적이 확률로 아이템을 떨굼(시체가 지워지기 전에)
             world.SystemManager.AddUnique(new KillRewardSystem());  // 처치마다 경험치·골드, 전투 중 레벨 업
             world.SystemManager.AddUnique(new StatRegenSystem());   // 초당 체력·마나 회복(힘·지능)

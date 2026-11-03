@@ -9,6 +9,7 @@ namespace IntoTheDungeon.Unity.Title
     /// 새 게임 직전 봉인석 고르기(판 도중엔 못 바꾼다): 가운데 봉인석 문양, 오른쪽에 단계·효과.
     /// 좌우 화살표(키보드 ←→)나 룬을 눌러 단계를 정하고, 「출발」(Enter)을 누르면 봉인석이 타오른 뒤 하얗게 번지며 던전으로 들어간다.
     /// 마지막으로 고른 단계를 기억한다(PlayerPrefs).
+    /// 잼도 여기서 세팅한다(「잼 세팅」 버튼·G키 → GemHud 창). 판 도중엔 봉인석 배지에서 보기만 한다.
     /// </summary>
     public sealed class SealSelectScreen : MonoBehaviour
     {
@@ -22,16 +23,21 @@ namespace IntoTheDungeon.Unity.Title
         SealEmblem _emblem;
         Text _tierText, _nameText, _stats, _hint;
         Image _white;
-        Button _left, _right, _start, _back;
+        Button _left, _right, _start, _back, _gemButton;
+        Text _gemSummary;
+        readonly Image[] _gemIcons = new Image[MetaProgress.MaxSlots];
+        System.Collections.Generic.Dictionary<string, Sprite> _gemSprites;
+        GemHud _gems;
         int _tier;
         bool _starting;
         float _startT, _textPop;
 
         public bool Visible => _root && _root.activeSelf;
 
-        public void Build(Transform canvasRoot, Font font, System.Action<int> onStart, System.Action onBack)
+        public void Build(Transform canvasRoot, Font font, System.Action<int> onStart, System.Action onBack, GemHud gems)
         {
             _font = font;
+            _gems = gems;
             _onStart = onStart;
             _onBack = onBack;
 
@@ -45,7 +51,7 @@ namespace IntoTheDungeon.Unity.Title
             var title = NewText(root, "봉인석", 66);
             title.color = new Color(0.92f, 0.88f, 1f, 1f);
             Place(title.rectTransform, new Vector2(0f, 430f), new Vector2(900f, 90f));
-            var sub = NewText(root, "봉인을 풀수록 던전의 몹이 강해지고, 그만큼 보상이 커집니다", 26);
+            var sub = NewText(root, "", 26);
             sub.color = new Color(1f, 1f, 1f, 0.55f);
             Place(sub.rectTransform, new Vector2(0f, 370f), new Vector2(1400f, 40f));
 
@@ -70,11 +76,23 @@ namespace IntoTheDungeon.Unity.Title
             _stats.lineSpacing = 1.25f;
             Place(_stats.rectTransform, new Vector2(470f, -90f), new Vector2(760f, 170f));
 
-            _start = MakeButton(root, "출발", new Vector2(470f, -300f), new Vector2(420f, 92f), new Color(0.32f, 0.2f, 0.5f, 1f), StartRun);
+            // 잼: 끼운 잼 요약 + 세팅 버튼(봉인석과 함께 판 들어가기 전에 정한다)
+            _gemSummary = NewText(root, "", 22);
+            _gemSummary.supportRichText = true;
+            _gemSummary.color = new Color(0.75f, 0.88f, 1f, 0.9f);
+            Place(_gemSummary.rectTransform, new Vector2(470f, -196f), new Vector2(800f, 32f));
+            for (int i = 0; i < _gemIcons.Length; i++)   // 끼운 잼 아이콘(빈 소켓은 흐린 칸, 잠긴 소켓은 안 보임)
+            {
+                _gemIcons[i] = NewImage(root, Color.white);
+                _gemIcons[i].preserveAspect = true;
+                Place(_gemIcons[i].rectTransform, new Vector2(470f + (i - (_gemIcons.Length - 1) * 0.5f) * 50f, -192f), new Vector2(42f, 42f));
+            }
+            _gemButton = MakeButton(root, "잼", new Vector2(470f, -238f), new Vector2(300f, 48f), new Color(0.2f, 0.32f, 0.52f, 1f), () => _gems?.SetOpen(true), 26);
+            _start = MakeButton(root, "출발", new Vector2(470f, -320f), new Vector2(420f, 92f), new Color(0.32f, 0.2f, 0.5f, 1f), StartRun);
             _back = MakeButton(root, "뒤로", new Vector2(-300f, -440f), new Vector2(260f, 70f), new Color(0.16f, 0.16f, 0.24f, 1f), () => _onBack?.Invoke());
-            _hint = NewText(root, "←→ 단계   ·   룬을 눌러도 됩니다   ·   Enter 출발", 22);
+            _hint = NewText(root, "", 22);
             _hint.color = new Color(1f, 1f, 1f, 0.4f);
-            Place(_hint.rectTransform, new Vector2(470f, -380f), new Vector2(800f, 36f));
+            Place(_hint.rectTransform, new Vector2(470f, -395f), new Vector2(800f, 36f));
 
             _white = NewImage(root, new Color(1f, 1f, 1f, 0f));
             Stretch(_white.rectTransform);
@@ -112,7 +130,8 @@ namespace IntoTheDungeon.Unity.Title
             PlayerPrefs.SetInt(PrefKey, _tier);
             PlayerPrefs.Save();
             _emblem.Ignite();
-            _left.interactable = _right.interactable = _start.interactable = _back.interactable = false;
+            _left.interactable = _right.interactable = _start.interactable = _back.interactable = _gemButton.interactable = false;
+            _gems?.SetOpen(false);
         }
 
         void Refresh()
@@ -147,10 +166,35 @@ namespace IntoTheDungeon.Unity.Title
                 return;
             }
 
+            RefreshGems();
+            if (_gems != null && (_gems.IsOpen || _gems.ToggledFrame == Time.frameCount)) return;   // 잼 창이 열려 있으면 키는 그쪽(G·Esc로 닫힘)
+            if (Input.GetKeyDown(KeyCode.G)) { _gems?.SetOpen(true); return; }
             if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A)) Set(_tier - 1);
             if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D)) Set(_tier + 1);
             if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) StartRun();
             if (Input.GetKeyDown(KeyCode.Escape)) _onBack?.Invoke();
+        }
+
+        // 끼운 잼: 아이콘만(이름·효과는 잼 창에서)
+        void RefreshGems()
+        {
+            var meta = MetaProgress.Current;
+            if (_gemSprites == null)
+            {
+                _gemSprites = new System.Collections.Generic.Dictionary<string, Sprite>();
+                foreach (var sp in Resources.LoadAll<Sprite>("GemIcons")) _gemSprites[sp.name] = sp;
+            }
+            _gemSummary.text = "";
+            for (int i = 0; i < _gemIcons.Length; i++)
+            {
+                bool open = i < meta.SlotCount;
+                _gemIcons[i].enabled = open;
+                if (!open) continue;
+                string id = meta.InSlot(i);
+                var sprite = id != null && _gemSprites.TryGetValue(id, out var g) ? g : null;
+                _gemIcons[i].sprite = sprite;
+                _gemIcons[i].color = sprite ? Color.white : new Color(1f, 1f, 1f, 0.12f);
+            }
         }
 
         static void Clickable(Image img, UnityEngine.Events.UnityAction onClick)
@@ -169,11 +213,8 @@ namespace IntoTheDungeon.Unity.Title
             var img = NewImage(parent, color);
             img.raycastTarget = true;
             Place(img.rectTransform, pos, size);
-            var outline = img.gameObject.AddComponent<Outline>();
-            outline.effectColor = new Color(1f, 1f, 1f, 0.15f);
-            outline.effectDistance = new Vector2(2f, -2f);
             var btn = img.gameObject.AddComponent<Button>();
-            btn.targetGraphic = img;
+            UiKit.Button(btn, img, color, UiKit.Rim);   // 둥근 판 + 청동 테두리
             btn.onClick.AddListener(onClick);
             var t = NewText(img.transform, text, fontSize);
             Stretch(t.rectTransform);

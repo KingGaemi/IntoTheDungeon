@@ -45,7 +45,7 @@ namespace IntoTheDungeon.Features.Battle
                 var teams = chunk.GetComponentArray<TeamComponent>();
                 var entities = chunk.GetEntities();
                 for (int i = 0; i < chunk.Count; i++)
-                    if (!statuses[i].IsAlive && teams[i].TeamFlag != Party.Team && !em.HasComponent<CorpseComponent>(entities[i]))
+                    if (!statuses[i].IsAlive && teams[i].TeamFlag != Party.Team && !em.HasComponent<CorpseComponent>(entities[i]) && !Revive.IsDowned(em, entities[i]))
                         _newCorpses.Add(entities[i]);
             }
 

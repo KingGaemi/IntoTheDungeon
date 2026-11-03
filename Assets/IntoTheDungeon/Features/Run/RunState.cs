@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace IntoTheDungeon.Features.Run
 {
-    public enum RunPhase { ChoosingRoom, InRoom, Camp, Cleared, Failed }   // Camp: 전투 뒤 보상·덱 정비
+    public enum RunPhase { ChoosingRoom, InRoom, Camp, Cleared, Failed }   // Camp: 전투 뒤 보상·장비 정비
     public enum Difficulty { Easy, Normal, Hard }
 
     /// <summary>난이도별 기본값(임시값). 난이도 선택 화면이 생기면 RunState.StartNew에 넘긴다.</summary>
@@ -16,7 +16,7 @@ namespace IntoTheDungeon.Features.Run
             _ => 0.8f
         };
 
-        /// <summary>전투에서 이긴 뒤 살아 있는 파티원이 회복하는 최대 체력 비율(덱 보정 전).</summary>
+        /// <summary>전투에서 이긴 뒤 살아 있는 파티원이 회복하는 최대 체력 비율(유물·장비 보정 전).</summary>
         public static float PostBattleHeal(Difficulty d) => d switch
         {
             Difficulty.Easy => 0.3f,
@@ -26,7 +26,7 @@ namespace IntoTheDungeon.Features.Run
     }
 
     /// <summary>
-    /// 던전 한 판(런)의 진행: 지도, 지금 위치, 방과 방 사이에 이어지는 파티(구성·체력)와 덱.
+    /// 던전 한 판(런)의 진행: 지도, 지금 위치, 방과 방 사이에 이어지는 파티(구성·체력)와 유물.
     /// 방을 옮길 때마다 씬을 다시 불러오므로 씬 밖(정적)에 둔다. 플레이 모드를 새로 켜면 새 판.
     /// </summary>
     public sealed class RunData
@@ -125,10 +125,10 @@ namespace IntoTheDungeon.Features.Run
 
         /// <summary>
         /// 적 하나를 처치했을 때 경험치·골드(임시값). 최대 체력이 클수록(강한 몹·높은 레벨) 많이 준다.
-        /// 경험치 = 최대 체력/25 × (1 + 0.2×(레벨-1)), 골드 = 경험치의 절반 정도에 ±30% 흔들림.
+        /// 경험치 = 최대 체력/33 × (1 + 0.2×(레벨-1)), 골드 = 경험치의 0.9배 정도에 ±30% 흔들림(0.5 → 0.9: 골드가 너무 적음).
         /// </summary>
         public static int KillXp(int maxHp, int level) => System.Math.Max(1, (int)System.MathF.Round(maxHp / 33f * (1f + 0.2f * System.Math.Max(0, level - 1))));
-        public int KillGold(int xp) => System.Math.Max(1, (int)System.MathF.Round(xp * 0.5f * (0.7f + 0.6f * (float)Rng.NextDouble())));
+        public int KillGold(int xp) => System.Math.Max(1, (int)System.MathF.Round(xp * 0.9f * (0.7f + 0.6f * (float)Rng.NextDouble())));
 
         /// <summary>파티 공용 보관함. 효과 없이 보관만 한다.</summary>
         public readonly Inventory Stash = new(Inventory.StashCols, Inventory.StashRows);
@@ -146,8 +146,11 @@ namespace IntoTheDungeon.Features.Run
         /// <summary>드랍 뽑기 등 판 안의 무작위.</summary>
         public System.Random Rng => _rng;
 
-        /// <summary>얻은 카드들. 패시브는 전투 때 파티 전원에게 걸린다.</summary>
+        /// <summary>얻은 카드들(동료 영입 기록). 파티 강화는 유물로 옮겨 갔다.</summary>
         public readonly List<CardDef> Deck = new();
+
+        /// <summary>파티 공용 유물(개수 제한 없음). 파티 전원에게 걸린다.</summary>
+        public readonly List<CardDef> Relics = new();
 
         /// <summary>정비 화면에서 고를 보상(이번 전투 것). 하나 고르면 RewardTaken.</summary>
         public readonly List<CardDef> PendingRewards = new();
@@ -176,12 +179,12 @@ namespace IntoTheDungeon.Features.Run
             _rng = new System.Random(seed ^ 0x5f3759df);
         }
 
-        /// <summary>그 파티원의 보정값 = 덱 패시브(파티 전원) + 그 파티원 장비 칸의 아이템.</summary>
+        /// <summary>그 파티원의 보정값 = 파티 유물(파티 전원) + 잼 + 그 파티원 장비 칸의 아이템.</summary>
         public PartyModifiers BuildModifiers(int slot)
         {
             var m = new PartyModifiers();
-            foreach (var card in Deck)
-                card.Modify?.Invoke(m);
+            foreach (var relic in Relics)
+                relic.Modify?.Invoke(m);
             MetaProgress.Current.Apply(m);   // 잼 슬롯(파티 전원)
             if (slot >= 0)
                 foreach (var item in GearOf(slot).Items)
@@ -226,7 +229,7 @@ namespace IntoTheDungeon.Features.Run
                 PendingRewards.Clear();
                 RewardTaken = true;
                 Shop.Clear();
-                Shop.AddRange(ShopPool.Generate(true, PartySize, Depth, _rng));
+                Shop.AddRange(ShopPool.Generate(true, this, _rng));
                 LastMessage = "";
                 return;
             }
@@ -241,7 +244,7 @@ namespace IntoTheDungeon.Features.Run
             Phase = RunPhase.InRoom;
         }
 
-        /// <summary>그 파티원의 전투 후 회복 비율 = 난이도 기본값 + 덱·장비 보정(0~1).</summary>
+        /// <summary>그 파티원의 전투 후 회복 비율 = 난이도 기본값 + 유물·장비 보정(0~1).</summary>
         public float PostBattleHealRatio(int slot)
             => System.Math.Clamp(DifficultyTable.PostBattleHeal(Difficulty) + BuildModifiers(slot).PostBattleHealAdd, 0f, 1f);
 
@@ -253,20 +256,27 @@ namespace IntoTheDungeon.Features.Run
             for (int i = 0; i < PartyHp.Count; i++)
                 if (PartyHp[i] > 0f) PartyHp[i] = System.MathF.Min(1f, PartyHp[i] + PostBattleHealRatio(i));   // 쓰러진 파티원은 휴식 방에서만
 
-            LastHeal = DifficultyTable.PostBattleHeal(Difficulty) + BuildModifiers(-1).PostBattleHealAdd;   // 표시용(덱까지, 장비는 파티원별)
+            LastHeal = DifficultyTable.PostBattleHeal(Difficulty) + BuildModifiers(-1).PostBattleHealAdd;   // 표시용(유물까지, 장비는 파티원별)
             bool boss = Current != null && Current.Type == RoomType.Boss;
             Phase = boss && IsLastStage ? RunPhase.Cleared : RunPhase.Camp;
             if (boss && !IsLastStage) StageCleared = true;   // 정비 뒤 다음 스테이지
             if (boss) MetaProgress.Current.AddBossKill();      // 잼 슬롯 해금 기록
             if (Phase == RunPhase.Cleared) EndRun(true);
 
-            // 전투 뒤 보상 카드는 없다(성장은 레벨 업, 카드·영입은 상점에서)
+            // 전투 뒤 보상은 보통 없다(성장은 레벨 업, 유물·영입은 상점에서). 예외:
+            // 1스테이지 첫 층 전투 → 첫 동료 고르기(케서린 혼자 시작 → 파티 짜기를 빨리 시작)
+            // 스테이지 보스(마지막 스테이지 제외) → 유물 3개 중 1개 무조건
             PendingRewards.Clear();
             RewardTaken = true;
+            if (Phase == RunPhase.Camp && Stage == 1 && Current != null && Current.Layer == 0 && PartySize < CardPool.MaxPartySize)
+                PendingRewards.AddRange(CardPool.AvailableRecruits(Members));
+            else if (Phase == RunPhase.Camp && boss)
+                PendingRewards.AddRange(RelicPool.Roll(this, RelicPool.RewardChoices, RelicPool.Tier(this, stageReward: true), _rng));
+            RewardTaken = PendingRewards.Count == 0;
             InShopRoom = false;
             Shop.Clear();
             if (Phase == RunPhase.Camp && Current != null)
-                Shop.AddRange(ShopPool.Generate(false, PartySize, Depth, _rng));
+                Shop.AddRange(ShopPool.Generate(false, this, _rng));
         }
 
         // ───────── 상점 ─────────
@@ -280,6 +290,7 @@ namespace IntoTheDungeon.Features.Run
             if (Phase != RunPhase.Camp || !Shop.Contains(o)) return "지금은 살 수 없습니다";
             if (o.Sold) return "품절";
             if (o.Kind == ShopOfferKind.Recruit && PartySize >= CardPool.MaxPartySize) return "파티가 가득 찼습니다";
+            if (o.Kind == ShopOfferKind.Card && Relics.Contains(o.Card)) return "이미 가진 유물입니다";
             if (o.Kind == ShopOfferKind.Revive && !AnyFallen()) return "쓰러진 파티원이 없습니다";
             if (o.Kind == ShopOfferKind.Heal && !AnyHurt()) return "다친 파티원이 없습니다";
             if (Gold < o.Price) return "골드가 부족합니다";
@@ -298,8 +309,8 @@ namespace IntoTheDungeon.Features.Run
                     Loot.Add(o.Item);
                     o.Sold = true;
                     break;
-                case ShopOfferKind.Card:
-                    Deck.Add(o.Card);
+                case ShopOfferKind.Card:   // 유물
+                    Relics.Add(o.Card);
                     o.Sold = true;
                     break;
                 case ShopOfferKind.Recruit:
@@ -358,6 +369,7 @@ namespace IntoTheDungeon.Features.Run
             foreach (var p in Stash.Items) s.Items.Add(new ItemSave { Owner = -1, Item = p.Def.Index, X = p.X, Y = p.Y, Rotated = p.Rotated });
             foreach (var d in Loot) s.Loot.Add(d.Index);
             foreach (var c in Deck) s.Deck.Add(c.Id);
+            foreach (var c in Relics) s.Relics.Add(c.Id);
             foreach (var c in PendingRewards) s.PendingRewards.Add(c.Id);
             foreach (var o in Shop)
                 s.Shop.Add(new OfferSave { Kind = (int)o.Kind, Item = o.Item?.Index ?? -1, Card = o.Card?.Id ?? "", Price = o.Price, Sold = o.Sold });
@@ -408,7 +420,15 @@ namespace IntoTheDungeon.Features.Run
                 if (inv.Place(def, it.X, it.Y, it.Rotated) == null) run.Loot.Add(def);   // 칸 규칙이 바뀌었으면 주운 아이템 칸으로
             }
             foreach (int i in s.Loot) { var def = ItemPool.Get(i); if (def != null) run.Loot.Add(def); }
-            foreach (var id in s.Deck) { var c = CardPool.Find(id); if (c != null) run.Deck.Add(c); }
+            foreach (var id in s.Relics) { var c = RelicPool.Find(id); if (c != null && !run.Relics.Contains(c)) run.Relics.Add(c); }
+            foreach (var id in s.Deck)
+            {
+                var c = CardPool.Find(id);
+                if (c == null) continue;
+                // 옛 저장: 덱의 패시브 카드는 같은 Id의 유물로 옮긴다(겹치던 건 하나만)
+                if (c.Kind == CardKind.Relic) { if (!run.Relics.Contains(c)) run.Relics.Add(c); }
+                else run.Deck.Add(c);
+            }
             foreach (var id in s.PendingRewards) { var c = CardPool.Find(id); if (c != null) run.PendingRewards.Add(c); }
             foreach (var os in s.Shop)
             {
@@ -420,16 +440,21 @@ namespace IntoTheDungeon.Features.Run
             return run;
         }
 
-        /// <summary>보상 하나를 고른다. 동료 영입이면 파티에 합류(체력 가득), 패시브면 덱에 넣는다.</summary>
+        /// <summary>보상 하나를 고른다. 동료 영입이면 파티에 합류(체력 가득), 유물이면 유물 칸에 넣는다.</summary>
         public void TakeReward(CardDef card)
         {
             if (RewardTaken || Phase != RunPhase.Camp || !PendingRewards.Contains(card)) return;
             RewardTaken = true;
             if (card.Kind == CardKind.Recruit)
             {
-                if (PartySize >= CardPool.MaxPartySize) return;
+                if (PartySize >= CardPool.MaxPartySize || Members.Contains(card.RecruitRecipe)) return;
                 Members.Add(card.RecruitRecipe);
                 if (PartyHp.Count > 0) PartyHp.Add(1f);   // 비어 있으면 전원 가득으로 취급되므로 그대로
+            }
+            if (card.Kind == CardKind.Relic)
+            {
+                if (!Relics.Contains(card)) Relics.Add(card);
+                return;
             }
             Deck.Add(card);
         }
@@ -467,16 +492,16 @@ namespace IntoTheDungeon.Features.Run
             EndRun(false);
         }
 
-        /// <summary>이번 판에 얻은 잼 이름(처치 드랍 + 판 끝 보상, 결과 화면 표시용).</summary>
+        /// <summary>이번 판에 얻은 잼 Id(처치 드랍 + 판 끝 보상). 잼 획득 연출(GemRevealHud)이 늘어난 만큼 하나씩 보여 준다.</summary>
         public readonly List<string> GemsFound = new();
         bool _runEnded;
 
-        /// <summary>잼 하나를 얻는다(판이 끝나도 남는다).</summary>
-        public GemDef FindGem()
+        /// <summary>잼 하나를 얻는다(판이 끝나도 남는다). specific이 없으면 무작위(보스 잼 제외).</summary>
+        public GemDef FindGem(GemDef specific = null)
         {
-            var gem = GemPool.Roll(_rng);
+            var gem = specific ?? GemPool.Roll(_rng);
             MetaProgress.Current.AddGem(gem.Id);
-            GemsFound.Add(gem.Name);
+            GemsFound.Add(gem.Id);
             return gem;
         }
 

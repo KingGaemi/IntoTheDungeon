@@ -39,6 +39,7 @@ namespace IntoTheDungeon.Unity.Hud
             public Button Button;
             public GameObject StopBadge;   // 오른쪽 위: 청록 망치 + 저지력 숫자
             public Text StopText;
+            public Text ManaText;          // 아래쪽: 마나 아이콘 + 비용(모자라면 「지금/비용」 빨강)
             public GameObject Empty;       // 아직 동료가 없는 칸(점선 + 「+」): 최대 4명까지 늘어난다는 표시
         }
 
@@ -92,6 +93,7 @@ namespace IntoTheDungeon.Unity.Hud
                     s.CooldownMask.anchorMax = Vector2.one;
                     s.CooldownText.text = "";
                     s.Label.text = "쓰러짐";
+                    s.ManaText.text = "";
                     s.Label.color = new Color(1f, 1f, 1f, 0.4f);
                     s.Frame.color = new Color(0.4f, 0.4f, 0.4f, 0.6f);
                     s.Button.interactable = false;
@@ -106,7 +108,11 @@ namespace IntoTheDungeon.Unity.Hud
                 s.CooldownMask.anchorMax = new Vector2(1f, sk.CooldownRatio);
                 s.CooldownText.text = sk.CooldownRemaining > 0f ? sk.CooldownRemaining.ToString(sk.CooldownRemaining < 1f ? "0.0" : "0") : "";
                 // 재사용 대기는 끝났는데 마나가 모자라면 그걸 알려 준다
-                s.Label.text = cooled && !enoughMana ? $"마나 부족\n{ds.Mana:0}/{sk.ManaCost:0}" : $"필살기\n<size=16>마나 {sk.ManaCost:0}</size>";
+                // 글자 대신 마나 아이콘 + 비용. 재사용 대기는 끝났는데 마나가 모자라면 「지금/비용」을 빨갛게
+                s.Label.text = "";
+                bool manaShort = cooled && !enoughMana;
+                s.ManaText.text = manaShort ? $"{ds.Mana:0}/{sk.ManaCost:0}" : $"{sk.ManaCost:0}";
+                s.ManaText.color = manaShort ? StopPowerUi.ShortColor : new Color(0.7f, 0.85f, 1f, 1f);
                 if (!s.StopBadge.activeSelf) s.StopBadge.SetActive(sk.StopPower > 0);
                 s.StopText.text = sk.StopPower.ToString();
                 s.StopText.color = StopPowerUi.Color;
@@ -121,13 +127,13 @@ namespace IntoTheDungeon.Unity.Hud
                 float pulse = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 14f);
                 if (chance)
                 {
-                    s.Label.text = $"지금 끊기!\n<size=16>{i + 1}번 키</size>";
+                    s.Label.text = "지금 끊기!";
                     s.Label.color = Color.Lerp(frameColor, Color.white, pulse);
                     s.Frame.color = Color.Lerp(frameColor, Color.white, pulse);
                 }
                 else if (shortOf)
                 {
-                    s.Label.text = $"저지력 부족\n<size=16>저지 {req} 필요</size>";
+                    s.Label.text = $"저지 {req} 필요";
                     s.Label.color = StopPowerUi.ShortColor;
                     s.StopText.color = Color.Lerp(StopPowerUi.ShortColor, Color.white, 0.3f * pulse);
                 }
@@ -200,8 +206,14 @@ namespace IntoTheDungeon.Unity.Hud
             frt.anchoredPosition = pos;
             frt.sizeDelta = size;
 
+            s.Frame.sprite = UiKit.FillSprite;   // 둥근 테(색이 깜빡이는 바깥 판)
+            s.Frame.type = Image.Type.Sliced;
+            s.Frame.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0f, 0f, 0.55f);
+            s.Frame.GetComponent<Shadow>().effectDistance = new Vector2(0f, -5f);
             s.Body = NewImage("Body", frt, readyColor);
-            Stretch(s.Body.rectTransform, 5f);
+            s.Body.sprite = UiKit.FillSprite;
+            s.Body.type = Image.Type.Sliced;
+            Stretch(s.Body.rectTransform, 4f);
             s.Button = s.Root.AddComponent<Button>();
             s.Button.targetGraphic = s.Body;
             int slot = index;
@@ -238,9 +250,7 @@ namespace IntoTheDungeon.Unity.Hud
             brt.anchorMin = brt.anchorMax = brt.pivot = new Vector2(1f, 1f);
             brt.anchoredPosition = new Vector2(-4f, -4f);
             brt.sizeDelta = new Vector2(66f, 32f);
-            var bo = badge.gameObject.AddComponent<Outline>();
-            bo.effectColor = new Color(StopPowerUi.Color.r, StopPowerUi.Color.g, StopPowerUi.Color.b, 0.6f);
-            bo.effectDistance = new Vector2(1.5f, -1.5f);
+            UiKit.Style(badge, new Color(0.03f, 0.08f, 0.09f, 0.9f), new Color(StopPowerUi.Color.r, StopPowerUi.Color.g, StopPowerUi.Color.b, 0.8f), shadow: false);
             var icon = NewImage("Icon", brt, StopPowerUi.Color);
             icon.sprite = StopPowerUi.Icon;
             var irt = icon.rectTransform;
@@ -263,6 +273,22 @@ namespace IntoTheDungeon.Unity.Hud
             s.HpFill = hpFill.rectTransform;
             s.HpFill.anchorMin = Vector2.zero; s.HpFill.anchorMax = Vector2.one;
             s.HpFill.offsetMin = s.HpFill.offsetMax = Vector2.zero;
+
+            // 마나: 아이콘 + 숫자(왼쪽 아래, 체력 바 위)
+            var manaIcon = NewImage("ManaIcon", s.Body.rectTransform, Color.white);
+            manaIcon.sprite = UiIcons.Of(UiIcons.Mana);
+            var mirt = manaIcon.rectTransform;
+            mirt.anchorMin = mirt.anchorMax = mirt.pivot = new Vector2(0f, 0f);
+            mirt.anchoredPosition = new Vector2(8f, 24f);
+            mirt.sizeDelta = new Vector2(24f, 24f);
+            s.ManaText = NewText("Mana", s.Body.rectTransform, font, "", 22);
+            s.ManaText.alignment = TextAnchor.MiddleLeft;
+            var mtr = s.ManaText.rectTransform;
+            mtr.anchorMin = mtr.anchorMax = mtr.pivot = new Vector2(0f, 0f);
+            mtr.anchoredPosition = new Vector2(34f, 24f);
+            mtr.sizeDelta = new Vector2(100f, 24f);
+            UiKit.Soft(s.ManaText);
+            UiKit.Soft(s.Label);
 
             s.Root.SetActive(false);
             return s;

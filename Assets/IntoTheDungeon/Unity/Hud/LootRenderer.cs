@@ -90,7 +90,7 @@ namespace IntoTheDungeon.Unity.Hud
             int used = 0, collecting = 0, arrived = 0;
             if (_world != null)
             {
-                float t = Time.time;
+                float t = Time.unscaledTime;   // 둥실거림은 배속과 무관하게
                 var bagWorld = BagWorld();
                 foreach (var chunk in _world.EntityManager.GetChunks(typeof(LootDropComponent)))
                 {
@@ -157,7 +157,7 @@ namespace IntoTheDungeon.Unity.Hud
             if (arrived > _arrived) _bagPulse = 1f;   // 하나 들어갈 때마다 통
             _arrived = arrived;
             _bagCount.text = $"+{arrived}";
-            _bagPulse = Mathf.Max(0f, _bagPulse - Time.deltaTime * 5f);
+            _bagPulse = Mathf.Max(0f, _bagPulse - Time.unscaledDeltaTime * 5f);
             _bag.localScale = Vector3.one * (1f + 0.25f * _bagPulse);
         }
 

@@ -107,6 +107,17 @@ namespace IntoTheDungeon.Unity.Hud
             _info.text = $"{(run.CurrentLayer + 1 >= layers ? "" : $"{run.CurrentLayer + 2}층으로 갈 방을 고르세요")}   ·   {party}{msg}";
         }
 
+        Dictionary<string, Sprite> _gemSprites;
+        Sprite GemSprite(string id)
+        {
+            if (_gemSprites == null)
+            {
+                _gemSprites = new Dictionary<string, Sprite>();
+                foreach (var sp in Resources.LoadAll<Sprite>("GemIcons")) _gemSprites[sp.name] = sp;
+            }
+            return _gemSprites.TryGetValue(id, out var s) ? s : null;
+        }
+
         Vector2 NodePos(RunData run, MapNode node)
         {
             int layers = run.Map.LayerCount;
@@ -140,9 +151,25 @@ namespace IntoTheDungeon.Unity.Hud
             frt.sizeDelta = size + new Vector2(8f, 8f);
             if (choosable) _choiceImages.Add((frame, node));
 
+            frame.sprite = UiKit.FillSprite;   // 둥근 방 칸
+            frame.type = Image.Type.Sliced;
             var body = NewImage("Body", frt, fill);
+            body.sprite = UiKit.FillSprite;
+            body.type = Image.Type.Sliced;
             Stretch(body.rectTransform, 4f);
             var label = NewText(body.rectTransform, Encounters.Label(node.Type), node.Type == RoomType.Boss ? 34 : 26);
+            string bossGem = node.Type == RoomType.Boss ? Encounters.BossGemOf(run.Stage) : node.Type == RoomType.Elite ? Encounters.EliteGem : null;
+            if (bossGem != null && !past)
+            {
+                var gemImg = NewImage("BossGem", frt, Color.white);
+                gemImg.sprite = GemSprite(bossGem);
+                gemImg.preserveAspect = true;
+                var grt = gemImg.rectTransform;
+                grt.anchorMin = grt.anchorMax = grt.pivot = new Vector2(1f, 1f);
+                grt.anchoredPosition = new Vector2(16f, 16f);   // 오른쪽 위 모서리에 걸쳐서
+                grt.sizeDelta = node.Type == RoomType.Boss ? new Vector2(52f, 52f) : new Vector2(38f, 38f);
+                gemImg.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0f, 0f, 0.8f);
+            }
             label.color = past ? new Color(1f, 1f, 1f, 0.5f) : Color.white;
 
             if (choosable)
@@ -198,7 +225,7 @@ namespace IntoTheDungeon.Unity.Hud
             back.raycastTarget = true;
             Place(back.rectTransform, new Vector2(0f, 1f), new Vector2(40f, -40f), new Vector2(300f, 64f));
             var btn = back.gameObject.AddComponent<Button>();
-            btn.targetGraphic = back;
+            UiKit.Button(btn, back, new Color(0.16f, 0.22f, 0.45f, 1f));
             btn.onClick.AddListener(() => RunState.Current.ReturnToCamp());
             var label = NewText(back.transform, "← 정비로 돌아가기", 28);
             label.rectTransform.anchorMin = Vector2.zero; label.rectTransform.anchorMax = Vector2.one;

@@ -61,6 +61,10 @@ namespace IntoTheDungeon.Features.Character
                     StopRequired = _def.SlamStopRequired,
                     ImpactAge = -1f
                 });
+            if (_def.BossGem > 0 || _def.DropGem > 0)   // 번호 + 1로 들고 있다(0 = 없음)
+                em.AddComponent(e, new IntoTheDungeon.Features.Battle.GemDropComponent { Gem = _def.DropGem - 1, BossGem = _def.BossGem - 1, Chance = _def.DropGemChance });
+            if (_def.ReviveCharges > 0)
+                em.AddComponent(e, IntoTheDungeon.Features.Battle.ReviveComponent.Create(_def.ReviveCharges, _def.ReviveStopRequired));
             em.AddComponent(e, new PrimaryStatsComponent { Base = _def.Stats, Growth = _def.Growth, Level = 1 });
             em.AddComponent(e, status);
             em.AddComponent(e, derived);
