@@ -91,7 +91,7 @@ namespace IntoTheDungeon.Features.Attack
                             {
                                 Owner = e,
                                 Team = teams[i].TeamFlag,
-                                Damage = (int)System.MathF.Round(statuses[i].Damage * sk.DamageMultiplier),
+                                Damage = SkillDamage(em, e, statuses[i].Damage, sk),
                                 Pos = transforms[i].Position,
                                 Height = transforms[i].Height,
                                 FacingSign = state.FacingToSign(),
@@ -154,6 +154,14 @@ namespace IntoTheDungeon.Features.Attack
             }
         }
 
+        // 필살기 피해 = 공격력 × 배율(마법 필살기면 마법 공격력도 더함)
+        static int SkillDamage(IEntityManager em, Entity e, int damage, in SpecialSkillComponent sk)
+        {
+            float atk = damage;
+            if (sk.Magic && em.TryGetComponent<DerivedStatsComponent>(e, out var ds)) atk += ds.MagicDamage;
+            return (int)System.MathF.Round(atk * sk.DamageMultiplier);
+        }
+
         void SetAction(Entity e, ref StateComponent state, ActionState action, bool stopMoving = false)
         {
             var prev = state.Current;
@@ -178,12 +186,14 @@ namespace IntoTheDungeon.Features.Attack
         public static void CreateWave(IEntityManager em, Entity owner, TeamFlag team, int damage, Vec2 pos, float height, float facingSign, in SpecialSkillComponent sk, int stopPower = 0)
         {
             var e = em.CreateEntity();
+            float ahead = sk.Centered ? 0f : sk.Offset > 0f ? sk.Offset : sk.WaveHalfExtents.X + 0.2f;   // 몸 바로 앞에서 출발(회오리: 제자리, 화살비: 멀리)
             em.AddComponent(e, new HitboxComponent
             {
+                Type = sk.Magic ? DamageType.Magic : DamageType.Physical,
                 Owner = owner,
                 Team = team,
                 Damage = damage,
-                Center = new Vec2(pos.X + facingSign * (sk.WaveHalfExtents.X + 0.2f), pos.Y),   // 몸 바로 앞에서 출발
+                Center = new Vec2(pos.X + facingSign * ahead, pos.Y),
                 HalfExtents = sk.WaveHalfExtents,
                 Height = height,
                 FacingSign = facingSign,

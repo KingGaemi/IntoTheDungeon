@@ -9,7 +9,7 @@ using IntoTheDungeon.Unity.Hud;
 namespace IntoTheDungeon.Unity.Title
 {
     /// <summary>
-    /// 타이틀 씬의 시작 메뉴(임시 UI, 코드로 만든다): 이어하기(자동 저장이 있을 때) · 새 게임 · 설정 · 종료.
+    /// 타이틀 씬의 시작 메뉴(임시 UI, 코드로 만든다): 이어하기(자동 저장이 있을 때) · 새 게임 · 업적 · 설정 · 종료.
     /// 설정: 피격 흔들림 세기(0~150%), 머리 위 디버그 글자 표시. 값은 GameSettings(PlayerPrefs)에 바로 저장된다.
     /// </summary>
     public sealed class TitleMenu : MonoBehaviour
@@ -21,39 +21,64 @@ namespace IntoTheDungeon.Unity.Title
         [SerializeField] Color buttonColor = new(0.16f, 0.22f, 0.45f, 1f);
         [SerializeField] Color accent = new(1f, 0.82f, 0.3f, 1f);
 
-        /// <summary>판이 끝나 「새 던전」을 누르고 타이틀로 오면 바로 봉인석 고르기를 연다.</summary>
+        /// <summary>판이 끝나 「새 던전」을 누르고 타이틀로 오면 바로 캐릭터 고르기(→ 봉인석)를 연다.</summary>
         public static bool OpenSealSelectOnLoad;
 
         Font _font;
         GameObject _menu, _settings, _continue, _titleGroup;
         Text _shakeValue, _overlayLabel;
         SealSelectScreen _seal;
+        CharacterSelectScreen _characters;
+        AchievementScreen _achievements;
+        string _starter;
 
         void Awake()
         {
             Build();
-            if (OpenSealSelectOnLoad) { OpenSealSelectOnLoad = false; ShowSeal(true); }
+            if (OpenSealSelectOnLoad) { OpenSealSelectOnLoad = false; ShowCharacters(true); }
         }
 
-        // 새 게임: 먼저 봉인석 단계를 고른다(판 도중엔 못 바꿈)
-        void NewGame() => ShowSeal(true);
+        // 새 게임: 시작 캐릭터 → 봉인석 단계 순으로 고른다(판 도중엔 못 바꿈)
+        void NewGame() => ShowCharacters(true);
 
-        void ShowSeal(bool show)
+        void ShowCharacters(bool show)
         {
-            _seal.Show(show);
+            _characters.Show(show);
             _menu.SetActive(!show);
             _titleGroup.SetActive(!show);
+        }
+
+        void PickCharacter(string starter)
+        {
+            _starter = starter;
+            _characters.Show(false);
+            _seal.Show(true);
+        }
+
+        // 봉인석에서 뒤로: 캐릭터 고르기로
+        void SealBack()
+        {
+            _seal.Show(false);
+            _characters.Show(true);
         }
 
         void StartRun(int sealTier)
         {
             RunSaveStore.Delete();   // 새 판을 시작하면 이전 판 저장은 지운다
-            RunState.StartNew();
+            RunState.StartNew(starter: _starter);
             RunState.Current.SetSealTier(sealTier);
             SceneManager.LoadScene(gameSceneName);
         }
 
+        void ShowAchievements(bool show)
+        {
+            _achievements.Show(show);
+            _menu.SetActive(!show);
+            _titleGroup.SetActive(!show);
+        }
+
         // 이어하기: 마지막 자동 저장(지도·정비 화면)부터
+
         void Continue()
         {
             var run = RunSaveStore.Load();
@@ -107,17 +132,18 @@ namespace IntoTheDungeon.Unity.Title
             _titleGroup = NewGroup(root);
             var title = NewText(_titleGroup.transform, "Into The Dungeon", 110);
             title.color = accent;
-            Place(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 250f), new Vector2(1400f, 140f));
+            Place(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 330f), new Vector2(1400f, 140f));
 
             // 메인 메뉴
             _menu = NewGroup(root);
             bool hasSave = RunSaveStore.HasSave;
-            float top = hasSave ? 40f : 0f;   // 이어하기가 있으면 한 칸씩 위로
+            float top = hasSave ? 90f : 40f;   // 이어하기가 있으면 한 칸씩 위로
             _continue = NewButton(_menu.transform, "이어하기", new Vector2(0f, top + 110f), Continue).gameObject;
             _continue.SetActive(hasSave);
             NewButton(_menu.transform, "새 게임", new Vector2(0f, top), NewGame);
-            NewButton(_menu.transform, "설정", new Vector2(0f, top - 110f), () => ShowSettings(true));
-            NewButton(_menu.transform, "종료", new Vector2(0f, top - 220f), Quit);
+            NewButton(_menu.transform, "업적", new Vector2(0f, top - 110f), () => ShowAchievements(true));
+            NewButton(_menu.transform, "설정", new Vector2(0f, top - 220f), () => ShowSettings(true));
+            NewButton(_menu.transform, "종료", new Vector2(0f, top - 330f), Quit);
 
             // 설정
             _settings = NewGroup(root);
@@ -140,7 +166,11 @@ namespace IntoTheDungeon.Unity.Title
             var gems = gameObject.AddComponent<Hud.GemHud>();   // 잼 세팅 창(봉인석 고르기 화면에서 연다)
             gems.Setup();
             _seal = gameObject.AddComponent<SealSelectScreen>();
-            _seal.Build(root, _font, StartRun, () => ShowSeal(false), gems);
+            _seal.Build(root, _font, StartRun, SealBack, gems);
+            _characters = gameObject.AddComponent<CharacterSelectScreen>();
+            _characters.Build(root, _font, PickCharacter, () => ShowCharacters(false));
+            _achievements = gameObject.AddComponent<AchievementScreen>();
+            _achievements.Build(root, _font, () => ShowAchievements(false));
         }
 
         GameObject NewGroup(Transform parent)

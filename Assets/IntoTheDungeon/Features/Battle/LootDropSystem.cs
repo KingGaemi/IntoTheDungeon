@@ -82,8 +82,8 @@ namespace IntoTheDungeon.Features.Battle
             var run = RunState.Current;
             var room = run.Current?.Type ?? RoomType.Battle;
             float chanceBonus = room == RoomType.Boss ? 0.15f : room == RoomType.Elite ? 0.06f : 0f;
-            float rareBonus = (room == RoomType.Boss ? 1f : room == RoomType.Elite ? 0.5f : 0f) + 0.05f * run.Depth + SealStone.RareBonus(run.SealTier);
-            float dropMul = SealStone.DropMul(run.SealTier);
+            float rareBonus = (room == RoomType.Boss ? 1f : room == RoomType.Elite ? 0.5f : 0f) + 0.05f * run.Depth + SealStone.RareBonus(run.SealTier) + DungeonTier.RareBonus(run.StageTier);
+            float dropMul = SealStone.DropMul(run.SealTier) * DungeonTier.DropMul(run.StageTier);
 
             // 청크 순회가 끝난 뒤 구조 변경
             foreach (var (e, pos, maxHp) in _dead)

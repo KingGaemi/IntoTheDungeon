@@ -18,6 +18,9 @@ namespace IntoTheDungeon.Unity.Hud
         [SerializeField] Color warnColor = new(1f, 0.2f, 0.15f, 1f);
         [SerializeField] Color impactColor = new(1f, 0.6f, 0.2f, 1f);
         [SerializeField] float impactTime = 0.45f;
+        [SerializeField] Color healColor = new(0.35f, 1f, 0.45f, 1f);
+        [SerializeField] Color hatchColor = new(1f, 0.45f, 0.7f, 1f);
+        [SerializeField] Color barrierColor = new(0.4f, 0.65f, 1f, 1f);
 
         sealed class Fx
         {
@@ -92,13 +95,16 @@ namespace IntoTheDungeon.Unity.Hud
         {
             var center = new Vector3(s.Center.X, s.Center.Y, 0f);
             fx.Root.position = center;
-            var full = new Vector3(s.Radius * 2f, s.Radius, 1f);   // 바닥 타원(깊이는 절반)
+            var full = new Vector3(s.Radius * 2f, s.Depth > 0f ? s.Depth * 2f : s.Radius, 1f);   // 바닥 타원(깊이는 절반, 돌진은 가는 줄)
             var ring = full / 0.85f;                                 // 고리 그림은 지름의 85% 자리에 그려져 있음
 
             fx.Edge.enabled = fx.Fill.enabled = warn;
             if (fx.Mark.gameObject.activeSelf != warn) fx.Mark.gameObject.SetActive(warn);
             fx.Impact.enabled = fx.Flash.enabled = !warn;
 
+            // 패턴 종류별 색: 강타·돌진 빨강 · 치유 의식 초록 · 부화 분홍 · 마법 보호막 파랑
+            var warnColor = s.Kind switch { PatternKind.Heal => healColor, PatternKind.Hatch => hatchColor, PatternKind.Barrier => barrierColor, _ => this.warnColor };
+            var impactColor = s.Kind switch { PatternKind.Heal => healColor, PatternKind.Hatch => hatchColor, PatternKind.Barrier => barrierColor, _ => this.impactColor };
             if (warn)
             {
                 float k = Mathf.Clamp01(s.Timer / Mathf.Max(0.01f, s.ChargeTime));

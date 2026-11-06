@@ -25,6 +25,8 @@ namespace IntoTheDungeon.Features.Run
         public const float RoomDiscount = 0.8f;
         public const float HealRatio = 0.3f;     // 회복: 살아 있는 파티원 전원 최대 체력의 30%
         public const float ReviveRatio = 0.5f;   // 부활: 쓰러진 파티원 1명을 체력 50%로
+        public const double CursedShelfChance = 0.3;   // (임시값) 상점 방 진열대 한 칸이 저주 유물일 확률
+        public const float CursedPriceMul = 0.5f;      // (임시값) 저주 유물 진열가 배율(반값)
 
         public static int ItemPrice(ItemRarity r) => r switch
         {
@@ -34,7 +36,7 @@ namespace IntoTheDungeon.Features.Run
             _ => 20
         };
 
-        public static int SellPrice(ItemDef def) => ItemPrice(def.Rarity) / 2;
+        public static int SellPrice(ItemDef def) => ItemPrice(def.Rarity) / 2 * (2 + def.Level) / 2;   // 강화 단계마다 원래 판매가의 절반씩 더(임시값)
 
         // ───────── 상점 티어(화면엔 안 보임) ─────────
         // 초반엔 살 수 없는 비싼 물건이 자리만 차지하지 않게, 진행도에 따라 상점 등급이 오른다.
@@ -74,14 +76,18 @@ namespace IntoTheDungeon.Features.Run
                 offers.Add(new ShopOffer { Kind = ShopOfferKind.Item, Item = def, Price = Price(ItemPrice(def.Rarity)) });
             }
 
-            // 유물(파티 공용): 아직 없는 것만, 등급은 유물 티어대로(상점 방은 한 단계 위)
-            int relicTier = System.Math.Min(RelicPool.MaxTier, RelicPool.Tier(run, stageReward: false) + (room ? 1 : 0));
-            foreach (var relic in RelicPool.Roll(run, room ? 2 : 1, relicTier, rng))
-                offers.Add(new ShopOffer { Kind = ShopOfferKind.Card, Card = relic, Price = Price(RelicPool.Price(relic.Rarity)) });
+            // 유물 진열대: 정비 상인 1개 · 상점 방 2개(안 가진 일반 유물, 등급별 가격 RelicPool.Price에 방 할인).
+            // 상점 방에선 CursedShelfChance로 한 칸이 저주 유물 반값(저주가 다 떨어졌으면 일반).
+            int relics = room ? 2 : 1;
+            CardDef cursed = room && rng.NextDouble() < CursedShelfChance ? RelicPool.RollCursed(run, rng) : null;
+            // 이번 보상 카드(PendingRewards)에 나온 유물은 진열대에서 뺀다(같은 유물이 두 곳에 보이지 않게). 풀이 비면 빈 리스트
+            var shelf = RelicPool.Roll(run, cursed != null ? relics - 1 : relics, RelicPool.Tier(run, false), rng, run.PendingRewards);
+            foreach (var card in shelf)
+                offers.Add(new ShopOffer { Kind = ShopOfferKind.Card, Card = card, Price = Price(RelicPool.Price(card.Rarity)) });
+            if (cursed != null)
+                offers.Add(new ShopOffer { Kind = ShopOfferKind.Card, Card = cursed, Price = System.Math.Max(1, (int)System.MathF.Round(Price(RelicPool.Price(cursed.Rarity)) * CursedPriceMul)) });
 
-            var recruits = CardPool.AvailableRecruits(members);   // 이미 있는 동료는 빼고
-            if (room && members.Count < CardPool.MaxPartySize && recruits.Count > 0)
-                offers.Add(new ShopOffer { Kind = ShopOfferKind.Recruit, Card = recruits[rng.Next(recruits.Count)], Price = Price(RecruitPrice) });
+            // 동료는 상점에서 팔지 않는다(지도의 동료 방에서 만나 합류)
             if (room)
                 offers.Add(new ShopOffer { Kind = ShopOfferKind.Revive, Price = Price(RevivePrice) });
             offers.Add(new ShopOffer { Kind = ShopOfferKind.Heal, Price = Price(HealPrice) });

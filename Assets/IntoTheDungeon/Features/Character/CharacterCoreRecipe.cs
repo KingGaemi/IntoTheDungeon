@@ -29,13 +29,9 @@ namespace IntoTheDungeon.Features.Character
             var ai = CombatAIComponent.Default;
             ai.AttackRange = _def.AttackRange;
             ai.MinRange = _def.MinRange;
+            ai.Enabled = !_def.Passive;   // 알집: 가만히 패턴만
             em.AddComponent(e, ai);
-            em.AddComponent(e, _def.Skill switch
-            {
-                SkillPreset.PowerShot => SpecialSkillComponent.PowerShot,
-                SkillPreset.TauntGuard => SpecialSkillComponent.TauntGuard,
-                _ => SpecialSkillComponent.SwordWave
-            });
+            em.AddComponent(e, SpecialSkillComponent.Of(_def.Skill));
             if (_def.BasicSkill != BasicSkillPreset.None) em.AddComponent(e, BasicSkills.Create(_def.BasicSkill));
             em.AddComponent(e, new StateComponent(ActionState.Idle));
             // 기본 스탯 → 체력·공격력·공속·이속·방어 등
@@ -52,6 +48,11 @@ namespace IntoTheDungeon.Features.Character
             if (_def.SlamRadius > 0f)
                 em.AddComponent(e, new IntoTheDungeon.Features.Battle.BossSlamComponent
                 {
+                    Kind = _def.SlamKind,
+                    Power = _def.SlamPower,
+                    AltKind = _def.SlamAltKind,
+                    AltPower = _def.SlamAltPower,
+                    Alternates = _def.SlamAltPower > 0f,
                     Cooldown = _def.SlamCooldown,
                     Remaining = _def.SlamCooldown * (0.3f + 0.4f * (float)s_rng.NextDouble()),   // 여러 마리가 한꺼번에 쓰지 않게 첫 시점을 흩뿌림
                     ChargeTime = _def.SlamCharge,
@@ -81,7 +82,7 @@ namespace IntoTheDungeon.Features.Character
             em.AddComponent(e, new IntoTheDungeon.Core.ECS.Components.TeamComponent());
             // 판정 크기는 임시값. X = 가로 반폭, Y = 깊이 반두께(같은 줄에 있어야 맞음)
             em.AddComponent(e, new HurtboxComponent { Offset = new Vec2(0f, 0f), HalfExtents = new Vec2(0.3f, 0.25f) });
-            if (_def.Ranged) em.AddComponent(e, RangedAttackComponent.Arrow);
+            if (_def.Ranged) em.AddComponent(e, _def.OrbShot ? RangedAttackComponent.Orb : RangedAttackComponent.Arrow);
             else
             {
                 var melee = MeleeAttackComponent.Default;

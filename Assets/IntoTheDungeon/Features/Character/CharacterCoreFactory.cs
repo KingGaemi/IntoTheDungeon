@@ -6,7 +6,7 @@ using IntoTheDungeon.Features.Stats;
 
 namespace IntoTheDungeon.Features.Character
 {
-    public enum SkillPreset { SwordWave, PowerShot, TauntGuard }
+    public enum SkillPreset { SwordWave, PowerShot, TauntGuard, Whirlwind, ArrowRain, Bulwark }   // 뒤 셋: 레벨업 특성으로 바꾸는 교체 필살기
 
     /// <summary>캐릭터 종류별 정의(레시피 이름 기준): 기본 스탯 4종, 몸 크기·무게, 공격 방식(근접/원거리)·사거리, 동작 시간, 필살기.</summary>
     public struct CharacterDefinition
@@ -23,6 +23,7 @@ namespace IntoTheDungeon.Features.Character
         public float WindupDuration;    // 공격 준비(이 끝에 판정·화살이 나감)
         public float RecoveryDuration;  // 공격 마무리
         public SkillPreset Skill;
+        public SkillPreset AltSkill;   // 교체 필살기(레벨업 특성 「필살기 교체」). Skill과 같으면 없음
         public IntoTheDungeon.Features.Attack.BasicSkillPreset BasicSkill;   // 자동으로 쓰는 기본 스킬(없으면 None)
         public bool Cleave;             // 근접 평타가 범위 공격(아니면 한 명만)
         public PrimaryStats Stats;      // 레벨 1의 힘·민첩·지능·정신력 → 체력·공격력·공속·이속 등은 StatFormula가 계산
@@ -35,6 +36,12 @@ namespace IntoTheDungeon.Features.Character
         // 강타(예고 후 범위 공격, BossSlamComponent): 힘 모으는 동안 도발로 끊을 수 있다. 반지름 0이면 없음
         public float SlamRadius, SlamCharge, SlamCooldown, SlamDamageMul;
         public int SlamStopRequired;    // 강타 요구 저지력
+        public IntoTheDungeon.Features.Battle.PatternKind SlamKind;   // 강타 / 치유 의식 / 부화
+        public float SlamPower;         // 치유: 최대 체력 비율, 부화: 마릿수, 보호막: 초
+        public IntoTheDungeon.Features.Battle.PatternKind SlamAltKind;   // 번갈아 쓰는 두 번째 패턴(SlamAltPower > 0일 때)
+        public float SlamAltPower;
+        public bool Passive;            // 움직이지도 때리지도 않는다(알집): 패턴만
+        public bool OrbShot;            // 원거리 평타가 화살 대신 구슬(주술사)
         // 되살아남(해골 기사, ReviveComponent): 쓰러지면 뼈 무더기가 됐다가 다시 일어난다. 무더기일 때 이 저지력 이상 필살기면 부서짐
         public int ReviveCharges, ReviveStopRequired;
         // 이 몹만 주는 잼(GemPool 번호 + 1, 0 = 없음): 보스로 나오면 BossGem 확정, 아니면 DropGem을 DropGemChance 확률로

@@ -60,7 +60,7 @@ namespace IntoTheDungeon.Unity.Hud
                     tile.Desc.text = StopPowerUi.Highlight(offer.Card.Description);
                     string whyShelf = run.CannotBuy(offer);
                     tile.Buy.interactable = whyShelf == null;
-                    tile.PriceLabel.text = offer.Sold ? "품절" : $"     {offer.Price}";
+                    tile.PriceLabel.text = offer.Sold ? "품절" : $"     {run.PriceOf(offer)}";   // 표시 가격 = 차감 가격(상점 가격 배율 반영)
                     tile.BuyImage.color = offer.Sold ? new Color(0.3f, 0.3f, 0.3f, 1f) : whyShelf == null ? accent : new Color(0.55f, 0.5f, 0.4f, 1f);
                     float sa = offer.Sold ? 0.4f : 1f;
                     tile.Title.color = new Color(1f, 0.9f, 0.65f, sa);
@@ -88,7 +88,7 @@ namespace IntoTheDungeon.Unity.Hud
 
                 string why = run.CannotBuy(offer);
                 tile.Buy.interactable = why == null;
-                tile.PriceLabel.text = offer.Sold ? "품절" : $"     {offer.Price}";   // 앞은 동전 아이콘 자리
+                tile.PriceLabel.text = offer.Sold ? "품절" : $"     {run.PriceOf(offer)}";   // 앞은 동전 아이콘 자리. 표시 가격 = 차감 가격
                 tile.BuyImage.color = offer.Sold ? new Color(0.3f, 0.3f, 0.3f, 1f) : why == null ? accent : new Color(0.55f, 0.5f, 0.4f, 1f);
                 float a = offer.Sold ? 0.4f : 1f;
                 tile.Title.color = new Color(1f, 1f, 1f, a);

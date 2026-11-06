@@ -113,12 +113,46 @@ namespace IntoTheDungeon.Features.Attack
                 }
             }
 
+            // 파티원 빌드(유물·특성): 독·그 파티원 흡혈
+            if (ownerAlive && em.TryGetComponent<MemberPerkComponent>(owner, out var perk))
+            {
+                if (perk.PoisonRatio > 0f && em.HasComponent<PoisonComponent>(victim))
+                {
+                    ref var p = ref em.GetComponent<PoisonComponent>(victim);
+                    float dps = hb.Damage * perk.PoisonRatio;
+                    if (!p.Active || dps >= p.Dps) { p.Dps = dps; p.Source = owner; }
+                    p.Remaining = System.MathF.Max(p.Remaining, perk.PoisonDuration);
+                }
+                if (perk.Lifesteal > 0f && em.HasComponent<HpModificationQueue>(owner))
+                {
+                    int heal = (int)System.MathF.Round(dealt * perk.Lifesteal);
+                    if (heal > 0) em.GetComponent<HpModificationQueue>(owner).Enqueue(HpModification.Heal(heal, owner));
+                }
+            }
+
+            // 파티 흡혈(피의 성배)
+            if (ownerAlive && CombatPerks.Lifesteal > 0f && CombatPerks.Mine(em, owner) && em.HasComponent<HpModificationQueue>(owner))
+            {
+                int heal = (int)System.MathF.Round(dealt * CombatPerks.Lifesteal);
+                if (heal > 0) em.GetComponent<HpModificationQueue>(owner).Enqueue(HpModification.Heal(heal, owner));
+            }
+
             // 맞은 쪽 특성: 가시(근접 평타·근접 히트박스만, 화살·검기는 안 돌려받음)
             if (ownerAlive && em.HasComponent<FollowOwnerComponent>(hitbox)
                 && em.TryGetComponent<TraitComponent>(victim, out var def) && def.Thorns > 0f
                 && em.HasComponent<HpModificationQueue>(owner))
             {
                 int back = System.Math.Max(1, (int)System.MathF.Round(dealt * def.Thorns));
+                em.GetComponent<HpModificationQueue>(owner).Enqueue(HpModification.Damage(back, victim));
+            }
+
+            // 맞은 파티원의 빌드 가시(가시 갑주·가시 갑옷): 적 팀의 근접 히트박스에 맞으면 맞힌 피해 × 비율을 때린 적에게 돌려준다
+            // (파티 쪽 히트박스엔 반응하지 않는다 — 보호막·도발 같은 아군 효과와 안 엮이게)
+            if (ownerAlive && hb.Team != Battle.Party.Team && em.HasComponent<FollowOwnerComponent>(hitbox)
+                && em.TryGetComponent<MemberPerkComponent>(victim, out var victimPerk) && victimPerk.Thorns > 0f
+                && em.HasComponent<HpModificationQueue>(owner))
+            {
+                int back = System.Math.Max(1, (int)System.MathF.Round(dealt * victimPerk.Thorns));
                 em.GetComponent<HpModificationQueue>(owner).Enqueue(HpModification.Damage(back, victim));
             }
         }

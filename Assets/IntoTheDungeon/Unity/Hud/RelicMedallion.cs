@@ -8,15 +8,21 @@ namespace IntoTheDungeon.Unity.Hud
     /// 유물 메달(장비와 한눈에 구분되게): 장비는 네모 칸·등급 색 테두리, 유물은 둥근 금테 메달 + 뒤로 금빛 빛무리 +
     /// 몇 초마다 테두리를 한 바퀴 훑는 반짝임. 등급은 테두리 색이 아니라 메달 아래 보석 점(일반 1개 … 영웅 4개, 점 색 = 등급 색).
     /// 유물 줄·유물 페이지·상점 진열대·보상 카드가 같이 쓴다. Build로 만들고 Set으로 유물을 바꾼다.
+    /// 저주 유물은 금테 대신 진홍 테(UiKit.Cursed)·붉은 빛무리·어두운 자줏빛 원판(빨강 = 부정 신호).
     /// </summary>
     public sealed class RelicMedallion : MonoBehaviour
     {
         static readonly Color RingGold = new(1f, 0.82f, 0.4f, 1f);
+        static readonly Color DiscPlain = new(0.16f, 0.11f, 0.2f, 1f);
+        static readonly Color DiscCursed = new(0.2f, 0.07f, 0.11f, 1f);
+        static readonly Color GlintPlain = new(1f, 1f, 0.9f, 1f);
+        static readonly Color GlintCursed = new(1f, 0.72f, 0.7f, 1f);
         static Sprite s_ring, s_disc, s_aura, s_glint, s_pip;
 
         Image _aura, _disc, _ring, _icon;
         RectTransform _glintPivot;
         Image _glint;
+        Color _glintColor = GlintPlain;
         readonly Image[] _pips = new Image[4];
         float _t, _phase;
 
@@ -32,7 +38,7 @@ namespace IntoTheDungeon.Unity.Hud
             rt.sizeDelta = new Vector2(size, size);
             var m = go.AddComponent<RelicMedallion>();
             m._aura = Img(rt, s_aura, new Color(1f, 0.75f, 0.3f, 0.5f), size * 1.55f);
-            m._disc = Img(rt, s_disc, new Color(0.16f, 0.11f, 0.2f, 1f), size * 0.86f);
+            m._disc = Img(rt, s_disc, DiscPlain, size * 0.86f);
             m._icon = Img(rt, null, Color.white, size * 0.58f);
             m._ring = Img(rt, s_ring, RingGold, size);
             // 반짝임: 메달 가운데를 축으로 도는 막대 끝의 빛 점
@@ -71,8 +77,13 @@ namespace IntoTheDungeon.Unity.Hud
                 _pips[i].color = col;
                 _pips[i].rectTransform.anchoredPosition = new Vector2((i - (count - 1) * 0.5f) * gap, -size * 0.5f);
             }
-            // 높은 등급일수록 빛무리가 진하다
-            _aura.color = new Color(1f, 0.72f, 0.28f, 0.28f + 0.1f * (int)relic.Rarity);
+            // 높은 등급일수록 빛무리가 진하다. 저주는 금테·금빛 대신 진홍 테·붉은 빛무리
+            bool cursed = relic.Cursed;
+            float auraA = 0.28f + 0.1f * (int)relic.Rarity;
+            _aura.color = cursed ? new Color(0.8f, 0.2f, 0.25f, auraA) : new Color(1f, 0.72f, 0.28f, auraA);
+            _ring.color = cursed ? UiKit.Cursed : RingGold;
+            _disc.color = cursed ? DiscCursed : DiscPlain;
+            _glintColor = cursed ? GlintCursed : GlintPlain;
         }
 
         void Update()
@@ -85,7 +96,7 @@ namespace IntoTheDungeon.Unity.Hud
             float cycle = (_t + _phase) % 3f;
             bool sweep = cycle < 1f;
             _glintPivot.localRotation = Quaternion.Euler(0f, 0f, -360f * cycle);
-            _glint.color = new Color(1f, 1f, 0.9f, sweep ? Mathf.Sin(cycle * Mathf.PI) * 0.95f : 0f);
+            _glint.color = new Color(_glintColor.r, _glintColor.g, _glintColor.b, sweep ? Mathf.Sin(cycle * Mathf.PI) * 0.95f : 0f);
         }
 
         static Image Img(RectTransform parent, Sprite sprite, Color color, float size)

@@ -35,13 +35,7 @@ namespace IntoTheDungeon.Unity.Hud
         const int MaxSparkles = 9;
         const float LandRingTime = 0.6f;
 
-        public static Color RarityColor(ItemRarity r) => r switch
-        {
-            ItemRarity.Uncommon => new Color(0.35f, 0.85f, 0.4f, 1f),
-            ItemRarity.Rare => new Color(0.3f, 0.6f, 1f, 1f),
-            ItemRarity.Epic => new Color(0.72f, 0.42f, 1f, 1f),
-            _ => new Color(0.85f, 0.85f, 0.85f, 1f)
-        };
+        public static Color RarityColor(ItemRarity r) => UiKit.Rarity(r);   // 등급색은 UiKit 토큰으로 통일
 
         sealed class Icon
         {

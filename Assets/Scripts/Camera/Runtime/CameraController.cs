@@ -25,6 +25,8 @@ public class CameraController : MonoBehaviour, IWorldInjectable
     bool _snapped;
     bool _hasGround;
     Vector2 _lastGround;
+    float _baseSize;        // 줌 펀치 기준 orthographicSize(연출 보정 전)
+    Vector2 _fxApplied;     // 지난 프레임에 더한 흔들림 오프셋
 
     public void Init(IWorld world)
     {
@@ -33,6 +35,9 @@ public class CameraController : MonoBehaviour, IWorldInjectable
         world.TryGet(out _walk);
         _area = FindFirstObjectByType<WalkAreaAuthoring>();
         _cam = GetComponent<Camera>();
+        if (_cam && _baseSize <= 0f) _baseSize = _cam.orthographicSize;
+        IntoTheDungeon.Unity.Hud.CameraFx.Reset();
+        _fxApplied = Vector2.zero;
         _snapped = false;
     }
 
@@ -52,6 +57,10 @@ public class CameraController : MonoBehaviour, IWorldInjectable
         float targetX = ground.x;
         float targetY = _area ? _area.CameraY : ground.y + fallbackHeight;
 
+        // 연출(흔들림·줌 펀치): 실제 시간으로 진행, 줌은 범위 제한 계산 전에 반영
+        IntoTheDungeon.Unity.Hud.CameraFx.Tick(Time.unscaledDeltaTime);
+        if (_cam && _cam.orthographic && _baseSize > 0f) _cam.orthographicSize = _baseSize + IntoTheDungeon.Unity.Hud.CameraFx.ZoomDelta;
+
         // 방 밖이 보이지 않게 가로 범위 제한(방이 화면보다 좁으면 가운데)
         if (_area && _cam && _cam.orthographic)
         {
@@ -61,6 +70,7 @@ public class CameraController : MonoBehaviour, IWorldInjectable
         }
 
         var p = transform.position;
+        p.x -= _fxApplied.x; p.y -= _fxApplied.y;   // 지난 프레임 흔들림을 빼고 로직 위치 기준으로 추적
         if (!_snapped) { p.x = targetX; p.y = targetY; _snapped = true; }
         else
         {
@@ -68,6 +78,8 @@ public class CameraController : MonoBehaviour, IWorldInjectable
             p.x = Mathf.Lerp(p.x, targetX, k);
             p.y = Mathf.Lerp(p.y, targetY, k);
         }
+        _fxApplied = IntoTheDungeon.Unity.Hud.CameraFx.Offset;
+        p.x += _fxApplied.x; p.y += _fxApplied.y;
         transform.position = p;
     }
 

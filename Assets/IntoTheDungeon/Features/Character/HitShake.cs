@@ -86,7 +86,7 @@ namespace IntoTheDungeon.Features.Character
         {
             if (!_active) return;
 
-            _elapsed += Time.deltaTime;
+            _elapsed += Time.unscaledDeltaTime;   // 히트스톱·배속과 무관하게 같은 길이(연출)
             if (_elapsed >= _duration)
             {
                 _active = false;

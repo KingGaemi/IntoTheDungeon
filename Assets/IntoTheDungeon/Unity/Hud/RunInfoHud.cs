@@ -1,38 +1,13 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.EventSystems;
 using IntoTheDungeon.Core.Abstractions.World;
 using IntoTheDungeon.Features.Battle;
 using IntoTheDungeon.Features.Run;
 
 namespace IntoTheDungeon.Unity.Hud
 {
-    /// <summary>유물 아이콘(Resources/RelicIcons.png, 코드로 그린 16px 도트 한 줄 시트). 순서는 아래 Order.</summary>
-    public static class RelicIcons
-    {
-        static readonly string[] Order = { "str", "agi", "int", "wil", "firstaid", "focus", "bulk", "coin", "boots",
-                                           "crest", "fang", "heart", "anvil", "horn", "titan", "phoenix" };
-        static readonly Dictionary<string, Sprite> s_cache = new();
-        static Texture2D s_sheet;
-
-        public static Sprite Of(string id)
-        {
-            if (id == null) return null;
-            if (s_cache.TryGetValue(id, out var sp) && sp) return sp;
-            if (!s_sheet)
-            {
-                s_sheet = Resources.Load<Texture2D>("RelicIcons");
-                if (!s_sheet) return null;
-                s_sheet.filterMode = FilterMode.Point;
-            }
-            int i = System.Array.IndexOf(Order, id);
-            if (i < 0) return null;
-            sp = Sprite.Create(s_sheet, new Rect(i * 16, 0, 16, 16), new Vector2(0.5f, 0.5f), 16f);
-            s_cache[id] = sp;
-            return sp;
-        }
-    }
+    // RelicIcons는 Unity/Hud/RelicIcons.cs로 옮겨 갔다
 
     /// <summary>
     /// 판 정보(전투·지도·정비 화면 공용, 코드로 만든다).
@@ -46,14 +21,6 @@ namespace IntoTheDungeon.Unity.Hud
         const float Slot = 64f, Gap = 8f;
         const int BarSlots = 6;   // 줄에 보이는 유물 수(넘치면 펼치기 버튼에 +N)
         static readonly Color GoldColor = new(1f, 0.84f, 0.3f, 1f);
-
-        sealed class Hover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
-        {
-            public int Index;
-            public RunInfoHud Owner;
-            public void OnPointerEnter(PointerEventData e) => Owner._hover = Index;
-            public void OnPointerExit(PointerEventData e) { if (Owner._hover == Index) Owner._hover = -1; }
-        }
 
         sealed class Tile
         {
@@ -74,10 +41,6 @@ namespace IntoTheDungeon.Unity.Hud
         Text _pageTitle;
         int _pageBuiltFor = -1;
         Text _relicLabel, _gold, _goldGain;
-        GameObject _tip;
-        RectTransform _tipRect;
-        Text _tipText;
-        int _hover = -1;
         int _shownGold = -1;
         float _pulse, _gainAge = 99f;
 
@@ -117,15 +80,7 @@ namespace IntoTheDungeon.Unity.Hud
                 if (relic == null) continue;
                 if (t.Medal.Relic != relic) t.Medal.Set(relic);
             }
-            var hovered = !_page.activeSelf && _hover >= 0 && _hover < shown ? run.Relics[_hover] : null;
-            if (_tip.activeSelf != (hovered != null)) _tip.SetActive(hovered != null);
-            if (hovered != null)
-            {
-                var col = LootRenderer.RarityColor(hovered.Rarity);
-                _tipText.text = $"<size=26><color=#{ColorUtility.ToHtmlStringRGB(col)}>{hovered.Title}</color></size>\n" +
-                                $"<size=17>유물 · {ItemDef.RarityLabel(hovered.Rarity)} · 파티 전원</size>\n\n{StopPowerUi.Highlight(hovered.Description)}";
-                _tipRect.anchoredPosition = new Vector2(_hover * (Slot + Gap), -Slot - 34f);
-            }
+            // 유물 설명은 공용 툴팁(UiTooltip, BuildTile에서 Bind)
 
             // 유물 페이지: 열려 있으면 유물이 바뀔 때 다시 채운다
             if (_page.activeSelf)
@@ -200,26 +155,12 @@ namespace IntoTheDungeon.Unity.Hud
 
             BuildPage();
 
-            // 마우스를 올리면 아래로 설명
-            var tip = UiKit.Panel(NewImage(_relicBar, Color.white));
-            _tip = tip.gameObject;
-            _tipRect = tip.rectTransform;
-            _tipRect.anchorMin = _tipRect.anchorMax = _tipRect.pivot = new Vector2(0f, 1f);
-            _tipRect.sizeDelta = new Vector2(420f, 150f);
-            _tipText = NewText(_tipRect, "", 20);
-            _tipText.supportRichText = true;
-            _tipText.alignment = TextAnchor.UpperLeft;
-            _tipText.horizontalOverflow = HorizontalWrapMode.Wrap;
-            var tt = _tipText.rectTransform;
-            tt.anchorMin = Vector2.zero; tt.anchorMax = Vector2.one;
-            tt.offsetMin = new Vector2(14f, 8f); tt.offsetMax = new Vector2(-14f, -10f);
-            _tip.SetActive(false);
-
             // ── 골드(오른쪽 위) ──
             var box = UiKit.Panel(NewImage(_canvas.transform, Color.white), rim: GoldColor);
             _goldBox = box.rectTransform;
             _goldBox.anchorMin = _goldBox.anchorMax = _goldBox.pivot = new Vector2(1f, 1f);
             _goldBox.sizeDelta = new Vector2(250f, 64f);
+            UiTooltip.Bind(box.gameObject, GoldTooltip);   // 공용 툴팁: 소지 금화 + 보상 건너뛰기 금액(숫자만)
             var coin = NewImage(_goldBox, Color.white);
             coin.sprite = RelicIcons.Of("coin");
             var crt = coin.rectTransform;
@@ -386,11 +327,32 @@ namespace IntoTheDungeon.Unity.Hud
             brt.offsetMin = new Vector2(3f, 3f); brt.offsetMax = new Vector2(-3f, -3f);
             t.Medal = RelicMedallion.Build(rt, Slot - 6f);
             t.Medal.transform.SetAsFirstSibling();   // 마우스 받는 판보다 뒤
-            var hover = body.gameObject.AddComponent<Hover>();
-            hover.Index = i;
-            hover.Owner = this;
+            int index = i;
+            UiTooltip.Bind(body.gameObject, () => RelicTooltip(index));   // 공용 툴팁(유물 이름·등급·저주·효과)
             t.Root.SetActive(false);
             return t;
+        }
+
+        // 줄의 i번째 칸에 보이는 유물(넘치는 칸은 펼치기 버튼이 대신하므로 null)
+        TooltipContent RelicTooltip(int i)
+        {
+            var run = RunState.Current;
+            if (run == null || _page.activeSelf) return null;
+            int count = run.Relics.Count;
+            int shown = count > BarSlots ? BarSlots - 1 : count;
+            return i < shown ? Tooltips.Relic(run.Relics[i]) : null;
+        }
+
+        // 금화 상자: 소지 금화 · 지금 보상을 건너뛰면 받을 금화
+        TooltipContent GoldTooltip()
+        {
+            var run = RunState.Current;
+            if (run == null) return null;
+            var c = new TooltipContent { Title = "금화", TitleColor = GoldColor, Icon = RelicIcons.Of("coin"), Kind = "소지", Rim = GoldColor };
+            c.Stats.Add((RelicIcons.Of("coin"), run.Gold.ToString("N0"), GoldColor));
+            if (run.Phase == RunPhase.Camp && run.PendingRewards.Count > 0 && !run.RewardTaken)
+                c.Stats.Add((UiIcons.Of(UiIcons.Relic), $"건너뛰기 +{run.SkipGold()}", UiKit.TextDim));
+            return c;
         }
 
         static RectTransform NewRect(string name, Transform parent)

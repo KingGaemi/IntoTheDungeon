@@ -15,6 +15,7 @@ namespace IntoTheDungeon.Features.Attack
         public float KnockbackSpeed;
         public bool Pierce;             // true면 관통, false면 첫 대상에 맞고 사라짐
         public float HitStun;           // 맞은 쪽 경직(초). 0이면 경직 없음
+        public ProjectileVisual Visual;
 
         public static readonly RangedAttackComponent Arrow = new()
         {
@@ -24,7 +25,21 @@ namespace IntoTheDungeon.Features.Attack
             HalfExtents = new Vec2(0.25f, 0.2f),
             KnockbackSpeed = 0.5f,          // 평타 화살은 거의 안 밀림(약 0.05)
             Pierce = false,
-            HitStun = 0f                    // 평타 화살은 경직 없음
+            HitStun = 0f,                   // 평타 화살은 경직 없음
+            Visual = ProjectileVisual.Arrow
+        };
+
+        // 주술사: 느리게 날아가는 초록 구슬(보고 피할 만큼 느림)
+        public static readonly RangedAttackComponent Orb = new()
+        {
+            SpawnOffsetX = 0.5f,
+            Speed = 7f,
+            Lifetime = 1f,                  // 사거리 약 7
+            HalfExtents = new Vec2(0.25f, 0.25f),
+            KnockbackSpeed = 1f,
+            Pierce = false,
+            HitStun = 0.15f,
+            Visual = ProjectileVisual.Orb
         };
     }
 }

@@ -41,8 +41,13 @@ namespace IntoTheDungeon.Unity.Hud
         readonly List<Text> _names = new();
         GameObject _tileRoot, _ui;
         RectTransform _canvasRect;
-        Text _enemyLine, _stopLine;
+        Text _stopLine;
         RectTransform _stopIcon;
+        // 첫 웨이브 적 칩 줄(적 종류마다 이름 ×수 + 망치·요구 저지력, 보스는 금색). 구성이 바뀔 때만 다시 만든다
+        RectTransform _enemyRow;
+        WaveSpawn[] _enemyBuiltFor;
+        int _enemyBuiltWaves = -1;
+        readonly List<(Image hammer, Text num, int req)> _stopMarks = new();   // 파티 최고 저지력과 비교해 청록/빨강
         readonly Text[] _rowLabels = new Text[Formation.Cols];
         Vector2 _grabOffset;
         float _time;
@@ -126,7 +131,7 @@ namespace IntoTheDungeon.Unity.Hud
             }
             for (; n < _names.Count; n++) _names[n].gameObject.SetActive(false);
 
-            _enemyLine.text = EnemyPreview();
+            UpdateEnemyRow();
             _stopLine.text = PartyStopLine(run);
             _stopIcon.anchoredPosition = new Vector2(16f - _stopLine.preferredWidth * 0.5f - 22f, 336f);   // 글자 바로 왼쪽
             if (_stopIcon.gameObject.activeSelf != _stopLine.text.Length > 0) _stopIcon.gameObject.SetActive(_stopLine.text.Length > 0);
@@ -265,29 +270,133 @@ namespace IntoTheDungeon.Unity.Hud
             _progress.DeployConfirmed = true;
         }
 
-        string EnemyPreview()
+        // 첫 웨이브 적 줄: 적 종류마다 칩(이름 ×수, 패턴이 있으면 망치+요구 저지력, 되살아남 ×N), 끝에 웨이브 수.
+        // 보스 이름은 금색. 칩에 마우스를 올리면 Tooltips.Enemy(패턴 이름·요구 저지력 청록/빨강·특성). 구성(첫 웨이브 배열)이 바뀔 때만 다시 만든다
+        void UpdateEnemyRow()
         {
-            if (_config == null || _config.Waves.Count == 0) return "";
-            var counts = new Dictionary<string, int>();
-            var order = new List<string>();
-            foreach (var s in _config.Waves[0])
+            if (_config == null || !_enemyRow) return;
+            var first = _config.Waves.Count > 0 ? _config.Waves[0] : null;
+            if (first != _enemyBuiltFor || _config.Waves.Count != _enemyBuiltWaves)
             {
-                string name = (_catalog != null ? _catalog.DisplayName(s.Recipe) : s.Recipe) + (s.Boss ? "(보스)" : "");
-                // 강타를 쓰는 몹이면 요구 저지력도 함께(보스는 보스 내려찍기 기준)
-                if (_catalog != null)
-                {
-                    var def = _catalog.Get(s.Recipe);
-                    int req = s.Boss ? IntoTheDungeon.Features.Battle.Boss.StopRequired : def.SlamRadius > 0f ? def.SlamStopRequired : 0;
-                    if (req > 0) name += $"(강타 <color={StopPowerUi.Hex}>저지 {req}</color>)";
-                    if (def.ReviveCharges > 0) name += $"(되살아남 · 분쇄 <color={StopPowerUi.Hex}>저지 {def.ReviveStopRequired}</color>)";
-                }
-                if (!counts.ContainsKey(name)) { counts[name] = 0; order.Add(name); }
-                counts[name] += s.Count;
+                _enemyBuiltFor = first;
+                _enemyBuiltWaves = _config.Waves.Count;
+                _stopMarks.Clear();
+                for (int i = _enemyRow.childCount - 1; i >= 0; i--) Destroy(_enemyRow.GetChild(i).gameObject);
+                if (first != null) BuildEnemyRow(first);
             }
-            var sb = new StringBuilder($"첫 웨이브: ");
-            for (int i = 0; i < order.Count; i++) sb.Append(i > 0 ? " · " : "").Append(order[i]).Append(" ×").Append(counts[order[i]]);
-            sb.Append($"     (웨이브 {_config.Waves.Count}개)");
-            return sb.ToString();
+            if (_stopMarks.Count == 0) return;
+            int best = BestPartyStop();
+            foreach (var (hammer, num, req) in _stopMarks)
+            {
+                var col = best >= req ? StopPowerUi.Color : StopPowerUi.ShortColor;   // 모자라면 빨강(부정 신호)
+                if (hammer.color != col) { hammer.color = col; num.color = col; }
+            }
+        }
+
+        void BuildEnemyRow(WaveSpawn[] first)
+        {
+            var counts = new Dictionary<string, int>();
+            var order = new List<WaveSpawn>();
+            foreach (var s in first)
+            {
+                string key = s.Recipe + (s.Boss ? "!" : "");
+                if (!counts.ContainsKey(key)) { counts[key] = 0; order.Add(s); }
+                counts[key] += s.Count;
+            }
+            var chips = new List<RectTransform>();
+            var widths = new List<float>();
+            foreach (var s in order)
+            {
+                chips.Add(BuildEnemyChip(s, counts[s.Recipe + (s.Boss ? "!" : "")], out float w));
+                widths.Add(w);
+            }
+            var wave = NewText(_enemyRow, $"웨이브 {_config.Waves.Count}", 20);
+            wave.color = new Color(1f, 1f, 1f, 0.6f);
+            chips.Add(wave.rectTransform);
+            widths.Add(wave.preferredWidth + 8f);
+
+            // 가운데 정렬로 가로 배치
+            const float gap = 30f;
+            float total = -gap;
+            foreach (var w in widths) total += w + gap;
+            float x = -total * 0.5f;
+            for (int i = 0; i < chips.Count; i++)
+            {
+                Place(chips[i], new Vector2(x + widths[i] * 0.5f, 0f), new Vector2(widths[i], 32f));
+                x += widths[i] + gap;
+            }
+        }
+
+        RectTransform BuildEnemyChip(WaveSpawn s, int count, out float width)
+        {
+            var bg = NewImage(_enemyRow, new Color(0f, 0f, 0f, 0f));   // 마우스 받는 투명 판(툴팁)
+            bg.gameObject.name = "Enemy";
+            var root = bg.transform;
+            var def = _catalog != null ? _catalog.Get(s.Recipe) : CharacterDefinition.Default;
+            string name = _catalog != null ? _catalog.DisplayName(s.Recipe) : s.Recipe;
+
+            var label = NewText(root, $"{name} ×{count}", 22);
+            label.color = s.Boss ? UiKit.Gold : new Color(1f, 0.72f, 0.6f, 1f);   // 보스 이름 금색
+            label.alignment = TextAnchor.MiddleLeft;
+            float w = label.preferredWidth;
+            LeftPlace(label.rectTransform, 0f, w);
+
+            // 패턴이 있으면 망치 + 요구 저지력(보스는 내려찍기 기준). 색은 UpdateEnemyRow가 파티 최고 저지력과 비교해 정한다
+            int req = s.Boss ? Boss.StopRequired : def.SlamRadius > 0f ? def.SlamStopRequired : 0;
+            if (req > 0)
+            {
+                var hammer = NewImage(root, StopPowerUi.Color);
+                hammer.sprite = StopPowerUi.Icon;
+                hammer.preserveAspect = true;
+                LeftPlace(hammer.rectTransform, w + 8f, 22f, 22f);
+                var num = NewText(root, req.ToString(), 22);
+                num.color = StopPowerUi.Color;
+                num.alignment = TextAnchor.MiddleLeft;
+                float nw = num.preferredWidth;
+                LeftPlace(num.rectTransform, w + 33f, nw);
+                _stopMarks.Add((hammer, num, req));
+                w += 33f + nw;
+            }
+            // 되살아남 ×N
+            if (def.ReviveCharges > 0)
+            {
+                var revive = NewImage(root, Color.white);
+                revive.sprite = UiIcons.Of(UiIcons.Revive);
+                revive.preserveAspect = true;
+                if (!revive.sprite) revive.enabled = false;
+                LeftPlace(revive.rectTransform, w + 8f, 22f, 22f);
+                var num = NewText(root, $"×{def.ReviveCharges}", 22);
+                num.color = new Color(1f, 1f, 1f, 0.85f);
+                num.alignment = TextAnchor.MiddleLeft;
+                float nw = num.preferredWidth;
+                LeftPlace(num.rectTransform, w + 33f, nw);
+                w += 33f + nw;
+            }
+            width = w;
+
+            bool boss = s.Boss;
+            var captured = def;
+            UiTooltip.Bind(bg.gameObject, () => Tooltips.Enemy(captured, boss, BestPartyStop()));
+            return bg.rectTransform;
+        }
+
+        // 칩 안 왼쪽 정렬 배치(왼쪽 가운데 앵커)
+        static void LeftPlace(RectTransform rt, float x, float w, float h = 32f)
+        {
+            rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0f, 0.5f);
+            rt.anchoredPosition = new Vector2(x, 0f);
+            rt.sizeDelta = new Vector2(w, h);
+        }
+
+        /// <summary>살아 있는 파티원 필살기 중 가장 높은 저지력(_party는 Update가 매 프레임 모아 둔다. 월드가 없으면 -1 = 비교 안 함).</summary>
+        int BestPartyStop()
+        {
+            if (_world == null) return -1;
+            var em = _world.EntityManager;
+            int best = 0;
+            foreach (var m in _party)
+                if (m.Alive && em.TryGetComponent<IntoTheDungeon.Features.Attack.SpecialSkillComponent>(m.Entity, out var sk) && sk.StopPower > best) best = sk.StopPower;
+            return best;
         }
 
         // 파티원별 필살기 저지력(장비 포함): 적 강타의 「저지 N」과 바로 비교할 수 있게
@@ -360,9 +469,9 @@ namespace IntoTheDungeon.Unity.Hud
             var hint = NewText(_ui.transform, "", 21);
             hint.color = new Color(1f, 1f, 1f, 0.7f);
             Place(hint.rectTransform, new Vector2(0f, 410f), new Vector2(1450f, 32f));
-            _enemyLine = NewText(_ui.transform, "", 22);
-            _enemyLine.color = new Color(1f, 0.72f, 0.6f, 1f);
-            Place(_enemyLine.rectTransform, new Vector2(0f, 372f), new Vector2(1450f, 32f));
+            _enemyRow = new GameObject("Enemies", typeof(RectTransform)).GetComponent<RectTransform>();
+            _enemyRow.SetParent(_ui.transform, false);
+            Place(_enemyRow, new Vector2(0f, 372f), new Vector2(1450f, 32f));
             // 파티 저지력 줄(청록 망치 + 파티원별 숫자)
             band.rectTransform.sizeDelta = new Vector2(1500f, 190f);
             band.rectTransform.anchoredPosition = new Vector2(0f, 400f);

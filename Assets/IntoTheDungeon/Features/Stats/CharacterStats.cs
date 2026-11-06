@@ -8,9 +8,9 @@ namespace IntoTheDungeon.Features.Stats
     public struct PrimaryStats
     {
         public int Str;   // 힘: 물리 공격력·최대 체력·체력 회복
-        public int Agi;   // 민첩: 공격 속도·방어력·이동 속도
+        public int Agi;   // 민첩: 공격 속도·이동 속도
         public int Int;   // 지능: 최대 마나·마나 회복·마법 공격력
-        public int Wil;   // 정신력: 마법 저항·넉백 저항·CC 저항
+        public int Wil;   // 정신력: 방어력·마법 저항·넉백 저항·CC 저항
 
         public PrimaryStats(int str, int agi, int intel, int wil) { Str = str; Agi = agi; Int = intel; Wil = wil; }
 
@@ -65,14 +65,14 @@ namespace IntoTheDungeon.Features.Stats
         public const float BaseDamage = 4f, DamagePerStr = 1.2f;
         public const float HpRegenPerStr = 0.15f;
         // 민첩
-        public const float BaseAttackSpeed = 1f, AttackSpeedPerAgi = 0.03f;
-        public const float ArmorPerAgi = 2f;
-        public const float BaseMoveSpeed = 2.3f, MoveSpeedPerAgi = 0.015f;   // 유저: 전체적으로 너무 빠르다 → 5 → 3.3 → 2.3
+        public const float BaseAttackSpeed = 1.15f, AttackSpeedPerAgi = 0.03f;   // 유저: 초반이 지루함 → 1 → 1.15
+        public const float BaseMoveSpeed = 2.6f, MoveSpeedPerAgi = 0.015f;   // 유저: 전체적으로 너무 빠르다 → 5 → 3.3 → 2.3 → (초반 지루함) 2.6
         // 지능
         public const float BaseMana = 50f, ManaPerInt = 10f;
-        public const float BaseManaRegen = 1f, ManaRegenPerInt = 0.3f;
+        public const float BaseManaRegen = 2.5f, ManaRegenPerInt = 0.3f;   // 1이면 기본 스킬이 회복분을 다 먹어 필살기를 거의 못 씀(할 게 없음)
         public const float MagicDamagePerInt = 1.5f;
         // 정신력
+        public const float ArmorPerWil = 2f;   // 방어력은 민첩 → 정신력으로(정신력이 너무 약했음)
         public const float MagicResistPerWil = 2f;
         public const float KnockbackResistPerWil = 0.03f, MaxKnockbackResist = 0.6f;
         public const float CcResistPerWil = 0.03f, MaxCcResist = 0.8f;
@@ -85,9 +85,9 @@ namespace IntoTheDungeon.Features.Stats
             st.Damage = (int)System.MathF.Round(BaseDamage + DamagePerStr * s.Str);
             st.AttackSpeed = BaseAttackSpeed + AttackSpeedPerAgi * s.Agi;
             st.MovementSpeed = BaseMoveSpeed * (1f + MoveSpeedPerAgi * s.Agi);
-            st.Armor = (int)System.MathF.Round(ArmorPerAgi * s.Agi);
+            st.Armor = (int)System.MathF.Round(ArmorPerWil * s.Wil);
 
-            d.Armor = ArmorPerAgi * s.Agi;
+            d.Armor = ArmorPerWil * s.Wil;
             d.MagicResist = MagicResistPerWil * s.Wil;
             d.KnockbackResist = System.MathF.Min(MaxKnockbackResist, KnockbackResistPerWil * s.Wil);
             d.CcResist = System.MathF.Min(MaxCcResist, CcResistPerWil * s.Wil);

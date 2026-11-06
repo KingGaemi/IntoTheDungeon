@@ -108,6 +108,7 @@ namespace IntoTheDungeon.Features.Run
     /// <summary>
     /// 판을 넘어 쌓이는 진행(잼 보유·장착, 잼 슬롯 해금 기록). 파일 저장은 Unity 쪽(MetaStore)이 Version을 보고 한다.
     /// 잼 슬롯: 처음 1칸, 보스 1회 처치 2칸, 보스 3회 처치 3칸, 던전 클리어 1회 4칸.
+    /// 만난 동료: 동료 방·물음표 방에서 처음 본 동료 유형은 영입하지 않아도 해금된다.
     /// </summary>
     public sealed class MetaProgress
     {
@@ -118,6 +119,7 @@ namespace IntoTheDungeon.Features.Run
 
         readonly Dictionary<string, int> _counts = new();
         readonly string[] _slots = new string[MaxSlots];   // 슬롯별 낀 잼 Id(빈 칸 null). 잠긴 슬롯 것은 무시
+        readonly HashSet<string> _allies = new();          // 해금된 동료 레시피
         public int BossKills { get; private set; }
         public int Clears { get; private set; }
         public int Runs { get; private set; }
@@ -161,6 +163,20 @@ namespace IntoTheDungeon.Features.Run
         }
 
         public void AddBossKill() { BossKills++; Version++; }
+
+        /// <summary>처음 하는 판(아직 끝낸 판이 없음): 1스테이지 지도가 외길이다.</summary>
+        public bool FirstRun => Runs == 0;
+
+        public bool AllyUnlocked(string recipe) => recipe == CardPool.DefaultStarter || recipe != null && _allies.Contains(recipe);
+        public IReadOnlyCollection<string> UnlockedAllies => _allies;
+
+        /// <summary>그 동료를 만났다. 처음 본 유형이면 해금하고 true.</summary>
+        public bool MeetAlly(string recipe)
+        {
+            if (string.IsNullOrEmpty(recipe) || !_allies.Add(recipe)) return false;
+            Version++;
+            return true;
+        }
 
         public void EndRun(bool cleared)
         {
@@ -218,6 +234,7 @@ namespace IntoTheDungeon.Features.Run
             var s = new MetaSave { BossKills = BossKills, Clears = Clears, Runs = Runs };
             foreach (var kv in _counts) { s.GemIds.Add(kv.Key); s.GemCounts.Add(kv.Value); }
             foreach (var id in _slots) s.Equipped.Add(id ?? "");   // 슬롯 순서 그대로(빈 칸은 "")
+            s.Allies.AddRange(_allies);
             return s;
         }
 
@@ -233,6 +250,7 @@ namespace IntoTheDungeon.Features.Run
                 var id = s.Equipped[i];
                 if (!string.IsNullOrEmpty(id) && m.Count(id) > 0 && System.Array.IndexOf(m._slots, id) < 0) m._slots[i] = id;
             }
+            if (s.Allies != null) foreach (var a in s.Allies) if (!string.IsNullOrEmpty(a)) m._allies.Add(a);
             return m;
         }
     }
@@ -244,5 +262,6 @@ namespace IntoTheDungeon.Features.Run
         public List<string> GemIds = new();
         public List<int> GemCounts = new();
         public List<string> Equipped = new();
+        public List<string> Allies = new();   // 해금된 동료 레시피
     }
 }

@@ -124,6 +124,7 @@ namespace IntoTheDungeon.Unity.Hud
                         var st = statuses[i];
                         if (!st.IsAlive || st.MaxHp <= 0) continue;
                         var e = entities[i];
+                        if (_world.EntityManager.HasComponent<BossComponent>(e)) continue;   // 보스: 머리 위 바 대신 화면 위 전용 바(BossHud)가 보여 준다
 
                         if (!_bars.TryGetValue(e, out var bar)) { bar = CreateBar(); _bars[e] = bar; }
                         bar.Used = true;

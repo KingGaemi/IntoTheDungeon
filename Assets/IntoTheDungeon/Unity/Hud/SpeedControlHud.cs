@@ -27,6 +27,18 @@ namespace IntoTheDungeon.Unity.Hud
         static float s_hitStopUntil;
         public static void HitStop(float seconds) => s_hitStopUntil = Mathf.Max(s_hitStopUntil, Time.unscaledTime + seconds);
 
+        // 슬로우(끊기 성공 직후 전용): 멈칫(히트스톱)이 풀린 뒤 seconds(실제 시간, 최대 MaxSlowMo) 동안 배속 × scale.
+        // PatternBroken/Shattered 직후에만 호출(InterruptFxRenderer.BreakImpact 한 곳, BreakSlowMo 스위치) — 예고·충전·StopFailed 호출 금지. 배속 보조성 연출은 금지 규칙.
+        const float MaxSlowMo = 0.15f;
+        static float s_slowFrom, s_slowUntil, s_slowScale = 1f;
+        public static void SlowMo(float seconds, float scale)
+        {
+            float from = Mathf.Max(Time.unscaledTime, s_hitStopUntil);
+            s_slowFrom = from;
+            s_slowUntil = Mathf.Max(s_slowUntil, from + Mathf.Clamp(seconds, 0f, MaxSlowMo));
+            s_slowScale = Mathf.Clamp(scale, 0.05f, 1f);
+        }
+
         BattleProgress _progress;
         GameObject _button;
         Image _image;
@@ -36,6 +48,7 @@ namespace IntoTheDungeon.Unity.Hud
         public void Init(IWorld world)
         {
             world.TryGet(out _progress);
+            s_hitStopUntil = 0f; s_slowFrom = s_slowUntil = 0f; s_slowScale = 1f;   // 씬 재로드: 지난 멈칫·슬로우 잔류 제거
             try { _index = Mathf.Clamp(PlayerPrefs.GetInt(PrefKey, 0), 0, Speeds.Length - 1); } catch { _index = 0; }
             if (!_button) Build();
         }
@@ -48,7 +61,8 @@ namespace IntoTheDungeon.Unity.Hud
             if (battle && Input.GetKeyDown(toggleKey)) Next();
 
             bool stopped = battle && Time.unscaledTime < s_hitStopUntil;
-            Time.timeScale = !battle ? 1f : stopped ? HitStopScale : Speeds[_index];
+            bool slowed = battle && !stopped && Time.unscaledTime >= s_slowFrom && Time.unscaledTime < s_slowUntil;   // 끊기 직후 슬로우(SlowMo)
+            Time.timeScale = !battle ? 1f : stopped ? HitStopScale : (slowed ? s_slowScale : 1f) * Speeds[_index];
             _label.text = $"×{Speeds[_index]}  <size=18><color=#FFFFFF99>Tab</color></size>";
             _image.color = speedColors[Mathf.Min(_index, speedColors.Length - 1)];
         }

@@ -112,6 +112,8 @@ namespace IntoTheDungeon.Unity.Hud
             rt.anchoredPosition = new Vector2(-296f, -30f);   // RunInfoHud 골드(오른쪽 끝, 폭 250) 왼쪽
             rt.sizeDelta = new Vector2(250f, 64f);
             _hover = _root.AddComponent<Hover>();
+            _hover.enabled = false;   // 옛 설명판 대신 공용 툴팁(UiTooltip) — 꺼진 컴포넌트는 포인터 이벤트를 받지 않아 _tip은 안 뜬다
+            UiTooltip.Bind(_root, SealTooltip);
 
             _emblem = new SealEmblem(rt, 0.9f, big: false);
             _emblem.Rect.anchorMin = _emblem.Rect.anchorMax = new Vector2(0f, 0.5f);
@@ -153,6 +155,33 @@ namespace IntoTheDungeon.Unity.Hud
             tt.offsetMin = new Vector2(14f, 8f); tt.offsetMax = new Vector2(-14f, -10f);
             _tip.SetActive(false);
             _root.SetActive(false);
+        }
+
+        // 공용 툴팁: 봉인석 단계·효과 + 끼운 잼(아이콘·레벨 줄, 이름·효과 줄)
+        TooltipContent SealTooltip()
+        {
+            var run = RunState.Current;
+            var meta = MetaProgress.Current;
+            int t = run.SealTier;
+            var col = SealArt.TierColor(t);
+            var c = new TooltipContent
+            {
+                Title = $"봉인석 {t}단계", TitleColor = t == 0 ? UiKit.TextMain : Color.Lerp(col, Color.white, 0.45f),
+                Kind = t == 0 ? "봉인됨" : SealArt.TierTitle(t),
+                Rim = t == 0 ? UiKit.RimDim : Color.Lerp(col, UiKit.Rim, 0.35f)
+            };
+            var sb = new System.Text.StringBuilder(StopPowerUi.Highlight(SealArt.Describe(t)));
+            for (int i = 0; i < meta.SlotCount; i++)
+            {
+                var gem = GemPool.Find(meta.InSlot(i));
+                if (gem == null) continue;
+                int lv = meta.Level(gem.Id);
+                var gc = new Color(gem.R, gem.G, gem.B, 1f);
+                c.Stats.Add((GemSprite(gem.Id), $"Lv{lv}", gc));
+                sb.Append($"\n<color=#{ColorUtility.ToHtmlStringRGB(gc)}>{gem.Name}</color> Lv{lv} · {StopPowerUi.Highlight(gem.Describe(lv))}");
+            }
+            c.Body = sb.ToString();
+            return c;
         }
 
         Sprite GemSprite(string id)

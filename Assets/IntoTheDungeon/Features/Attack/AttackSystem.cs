@@ -101,10 +101,11 @@ namespace IntoTheDungeon.Features.Attack
                 LaunchSpeed = 0f,
                 HitStun = d.HitStun
             });
-            em.AddComponent(e, new ProjectileComponent { Velocity = new Vec2(r.FacingSign * d.Speed, 0f), DestroyOnHit = !d.Pierce });
+            bool pierce = d.Pierce || (CombatPerks.PierceArrows && CombatPerks.Mine(em, r.Owner));   // 관통 깃촉
+            em.AddComponent(e, new ProjectileComponent { Velocity = new Vec2(r.FacingSign * d.Speed, 0f), DestroyOnHit = !pierce });
             em.AddComponent(e, new LifetimeComponent { Remaining = d.Lifetime });
             em.AddComponent(e, new HitListComponent());
-            em.AddComponent(e, new ProjectileVisualComponent { Kind = ProjectileVisual.Arrow, TotalLifetime = d.Lifetime });
+            em.AddComponent(e, new ProjectileVisualComponent { Kind = d.Visual, TotalLifetime = d.Lifetime });
         }
 
         static void CreateMeleeHitbox(IEntityManager em, in Request r)

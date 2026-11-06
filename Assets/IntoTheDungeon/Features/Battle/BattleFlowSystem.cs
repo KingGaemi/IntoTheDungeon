@@ -9,6 +9,7 @@ using IntoTheDungeon.Core.Abstractions.Messages.Spawn;
 using IntoTheDungeon.Core.Abstractions.Types;
 using IntoTheDungeon.Core.Util;
 using IntoTheDungeon.Features.Status;
+using IntoTheDungeon.Features.State;
 using IntoTheDungeon.Features.Run;
 using IntoTheDungeon.Features.Attack;
 using IntoTheDungeon.Features.Physics.Components;
@@ -27,8 +28,12 @@ namespace IntoTheDungeon.Features.Battle
     /// <summary>레벨을 이미 입힌 적 표시.</summary>
     public struct EnemyLeveledTag : IComponentData { }
 
-    public sealed class BattleFlowSystem : GameSystem, ITick
+    public sealed partial class BattleFlowSystem : GameSystem, ITick
     {
+        // 부분 메서드 훅(구현은 result-records 트랙의 BattleFlowSystem.Tally.cs, 없으면 호출이 사라진다)
+        partial void OnRoomBegin(MapNode node);            // BeginRoom: CombatMeter.Reset() 바로 다음
+        partial void OnBattleEnd(RunData run, bool won);   // Victory의 run.WinRoom 직전 / Defeat의 run.Lose 직전
+
         const float SpawnSettleTime = 1f;
         const float EnemyHpBase = 1.15f, EnemyDamageBase = 1.35f;   // 몹 전체 배율(임시값, 특성·레벨·봉인석 위에 곱함). 체력 1.6 → 1.15(지루함)
         const float PartyStartInset = 4f;   // 파티는 방 왼쪽 끝에서 이만큼 안쪽에서 시작(몹은 오른쪽에서 옴)   // 스폰 직후엔 아직 엔티티가 없을 수 있어 이 시간 뒤부터 전멸 판정
@@ -78,7 +83,7 @@ namespace IntoTheDungeon.Features.Battle
             Party.TryGetCenter(_world.EntityManager, out var partyPos, out int partyAlive);
             if (!partyFound || p.IsOver) return;   // 파티가 아직 스폰 전이면 기다린다
 
-            if (partyAlive == 0 && _hpApplied) { Enter(BattlePhase.Defeat); run.Lose(); return; }
+            if (partyAlive == 0 && _hpApplied) { Enter(BattlePhase.Defeat); OnBattleEnd(run, false); run.Lose(); return; }
 
             switch (p.Phase)
             {
@@ -89,7 +94,9 @@ namespace IntoTheDungeon.Features.Battle
 
                 case BattlePhase.Fighting:
                     ApplyEnemyLevels(run);
-                    if (p.PhaseTime >= SpawnSettleTime && p.EnemiesAlive == 0)
+                    GuestAutoSkill(p);
+                    bool hatched = SpawnPatternAdds();   // 알집에서 깨어난 새끼(이번 프레임 스폰이라 아직 안 셈)
+                    if (!hatched && p.PhaseTime >= SpawnSettleTime && p.EnemiesAlive == 0)
                     {
                         if (p.Wave < p.TotalWaves)
                         {
@@ -97,7 +104,15 @@ namespace IntoTheDungeon.Features.Battle
                             CollectLoot(run);        // 떨어진 아이템은 웨이브마다 가방으로
                             BeginAdvance();          // 파티가 오른쪽(안쪽)으로 달려간다
                         }
-                        else { Enter(BattlePhase.Victory); CollectLoot(run); run.WinRoom(CollectPartyHp()); }
+                        else
+                        {
+                            Enter(BattlePhase.Victory);
+                            CollectLoot(run);
+                            string guest = run.GuestAlly;
+                            OnBattleEnd(run, true);
+                            run.WinRoom(CollectPartyHp());
+                            if (guest != null) SlotJoinedGuest(run, guest);
+                        }
                     }
                     break;
 
@@ -125,11 +140,25 @@ namespace IntoTheDungeon.Features.Battle
             }
         }
 
+        bool SpawnPatternAdds()
+        {
+            if (Boss.PatternSpawns.Count == 0) return false;
+            Party.TryGetCenter(_world.EntityManager, out var partyPos, out _);
+            foreach (var (recipe, pos) in Boss.PatternSpawns)
+                if (_recipes.TryGetId(recipe, out var id))
+                    Enqueue(id, recipe, pos, partyPos.X < pos.X ? -1f : 1f, TeamFlag.Enemy);
+            Boss.PatternSpawns.Clear();
+            return true;
+        }
+
         void BeginRoom(MapNode node)
         {
             CombatMeter.Reset();   // 딜 미터는 방마다 새로
+            OnRoomBegin(node);
+            Boss.PatternSpawns.Clear();
             _config.Waves.Clear();
-            _config.Waves.AddRange(Encounters.ForParty(Encounters.For(node.Type, node.Layer, RunState.Current.Stage), Encounters.Fighters(RunState.Current)));
+            var run = RunState.Current;
+            _config.Waves.AddRange(Encounters.ForParty(Encounters.For(run.ForcedEncounter ?? node.Type, node.Layer, run.Stage, run.TutorialFirstBattle), Encounters.Fighters(run)));   // 매복이면 강제 구성(정예)
             _progress.TotalWaves = _config.Waves.Count;
             _progress.Wave = 0;
             _progress.DeployConfirmed = false;
@@ -209,6 +238,7 @@ namespace IntoTheDungeon.Features.Battle
         void ApplyRunToParty(RunData run)
         {
             var em = _world.EntityManager;
+            CombatPerks.Set(run.BuildModifiers(-1));   // 유물의 전투 효과(파티 공용)
 
             // 슬롯 붙이기: 스폰된 파티원(생긴 순서 = 스폰 순서)에 살아 있는 슬롯 번호를 차례로
             Party.Collect(em, _party);
@@ -224,6 +254,7 @@ namespace IntoTheDungeon.Features.Battle
             {
                 var e = _party[i].Entity;
                 int slot = _party[i].Slot;
+                if (slot < Party.NoSlot) PrepareMember(em, e, run, slot);
                 var mods = RecalculatePartyStats(em, e, run, slot);
                 ref var st = ref em.GetComponent<StatusComponent>(e);
                 st.CurrentHp = st.MaxHp;
@@ -243,13 +274,24 @@ namespace IntoTheDungeon.Features.Battle
             }
         }
 
+        // 내 파티원: 빌드 효과 칸을 달고, 「필살기 교체」 특성이 있으면 교체 필살기로 바꾼다(구조 변경이라 방 시작 때 한 번)
+        void PrepareMember(IEntityManager em, Entity e, RunData run, int slot)
+        {
+            if (!em.HasComponent<MemberPerkComponent>(e)) em.AddComponent(e, new MemberPerkComponent());
+            if (!run.BuildModifiers(slot).AltSpecial || slot >= run.Members.Count || !em.HasComponent<SpecialSkillComponent>(e)) return;
+            if (!_world.TryGet(out IntoTheDungeon.Features.Character.CharacterCatalog cat)) return;
+            var def = cat.Get(run.Members[slot]);
+            if (def.AltSkill == def.Skill) return;
+            em.GetComponent<SpecialSkillComponent>(e) = SpecialSkillComponent.Of(def.AltSkill);
+        }
+
         /// <summary>
         /// 파티원 능력치를 판 기록(레벨·유물·그 파티원 장비)으로 다시 계산한다. 체력·마나는 가득으로 바뀌므로 필요하면 호출한 쪽이 되돌린다.
         /// 방 시작과 전투 중 레벨 업에 쓴다.
         /// </summary>
         public static PartyModifiers RecalculatePartyStats(IEntityManager em, Entity e, RunData run, int slot)
         {
-            var mods = run.BuildModifiers(slot < Party.NoSlot ? slot : -1);   // 유물 + 그 파티원 장비
+            var mods = slot < Party.NoSlot ? run.BuildModifiers(slot) : new PartyModifiers();   // 유물 + 그 파티원 장비(합류 전 동료는 아직 내 유물을 안 받는다)
             ref var st = ref em.GetComponent<StatusComponent>(e);
 
             // 스탯 보너스·레벨로 세부 능력치를 다시 계산(체력·공격력·공속·이속·방어·저항·회복)
@@ -261,15 +303,30 @@ namespace IntoTheDungeon.Features.Battle
                 ref var ds = ref em.GetComponent<DerivedStatsComponent>(e);
                 StatFormula.Apply(ps.Total, ref st, ref ds);
                 TraitComponent.ApplyIfAny(em, e, ref st, ref ds);
+                ds.ManaRegen *= mods.ManaRegenMul;   // 마나 샘·명상
                 if (em.HasComponent<HitStunComponent>(e)) em.GetComponent<HitStunComponent>(e).Resistance = ds.CcResist;
             }
 
-            // 필살기 저지력 = 기본 + 장비(그 파티원 장비 칸·유물)
+            // 필살기: 저지력 = 기본 + 장비(저지력 없는 필살기는 그대로 0), 피해·마법·방패는 유물·특성으로
             if (em.HasComponent<SpecialSkillComponent>(e))
             {
                 ref var sk = ref em.GetComponent<SpecialSkillComponent>(e);
-                sk.StopPower = sk.StopPowerBase + mods.StopPowerAdd;
+                sk.StopPower = sk.StopPowerBase > 0 ? sk.StopPowerBase + mods.StopPowerAdd : 0;
+                sk.DamageMultiplier = sk.DamageMulBase * mods.SkillDamageMul;
+                sk.Magic = sk.MagicBase || mods.MagicSkills;
+                if (sk.GuardDurationBase > 0f)
+                {
+                    sk.GuardDuration = sk.GuardDurationBase + mods.GuardDurationAdd;
+                    sk.GuardDamageMul = System.MathF.Max(0.1f, sk.GuardMulBase - mods.GuardMulCut);
+                }
             }
+            if (em.HasComponent<MemberPerkComponent>(e))
+                em.GetComponent<MemberPerkComponent>(e) = new MemberPerkComponent
+                {
+                    PoisonRatio = mods.PoisonRatio, PoisonDuration = mods.PoisonDuration,
+                    KillCooldownCut = mods.KillCooldownCut, Lifesteal = mods.SelfLifesteal,
+                    KillManaAdd = mods.KillManaAdd, Thorns = mods.ThornsAdd
+                };
 
             // 범위 평타: 캐릭터 자체 또는 장비
             if (em.HasComponent<MeleeAttackComponent>(e))
@@ -297,8 +354,8 @@ namespace IntoTheDungeon.Features.Battle
         /// <summary>적 레벨(임시값): 1 + 던전 깊이/2(깊이 = (스테이지-1)×층 수 + 층), 정예 +1, 보스 +1. 파티가 평소엔 적보다 조금 높게.</summary>
         static int EnemyLevel(RunData run)
         {
-            int lv = 1 + run.Depth / 2;
-            if (run.Current != null && run.Current.Type == RoomType.Elite) lv += 1;
+            int lv = 1 + run.Depth / 2 + DungeonTier.LevelAdd(run.StageTier);
+            if (run.Current != null && (run.Current.Type == RoomType.Elite || run.ForcedEncounter == RoomType.Elite)) lv += 1;   // 매복도 정예 전투
             if (run.Current != null && run.Current.Type == RoomType.Boss) lv += 1;
             return lv;
         }
@@ -335,16 +392,16 @@ namespace IntoTheDungeon.Features.Battle
                 est.MaxHp = (int)System.MathF.Round(est.MaxHp * EnemyHpBase);
                 est.Damage = (int)System.MathF.Round(est.Damage * EnemyDamageBase);
                 // 스테이지·정예 보정(뒤로 갈수록 템·레벨이 쌓이므로 더 단단하고 아프게)
-                bool eliteRoom = run.Current != null && run.Current.Type == RoomType.Elite;
+                bool eliteRoom = run.Current != null && (run.Current.Type == RoomType.Elite || run.ForcedEncounter == RoomType.Elite);   // 매복도 정예 보정
                 est.MaxHp = (int)System.MathF.Round(est.MaxHp * Encounters.StageHpMul(run.Stage, eliteRoom));
                 est.Damage = (int)System.MathF.Round(est.Damage * Encounters.StageDamageMul(run.Stage, eliteRoom));
                 // 파티 인원 보정(혼자·둘이면 약하게)
                 est.MaxHp = (int)System.MathF.Round(est.MaxHp * Encounters.HpMul(fighters));
                 est.Damage = System.Math.Max(1, (int)System.MathF.Round(est.Damage * Encounters.DamageMul(fighters)));
                 // 봉인석: 체력·공격력 배율
-                est.MaxHp = (int)System.MathF.Round(est.MaxHp * SealStone.EnemyHpMul(run.SealTier));
+                est.MaxHp = (int)System.MathF.Round(est.MaxHp * SealStone.EnemyHpMul(run.SealTier) * DungeonTier.EnemyHpMul(run.StageTier));   // 봉인석 × 던전 등급
                 est.CurrentHp = est.MaxHp;
-                est.Damage = (int)System.MathF.Round(est.Damage * SealStone.EnemyDamageMul(run.SealTier));
+                est.Damage = (int)System.MathF.Round(est.Damage * SealStone.EnemyDamageMul(run.SealTier) * DungeonTier.EnemyDamageMul(run.StageTier));
                 if (boss) Boss.ApplyHp(em, e);
                 if (em.HasComponent<HitStunComponent>(e)) em.GetComponent<HitStunComponent>(e).Resistance = em.GetComponent<DerivedStatsComponent>(e).CcResist;
             }
@@ -364,7 +421,7 @@ namespace IntoTheDungeon.Features.Battle
                     drops[i].CollectAge = 0f;
                     drops[i].CollectDelay = 0.5f + 0.15f * k++;   // 임시값
                     var item = ItemPool.Get(drops[i].ItemIndex);
-                    if (item != null) run.Loot.Add(item);
+                    if (item != null) { run.Loot.Add(item); run.Stats.ItemsFound++; }
                 }
             }
         }
@@ -473,6 +530,10 @@ namespace IntoTheDungeon.Features.Battle
             if (_area is RectWalkArea r && partyPos.X + _config.SpawnDistance + 2f > r.MaxX) side = -1f;
 
             bool fromDoor = wave == _config.Waves.Count && _area is RectWalkArea;   // 마지막 웨이브: 문 앞에서
+            // 동료 방: 첫 웨이브 몹 무리 한가운데에서 동료가 버티고 있다(슬롯 없는 파티원 → 이기면 RunState가 합류시킴)
+            string guest = wave == 1 ? RunState.Current.GuestAlly : null;
+            if (guest != null && _recipes.TryGetId(guest, out var guestId))
+                Enqueue(guestId, "Party", new Vec2(partyPos.X + side * (_config.SpawnDistance + 0.6f), RandomDepth(partyPos.Y)), -side, Party.Team);
             int n = 0;
             foreach (var s in _config.Waves[wave - 1])
             {
@@ -485,6 +546,85 @@ namespace IntoTheDungeon.Features.Battle
                     Enqueue(id, s.Boss ? Boss.SpawnName : s.Recipe, pos, side < 0 ? 1f : -1f, TeamFlag.Enemy);
                 }
             }
+        }
+
+        // 합류 전 동료(슬롯 없는 파티원)는 필살기 버튼이 없으니 스스로 쓰되, 오직 패턴을 끊을 때만 쓴다:
+        // 끊을 수 있는(저지력 ≥ 요구치) 패턴을 모으는 적이 닿는 곳에 있을 때. 플레이어가 보고 "필살기는 패턴 끊기용"을 자연스럽게 배운다
+        readonly System.Collections.Generic.List<(Vec2 pos, int required, float left)> _charging = new(8);
+
+        void GuestAutoSkill(BattleProgress p)
+        {
+            if (p.EnemiesAlive == 0 || p.PhaseTime < SpawnSettleTime) return;
+            var em = _world.EntityManager;
+            _charging.Clear();
+            foreach (var chunk in em.GetChunks(typeof(BossSlamComponent), typeof(TransformComponent), typeof(TeamComponent)))
+            {
+                var slams = chunk.GetComponentArray<BossSlamComponent>();
+                var tfs = chunk.GetComponentArray<TransformComponent>();
+                var teams = chunk.GetComponentArray<TeamComponent>();
+                for (int i = 0; i < chunk.Count; i++)
+                    if (teams[i].TeamFlag == TeamFlag.Enemy && slams[i].Charging && !slams[i].Fired)
+                        _charging.Add((tfs[i].Position, slams[i].StopRequired, slams[i].ChargeTime - slams[i].Timer));
+            }
+
+            Party.Collect(em, _party);
+            foreach (var m in _party)
+            {
+                if (m.Slot < Party.NoSlot || !m.Alive) continue;
+                if (!em.HasComponent<EnemyLeveledTag>(m.Entity)) LevelGuest(em, m.Entity);
+                if (_charging.Count == 0 || !em.HasComponent<SpecialSkillComponent>(m.Entity)) continue;
+                ref var sk = ref em.GetComponent<SpecialSkillComponent>(m.Entity);
+                if (sk.CooldownRemaining > 0f || sk.Casting || sk.Requested) continue;
+                if (em.TryGetComponent<DerivedStatsComponent>(m.Entity, out var ds) && ds.Mana < sk.ManaCost) continue;
+                if (!em.TryGetComponent<TransformComponent>(m.Entity, out var tf) || !em.TryGetComponent<StateComponent>(m.Entity, out var state)) continue;
+                if (CanBreak(sk, tf.Position, state.FacingToSign())) sk.Request();
+            }
+        }
+
+        // 지금 쓰면 모으는 중인 패턴 하나라도 끊기는가(저지력·닿는 거리·패턴이 터지기 전에 닿는지)
+        bool CanBreak(in SpecialSkillComponent sk, Vec2 pos, float facing)
+        {
+            foreach (var (target, required, left) in _charging)
+            {
+                if (sk.StopPower < required) continue;
+                float dx = target.X - pos.X, dy = System.MathF.Abs(target.Y - pos.Y);
+                if (sk.TauntRadius > 0f)   // 도발: 몸 주위 반경(깊이는 절반)
+                {
+                    if (System.MathF.Abs(dx) <= sk.TauntRadius && dy <= sk.TauntRadius * 0.5f && left > sk.CastTime) return true;
+                    continue;
+                }
+                // 투사체: 바라보는 쪽, 사거리·깊이 안, 날아가는 시간까지 쳐서 터지기 전에 닿을 때
+                float reach = sk.WaveSpeed * sk.WaveLifetime + sk.WaveHalfExtents.X;
+                float ahead = dx * facing;
+                if (ahead < -0.3f || ahead > reach || dy > sk.WaveHalfExtents.Y + 0.3f) continue;
+                float travel = sk.WaveSpeed > 0f ? System.MathF.Max(0f, ahead) / sk.WaveSpeed : 0f;
+                if (left > sk.CastTime + travel) return true;
+            }
+            return false;
+        }
+
+        // 방을 깨 합류한 동료: 아직 전투 화면이라 그 몸에 새 슬롯을 붙인다(안 붙이면 필살기 칸이 「쓰러짐」으로 보임)
+        void SlotJoinedGuest(RunData run, string recipe)
+        {
+            int slot = run.Members.IndexOf(recipe);
+            if (slot < 0) return;
+            var em = _world.EntityManager;
+            Party.Collect(em, _party);
+            foreach (var m in _party)
+                if (m.Slot >= Party.NoSlot) { em.AddComponent(m.Entity, new PartySlotComponent { Slot = slot }); return; }
+        }
+
+        // 합류 전 동료: 파티에서 가장 낮은 레벨 + 유물로 능력치를 맞춘다(합류하면 그 레벨로 들어온다). 한 번만(표시 태그 재사용)
+        void LevelGuest(IEntityManager em, Entity e)
+        {
+            em.AddComponent(e, new EnemyLeveledTag());
+            var run = RunState.Current;
+            int lowest = int.MaxValue;
+            for (int s = 0; s < run.Members.Count; s++) lowest = System.Math.Min(lowest, run.LevelOf(s));
+            if (em.HasComponent<PrimaryStatsComponent>(e)) em.GetComponent<PrimaryStatsComponent>(e).Level = lowest == int.MaxValue ? 1 : lowest;
+            RecalculatePartyStats(em, e, run, Party.NoSlot);
+            ref var st = ref em.GetComponent<StatusComponent>(e);
+            st.CurrentHp = st.MaxHp;
         }
 
         // 씬에 놓인 첫 파티원 뒤로, 판에 기록된 동료들을 슬롯 순서대로 스폰한다

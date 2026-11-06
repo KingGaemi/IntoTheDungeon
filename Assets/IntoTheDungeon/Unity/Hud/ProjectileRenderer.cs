@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using IntoTheDungeon.Core.Abstractions.World;
+using IntoTheDungeon.Core.ECS.Abstractions;
 using IntoTheDungeon.Features.Attack;
 
 namespace IntoTheDungeon.Unity.Hud
@@ -24,15 +25,20 @@ namespace IntoTheDungeon.Unity.Hud
         readonly Dictionary<ProjectileVisual, Sprite> _sprites = new();
         readonly List<SpriteRenderer> _pool = new();
         int _sortingLayer;
+        // 지난 프레임에 있던 투사체(사라진 자리에 착탄 파편을 내려고 기억 → HitFxRenderer.ProjectileGone)
+        readonly Dictionary<Entity, (Vector3 pos, ProjectileVisual kind, int frame)> _last = new();
+        readonly List<Entity> _gone = new();
 
         public void Init(IWorld world)
         {
             _world = world;
+            _last.Clear();
             if (_sprites.Count == 0)
             {
                 _sprites[ProjectileVisual.SwordWave] = BuildCrescent();
                 _sprites[ProjectileVisual.Arrow] = BuildArrow(false);
                 _sprites[ProjectileVisual.PowerArrow] = BuildArrow(true);
+                _sprites[ProjectileVisual.Orb] = BuildOrb();
             }
             int id = SortingLayer.NameToID("Projectiles");   // 캐릭터보다 위
             _sortingLayer = SortingLayer.IsValid(id) ? id : 0;
@@ -48,6 +54,7 @@ namespace IntoTheDungeon.Unity.Hud
                     var visuals = chunk.GetComponentArray<ProjectileVisualComponent>();
                     var hitboxes = chunk.GetComponentArray<HitboxComponent>();
                     var lifetimes = chunk.GetComponentArray<LifetimeComponent>();
+                    var entities = chunk.GetEntities();
                     for (int i = 0; i < chunk.Count; i++)
                     {
                         var r = Get(used++);
@@ -63,9 +70,15 @@ namespace IntoTheDungeon.Unity.Hud
                         r.color = new Color(1f, 1f, 1f, wave ? Mathf.Clamp01(life * 2.5f) : 1f);       // 검기만 마지막 40%에서 사라짐
                         r.sortingLayerID = _sortingLayer;
                         r.sortingOrder = Mathf.RoundToInt(-hb.Center.Y * 100f);
+                        _last[entities[i]] = (r.transform.position, kind, Time.frameCount);
                     }
                 }
             }
+            // 이번 프레임에 안 보인 투사체 = 맞았거나 수명이 다함 → 그 자리에 파편
+            foreach (var kv in _last)
+                if (kv.Value.frame != Time.frameCount) { HitFxRenderer.ProjectileGone(kv.Value.pos, kv.Value.kind); _gone.Add(kv.Key); }
+            for (int i = 0; i < _gone.Count; i++) _last.Remove(_gone[i]);
+            _gone.Clear();
             for (int i = used; i < _pool.Count; i++)
                 if (_pool[i].gameObject.activeSelf) _pool[i].gameObject.SetActive(false);
         }
@@ -121,6 +134,24 @@ namespace IntoTheDungeon.Unity.Hud
                 }
             }
             return Finish(tex, px, "SwordWave");
+        }
+
+        // 주술사 구슬: 흰 심 + 초록 빛무리
+        Sprite BuildOrb()
+        {
+            const int N = 12;
+            var tex = NewTexture(N, N);
+            var px = new Color32[N * N];
+            for (int y = 0; y < N; y++)
+                for (int x = 0; x < N; x++)
+                {
+                    float d = new Vector2(x + 0.5f - N * 0.5f, y + 0.5f - N * 0.5f).magnitude / (N * 0.5f);
+                    px[y * N + x] = d > 1f ? new Color32(0, 0, 0, 0)
+                        : d < 0.3f ? new Color32(235, 255, 235, 255)
+                        : d < 0.6f ? new Color32(120, 255, 150, 255)
+                        : new Color32(70, 210, 110, (byte)(200 * (1f - d) / 0.4f));
+                }
+            return Finish(tex, px, "Orb");
         }
 
         // 오른쪽을 향한 화살(깃·나무 살·쇠 촉). 강화 화살은 더 길고 하늘색 빛 테두리

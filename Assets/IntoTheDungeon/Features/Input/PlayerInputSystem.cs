@@ -23,7 +23,7 @@ namespace IntoTheDungeon.Features.Input
         IInputService _input;
         ISystemSpawnQueue _spawnQueue;
         IWalkArea _area;
-        static readonly string[] OrcRecipeNames = { "Orc1", "Orc2", "Orc3", "Plant1", "Plant2", "Plant3", "Bat1" };
+        static readonly string[] OrcRecipeNames = { "Orc1", "Orc2", "Orc3", "Plant1", "Plant2", "Plant3", "Bat1", "Spider1", "Shaman1", "EggSac1" };
         RecipeId[] _orcRecipeIds; // R키 스폰용 - Initialize에서 한 번만 캐싱
         int _nextOrc;
         static readonly string[] AllyRecipeNames = { "Catherine", "Archer", "Warrior" };   // T키 동료 소환(팀만 Player로 바꿔 스폰)

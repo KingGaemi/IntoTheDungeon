@@ -19,7 +19,7 @@ namespace IntoTheDungeon.Unity.Hud
     {
         [SerializeField] KeyCode toggleKey = KeyCode.G;
         [SerializeField] Color panelColor = new(0.09f, 0.1f, 0.17f, 1f);
-        [SerializeField] Color accent = new(1f, 0.82f, 0.3f, 1f);
+        [SerializeField] Color accent = UiKit.Accent;
         const float PopTime = 0.28f;
 
         /// <summary>끌기·누르기·마우스 올리기를 받아 GemHud에 넘긴다(소켓 또는 목록 칸).</summary>

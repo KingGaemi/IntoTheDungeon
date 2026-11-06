@@ -69,6 +69,7 @@ namespace IntoTheDungeon.Unity
             [Tooltip("공격 준비·마무리 시간(0이면 기본 0.5·0.7)")]
             public float windup, recovery;
             public SkillPreset skill;
+            public SkillPreset altSkill;
             [Tooltip("자동으로 쓰는 기본 스킬")]
             public BasicSkillPreset basic;
             [Tooltip("근접 평타가 범위 공격(아니면 한 명만)")]
@@ -93,6 +94,15 @@ namespace IntoTheDungeon.Unity
             public float slamRadius, slamCharge, slamCd, slamDmg;
             [Tooltip("강타 요구 저지력(0이면 10). 필살기 저지력(대부분 10)이 쌓여 이 이상이면 끊김")]
             public int slamStop;
+            [Tooltip("패턴 종류(강타·치유 의식·부화)와 세기(치유: 최대 체력 비율, 부화: 마릿수)")]
+            public PatternKind slamKind;
+            public float slamPower;
+            public PatternKind slamAltKind;
+            public float slamAltPower;
+            [Tooltip("움직이지도 때리지도 않고 패턴만(알집)")]
+            public bool passive;
+            [Tooltip("원거리 평타가 화살 대신 구슬")]
+            public bool orb;
             [Tooltip("되살아남: 횟수(0이면 없음)·무더기를 부수는 데 필요한 저지력")]
             public int revive, reviveStop;
             [Tooltip("보스 잼: 보스로 나오면 확정(bossGem), 아니면 dropGem을 dropGemChance 확률로(GemPool Id, 비우면 없음)")]
@@ -103,18 +113,22 @@ namespace IntoTheDungeon.Unity
         [Header("캐릭터 종류별 정의(없는 이름은 반지름 0.3·무게 1)")]
         [SerializeField] CharacterDefEntry[] characterDefs =
         {
-            new() { recipe = "Character", displayName = "케서린", gStr = 4, gAgi = 2, gInt = 1, gWil = 2, bodyRadius = 0.3f, bodyMass = 1f, headHeight = 1.0f, basic = BasicSkillPreset.Slash, str = 12, agi = 7, intel = 2, wil = 5 },
-            new() { recipe = "Catherine", displayName = "케서린", gStr = 4, gAgi = 2, gInt = 1, gWil = 2, bodyRadius = 0.3f, bodyMass = 1f, headHeight = 1.0f, basic = BasicSkillPreset.Slash, str = 12, agi = 7, intel = 2, wil = 5 },
+            // 케서린: 몸이 약한 대신(체력 ×0.6) 평타·필살기가 모두 범위 공격 → 탱커가 막아 줘야 산다
+            new() { recipe = "Character", displayName = "케서린", gStr = 4, gAgi = 2, gInt = 1, gWil = 2, bodyRadius = 0.3f, bodyMass = 1f, headHeight = 1.0f, basic = BasicSkillPreset.Slash, str = 12, agi = 7, intel = 2, wil = 5,
+                    hpMul = 0.6f, cleave = true },
+            new() { recipe = "Catherine", displayName = "케서린", altSkill = SkillPreset.Whirlwind, gStr = 4, gAgi = 2, gInt = 1, gWil = 2, bodyRadius = 0.3f, bodyMass = 1f, headHeight = 1.0f, basic = BasicSkillPreset.Slash, str = 12, agi = 7, intel = 2, wil = 5,
+                    hpMul = 0.6f, cleave = true },
             // 오크: 단단하고(체력·넉백 저항↑) 느리지만, 맞으면 크게 밀려난다(평타 넉백·띄우기)
             new() { recipe = "Orc1", displayName = "오크", gStr = 1, gAgi = 1, gInt = 0, gWil = 1, bodyRadius = 0.35f, bodyMass = 1.2f, headHeight = 1.27f, str = 5, agi = 3, intel = 0, wil = 2,
-                    traitText = "단단함 · 묵직한 한 방(크게 밀어냄) · 강타(도발로 끊기)", hpMul = 1.35f, spdMul = 0.9f, kbResist = 0.35f, knockback = 5f, launch = 3f, windup = 0.6f,
-                    slamRadius = 1.5f, slamCharge = 1.3f, slamCd = 9f, slamDmg = 2.2f },
-            new() { recipe = "Orc2", displayName = "오크 전사", gStr = 2, gAgi = 1, gInt = 0, gWil = 1, bodyRadius = 0.4f, bodyMass = 1.5f, headHeight = 1.36f, str = 7, agi = 4, intel = 0, wil = 3,
-                    traitText = "단단함 · 묵직한 한 방(크게 밀어냄) · 강타(도발로 끊기)", hpMul = 1.4f, spdMul = 0.9f, kbResist = 0.4f, knockback = 6f, launch = 3.5f, windup = 0.6f,
-                    slamRadius = 1.8f, slamCharge = 1.3f, slamCd = 8f, slamDmg = 2.5f },
+                    traitText = "단단함 · 강타: 못 끊으면 치명상", hpMul = 1.35f, spdMul = 0.9f, kbResist = 0.35f, knockback = 5f, launch = 3f, windup = 0.6f,
+                    slamRadius = 1.8f, slamCharge = 1.5f, slamCd = 12f, slamDmg = 26f },   // 강타는 그냥 맞으면 케서린이 죽는다(끊거나 도발·방패로 받아야)
+            // 오크 돌격병: 가장 가까운 파티원 쪽으로 일직선 돌진, 처음 닿은 한 명이 치명상 → 끊거나 전열(방패)이 받아야 후열이 산다
+            new() { recipe = "Orc2", displayName = "오크 돌격병", gStr = 2, gAgi = 1, gInt = 0, gWil = 1, bodyRadius = 0.4f, bodyMass = 1.5f, headHeight = 1.36f, str = 7, agi = 4, intel = 0, wil = 3,
+                    traitText = "단단함 · 돌진: 맨 앞 한 명이 치명상", hpMul = 1.4f, spdMul = 0.9f, kbResist = 0.4f, knockback = 6f, launch = 3.5f, windup = 0.6f,
+                    slamKind = PatternKind.Charge, slamRadius = 3f, slamCharge = 1.4f, slamCd = 10f, slamDmg = 22f },
             new() { recipe = "Orc3", displayName = "오크 대장", gStr = 2, gAgi = 1, gInt = 0, gWil = 2, bodyRadius = 0.45f, bodyMass = 2f, headHeight = 1.59f, str = 10, agi = 3, intel = 1, wil = 6,
-                    traitText = "매우 단단함 · 맞으면 밀려나며 잠깐 굳음", hpMul = 1.5f, spdMul = 0.85f, kbResist = 0.5f, knockback = 7f, launch = 4f, hitStun = 0.25f, windup = 0.7f,
-                    slamRadius = 2.1f, slamCharge = 1.4f, slamCd = 7f, slamDmg = 2.8f, slamStop = 15, bossGem = "warlord" },
+                    traitText = "매우 단단함 · 강타(저지 15): 못 끊으면 치명상", hpMul = 1.5f, spdMul = 0.85f, kbResist = 0.5f, knockback = 7f, launch = 4f, hitStun = 0.25f, windup = 0.7f,
+                    slamRadius = 2.4f, slamCharge = 1.6f, slamCd = 10f, slamDmg = 18f, slamStop = 15, bossGem = "warlord" },
             // 식인 식물: 체력이 낮은 대신 아프다. 뿌리 때문에 느리다
             new() { recipe = "Plant1", displayName = "식인초", gStr = 1, gAgi = 2, gInt = 0, gWil = 1, bodyRadius = 0.3f, bodyMass = 1f, headHeight = 1.0f, str = 5, agi = 7, intel = 0, wil = 2,
                     traitText = "약하지만 아프게 문다", hpMul = 0.5f, dmgMul = 1.8f, spdMul = 0.8f },
@@ -126,6 +140,20 @@ namespace IntoTheDungeon.Unity
             new() { recipe = "Bat1", displayName = "흡혈 박쥐", gStr = 1, gAgi = 2, gInt = 0, gWil = 0, bodyRadius = 0.22f, bodyMass = 0.5f, headHeight = 1.45f, str = 3, agi = 10, intel = 0, wil = 0,
                     attackRange = 0.9f, windup = 0.25f, recovery = 0.35f,
                     traitText = "빠른 떼 · 흡혈 · 잘 날아감", hpMul = 0.4f, dmgMul = 0.7f, spdMul = 1.35f, atkSpdMul = 1.3f, kbResist = -0.6f, lifesteal = 0.5f },
+            // 거미(코드로 그린 도트): 떼로 몰려와 아프게 문다. 대신 몸이 약해 범위 공격에 한꺼번에 쓸린다 → 탱커가 끌고 케서린이 쓸기
+            new() { recipe = "Spider1", displayName = "거미", gStr = 1, gAgi = 2, gInt = 0, gWil = 0, bodyRadius = 0.24f, bodyMass = 0.6f, headHeight = 0.75f, str = 5, agi = 11, intel = 0, wil = 0,
+                    attackRange = 0.9f, windup = 0.35f, recovery = 0.4f,
+                    traitText = "떼 · 아프게 문다 · 약함", hpMul = 0.35f, dmgMul = 1.7f, spdMul = 1.25f, atkSpdMul = 1.15f, kbResist = -0.3f },
+            // 오크 주술사(코드로 그린 도트): 뒤에서 구슬을 쏘다가, 곁에 몹이 있으면 치유 의식(예고 2초).
+            // 못 끊으면 주변 몹 회복 + 광폭(공격력 ×1.25, 겹침) → 궁수 강사·검기로 먼저 끊거나 잡아야 한다
+            new() { recipe = "Shaman1", displayName = "오크 주술사", gStr = 1, gAgi = 1, gInt = 2, gWil = 1, bodyRadius = 0.3f, bodyMass = 0.9f, headHeight = 1.25f, str = 5, agi = 5, intel = 6, wil = 3,
+                    ranged = true, orb = true, attackRange = 5f, minRange = 3f, windup = 0.55f, recovery = 0.6f,
+                    traitText = "치유 의식 ↔ 마법 보호막(물리 피해 -80%)", hpMul = 0.75f, dmgMul = 0.8f, spdMul = 0.85f,
+                    slamKind = PatternKind.Heal, slamPower = 0.35f, slamAltKind = PatternKind.Barrier, slamAltPower = 6f, slamRadius = 4.5f, slamCharge = 2f, slamCd = 9f },
+            // 거미 알집(코드로 그린 도트): 가만히 있으면서 몇 초마다 새끼 거미 둘을 깨운다(예고 2.5초, 끊으면 취소). 먼저 부숴야 한다
+            new() { recipe = "EggSac1", displayName = "거미 알집", gStr = 2, gAgi = 0, gInt = 0, gWil = 2, bodyRadius = 0.4f, bodyMass = 3f, immovable = true, headHeight = 1.1f, str = 6, agi = 1, intel = 0, wil = 6,
+                    passive = true, traitText = "부화: 새끼 거미가 계속 깨어남", hpMul = 0.9f, kbResist = 0.9f,
+                    slamKind = PatternKind.Hatch, slamPower = 2f, slamRadius = 1f, slamCharge = 2.5f, slamCd = 5f },
             // 해골 기사(FreeAssets craftpix Skeleton01, 정예): 단단하고 아프다. 쓰러지면 뼈 무더기가 됐다가 다시 일어난다(2번).
             // 무더기일 때 저지력 15 이상 필살기를 맞혀야 완전히 부서진다 → "해골 나오면 필살기를 아껴라"
             new() { recipe = "Skeleton1", displayName = "해골 기사", gStr = 2, gAgi = 1, gInt = 0, gWil = 2, bodyRadius = 0.38f, bodyMass = 1.8f, headHeight = 1.5f, str = 9, agi = 5, intel = 0, wil = 6,
@@ -133,9 +161,9 @@ namespace IntoTheDungeon.Unity
                     knockback = 4f, launch = 2f, hitStun = 0.2f, revive = 2, reviveStop = 15, dropGem = "bonecrown", dropGemChance = 0.4f },
             // 중갑 전사(탱커): 체력·방어·넉백 저항이 높고 무겁다. 대신 휘두르는 게 느려 평타 피해는 낮다. 평타는 범위, 필살기는 도발 + 방패
             new() { recipe = "Warrior", displayName = "중갑 전사", gStr = 4, gAgi = 3, gInt = 1, gWil = 3, bodyRadius = 0.36f, bodyMass = 2.2f, headHeight = 1.3f,
-                    windup = 0.7f, recovery = 0.8f, skill = SkillPreset.TauntGuard, basic = BasicSkillPreset.ShieldBash, cleave = true, str = 13, agi = 8, intel = 1, wil = 10 },
+                    windup = 0.7f, recovery = 0.8f, skill = SkillPreset.TauntGuard, altSkill = SkillPreset.Bulwark, basic = BasicSkillPreset.ShieldBash, cleave = true, str = 13, agi = 8, intel = 1, wil = 10 },
             new() { recipe = "Archer", displayName = "궁수", gStr = 3, gAgi = 4, gInt = 2, gWil = 1, bodyRadius = 0.28f, bodyMass = 0.9f, headHeight = 1.05f, ranged = true, attackRange = 5.5f, minRange = 2f,
-                    windup = 0.6f, recovery = 0.3f, skill = SkillPreset.PowerShot, basic = BasicSkillPreset.QuickShot, str = 7, agi = 12, intel = 3, wil = 4 },
+                    windup = 0.6f, recovery = 0.3f, skill = SkillPreset.PowerShot, altSkill = SkillPreset.ArrowRain, basic = BasicSkillPreset.QuickShot, str = 7, agi = 12, intel = 3, wil = 4 },
         };
 
         public override void Install(GameWorld world)
@@ -175,6 +203,7 @@ namespace IntoTheDungeon.Unity
                     if (d.windup > 0f) def.WindupDuration = d.windup;
                     if (d.recovery > 0f) def.RecoveryDuration = d.recovery;
                     def.Skill = d.skill;
+                    def.AltSkill = d.altSkill;
                     def.BasicSkill = d.basic;
                     def.Cleave = d.cleave;
                     var stats = new PrimaryStats(d.str, d.agi, d.intel, d.wil);
@@ -202,6 +231,12 @@ namespace IntoTheDungeon.Unity
                     def.SlamCooldown = d.slamCd > 0f ? d.slamCd : 9f;
                     def.SlamDamageMul = d.slamDmg > 0f ? d.slamDmg : 2f;
                     def.SlamStopRequired = d.slamStop > 0 ? d.slamStop : 10;
+                    def.SlamKind = d.slamKind;
+                    def.SlamPower = d.slamPower;
+                    def.SlamAltKind = d.slamAltKind;
+                    def.SlamAltPower = d.slamAltPower;
+                    def.Passive = d.passive;
+                    def.OrbShot = d.orb;
                     def.ReviveCharges = d.revive;
                     def.ReviveStopRequired = d.reviveStop > 0 ? d.reviveStop : 10;
                     def.BossGem = string.IsNullOrEmpty(d.bossGem) ? 0 : IntoTheDungeon.Features.Run.GemPool.IndexOf(d.bossGem) + 1;   // 번호 + 1(0 = 없음)

@@ -26,11 +26,15 @@ namespace IntoTheDungeon.Unity.Hud
         {
             _rt = (RectTransform)transform;
             _group = gameObject.AddComponent<CanvasGroup>();
+            UiTooltip.Bind(gameObject, () => Tooltips.Item(Def));   // 공용 툴팁(Def는 마우스를 올릴 때 읽는다)
         }
+
+        void OnDestroy() { if (Dragging) UiTooltip.Suppressed = false; }   // 끄는 중에 사라져도 툴팁 억제가 남지 않게
 
         public void OnBeginDrag(PointerEventData e)
         {
             Dragging = true;
+            UiTooltip.Suppressed = true; UiTooltip.Hide();   // 끄는 동안 툴팁 숨김
             _group.blocksRaycasts = false;   // 아래 칸·버리기 영역이 포인터를 받게
             Owner.BeginDrag(this);
             Follow(e);
@@ -41,6 +45,7 @@ namespace IntoTheDungeon.Unity.Hud
         public void OnEndDrag(PointerEventData e)
         {
             Dragging = false;
+            UiTooltip.Suppressed = false;
             _group.blocksRaycasts = true;
             Owner.Drop(this, e.position);
         }

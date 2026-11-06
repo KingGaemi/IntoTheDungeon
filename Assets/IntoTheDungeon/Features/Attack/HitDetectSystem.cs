@@ -82,7 +82,7 @@ namespace IntoTheDungeon.Features.Attack
                         em.GetComponent<HpModificationQueue>(target.E).Enqueue(HpModification.Damage(dealt, hb.Owner));
                         ApplyHitReaction(em, target.E, hb);
                         TraitHitEffects.Apply(em, hitboxEntities[i], target.E, hb, dealt);
-                        if (hb.StopPower > 0) PatternBreak.Apply(em, target.E, hb.StopPower, flinch: false, pushDir: hb.FacingSign);
+                        if (hb.StopPower > 0) PatternBreak.Apply(em, target.E, hb.StopPower, flinch: false, pushDir: hb.FacingSign, source: hb.Owner);
                         continue;
                     }
 
@@ -96,7 +96,7 @@ namespace IntoTheDungeon.Features.Attack
                         em.GetComponent<HpModificationQueue>(t.E).Enqueue(HpModification.Damage(dealt, hb.Owner));
                         ApplyHitReaction(em, t.E, hb);
                         TraitHitEffects.Apply(em, hitboxEntities[i], t.E, hb, dealt);
-                        if (hb.StopPower > 0) PatternBreak.Apply(em, t.E, hb.StopPower, flinch: false, pushDir: hb.FacingSign);   // 필살기 저지력
+                        if (hb.StopPower > 0) PatternBreak.Apply(em, t.E, hb.StopPower, flinch: false, pushDir: hb.FacingSign, source: hb.Owner);   // 필살기 저지력
 
                         // 일반 화살: 첫 대상에 꽂히고 사라진다(수명을 0으로 → LifetimeSystem이 지움)
                         var self = hitboxEntities[i];
@@ -157,12 +157,28 @@ namespace IntoTheDungeon.Features.Attack
         static int Mitigated(IEntityManager em, Entity victim, in HitboxComponent hb)
         {
             int dmg = hb.Damage;
+            if (hb.HpRatioDamage > 0f && em.TryGetComponent<StatusComponent>(victim, out var vs))   // 튜토리얼 강타: 아프게, 그래도 살아남게
+                return System.Math.Clamp((int)System.MathF.Round(vs.MaxHp * hb.HpRatioDamage), 0, System.Math.Max(0, vs.CurrentHp - 1));
             // 난이도: 파티가 받는 피해 배율
             if (em.TryGetComponent<TeamComponent>(victim, out var team) && team.TeamFlag == Party.Team)
                 dmg = System.Math.Max(1, (int)System.MathF.Round(dmg * DifficultyTable.PartyDamageTaken(RunState.Current.Difficulty)));
-            // 방패(전사 필살기): 받는 피해 감소
+            // 기절(패턴을 끊겨 그로기)한 적은 더 아프게 맞는다: 끊은 다음이 몰아칠 때
+            if (em.TryGetComponent<HitStunComponent>(victim, out var stun) && stun.GroggyTotal > 0f && stun.Remaining > 0f)
+                dmg = (int)System.MathF.Round(dmg * (PatternBreak.GroggyDamageMul + (CombatPerks.Mine(em, hb.Owner) ? CombatPerks.GroggyDamageAdd : 0f)));
+            // 방패(전사 필살기): 받는 피해 감소. 가시 방패 유물이면 때린 적에게 돌려준다
             if (em.TryGetComponent<GuardComponent>(victim, out var guard) && guard.Remaining > 0f)
+            {
+                if (CombatPerks.GuardReflect > 0f && CombatPerks.Mine(em, victim) && em.Exists(hb.Owner) && em.HasComponent<HpModificationQueue>(hb.Owner)
+                    && em.TryGetComponent<StatusComponent>(hb.Owner, out var atk) && atk.IsAlive)
+                    em.GetComponent<HpModificationQueue>(hb.Owner).Enqueue(HpModification.Damage(System.Math.Max(1, (int)System.MathF.Round(dmg * CombatPerks.GuardReflect)), victim));
                 dmg = System.Math.Max(1, (int)System.MathF.Round(dmg * guard.DamageMul));
+            }
+            // 마법 보호막(주술사): 물리 피해는 거의 막고, 마법 피해는 그대로
+            if (hb.Type == DamageType.Physical && em.TryGetComponent<Battle.BarrierComponent>(victim, out var barrier) && barrier.Remaining > 0f)
+                dmg = System.Math.Max(1, (int)System.MathF.Round(dmg * Battle.Boss.BarrierPhysicalMul));
+            // 부패의 손길: 중독된 적은 내 파티원에게 더 아프게 맞는다
+            if (CombatPerks.RotDamageAdd > 0f && em.TryGetComponent<PoisonComponent>(victim, out var poison) && poison.Active && CombatPerks.Mine(em, hb.Owner))
+                dmg = (int)System.MathF.Round(dmg * (1f + CombatPerks.RotDamageAdd));
             // 배치 열: 전열은 덜, 후열은 더 아프다
             if (em.TryGetComponent<FormationComponent>(victim, out var form) && form.Active)
                 dmg = System.Math.Max(1, (int)System.MathF.Round(dmg * Formation.DamageTakenMul(form.Row)));

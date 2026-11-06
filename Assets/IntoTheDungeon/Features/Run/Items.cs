@@ -18,6 +18,16 @@ namespace IntoTheDungeon.Features.Run
         public readonly int W, H;           // 가방 칸(회전 전)
         public readonly string Description;
         public readonly System.Action<PartyModifiers> Modify;
+        public readonly int Level;          // 강화 단계(0 = 원본)
+        public readonly ItemDef Base;       // 강화된 정의면 원본, 원본이면 null
+        public ItemDef Root => Base ?? this;
+
+        // 강화된 정의(ItemEnhance.Of): 번호·Id·등급·칸은 원본과 같다
+        internal ItemDef(ItemDef root, int level, string name, string desc, System.Action<PartyModifiers> modify)
+        {
+            Index = root.Index; Id = root.Id; Name = name; Rarity = root.Rarity; Description = desc; Modify = modify;
+            W = root.W; H = root.H; Level = level; Base = root;
+        }
 
         internal ItemDef(int index, string id, string name, ItemRarity rarity, string desc, System.Action<PartyModifiers> modify)
         {
@@ -102,6 +112,25 @@ namespace IntoTheDungeon.Features.Run
 
             var candidates = All.FindAll(d => d.Rarity == rarity);
             return candidates[rng.Next(candidates.Count)];
+        }
+
+        /// <summary>그 등급 아이템 중 하나. 그 등급이 비어 있으면 아래 등급으로 내려간다(전부 비면 null).</summary>
+        public static ItemDef RollRarity(System.Random rng, ItemRarity rarity)
+        {
+            for (int r = (int)rarity; r >= 0; r--)
+            {
+                var candidates = All.FindAll(d => (int)d.Rarity == r);
+                if (candidates.Count > 0) return candidates[rng.Next(candidates.Count)];
+            }
+            return null;
+        }
+
+        /// <summary>Id로 아이템 찾기(없으면 null).</summary>
+        public static ItemDef Find(string id)
+        {
+            if (id == null) return null;
+            foreach (var d in All) if (d.Id == id) return d;
+            return null;
         }
     }
 

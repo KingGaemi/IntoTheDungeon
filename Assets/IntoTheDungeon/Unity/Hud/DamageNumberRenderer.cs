@@ -83,7 +83,7 @@ namespace IntoTheDungeon.Unity.Hud
             var n = Get();
             n.Start = new Vector3(t.Position.X + jx, t.Position.Y + t.Height + head + startAboveHead, 0f);
             n.Age = 0f;
-            n.Scale = big ? bigHitScale : 1f;
+            n.Scale = (big ? bigHitScale : 1f) * (party ? 0.85f : 1f);   // 파티 피격 숫자는 조금 작게(색은 빨강 유지)
             n.Color = party ? partyHitColor : big ? bigHitColor : enemyHitColor;
             n.Text.text = n.Shadow.text = evt.Amount.ToString();
             int order = 32600 + (_jitter % 100);   // 나중 숫자가 위에

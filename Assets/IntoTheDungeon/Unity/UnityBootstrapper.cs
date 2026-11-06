@@ -80,7 +80,10 @@ namespace IntoTheDungeon.Unity
             World.BakeScene();
 
             // 전투 화면 UI(필살기 버튼·웨이브 진행·던전 지도·정비)와 투사체(검기·화살)·체력바·데미지 숫자·떨어진 아이템 그림: 씬 배치 없이 코드로 만든다(주입 전에 만들어야 Init을 받음)
-            new GameObject("BattleHud", typeof(Hud.SkillButtonHud), typeof(Hud.ProjectileRenderer), typeof(Hud.HealthBarRenderer), typeof(Hud.DamageNumberRenderer), typeof(Hud.LootRenderer), typeof(Hud.RewardFxRenderer), typeof(Hud.BossRenderer), typeof(Hud.GuardRenderer), typeof(Hud.DoorRenderer), typeof(Hud.SpeedControlHud), typeof(Hud.MeterHud), typeof(Hud.BattleStatusHud), typeof(Hud.DungeonMapHud), typeof(Hud.CampHud), typeof(Hud.SealHud), typeof(Hud.DeployHud), typeof(Hud.InterruptFxRenderer), typeof(Hud.StunFxRenderer), typeof(Hud.ReviveFxRenderer), typeof(Hud.GemRevealHud), typeof(Hud.StopGuideHud), typeof(Hud.RunInfoHud), typeof(RunAutoSave));
+            var hud = new GameObject("BattleHud", typeof(Hud.SkillButtonHud), typeof(Hud.ProjectileRenderer), typeof(Hud.HealthBarRenderer), typeof(Hud.DamageNumberRenderer), typeof(Hud.LootRenderer), typeof(Hud.RewardFxRenderer), typeof(Hud.BossRenderer), typeof(Hud.GuardRenderer), typeof(Hud.DoorRenderer), typeof(Hud.SpeedControlHud), typeof(Hud.MeterHud), typeof(Hud.BattleStatusHud), typeof(Hud.DungeonMapHud), typeof(Hud.CampHud), typeof(Hud.SealHud), typeof(Hud.DeployHud), typeof(Hud.InterruptFxRenderer), typeof(Hud.StunFxRenderer), typeof(Hud.ReviveFxRenderer), typeof(Hud.GemRevealHud), typeof(Hud.StopGuideHud), typeof(Hud.RunInfoHud), typeof(RunAutoSave));
+            // [AutoHud]가 붙은 HUD는 여기서 자동으로 붙는다(새 HUD마다 이 줄을 고치지 않게)
+            foreach (var t in typeof(UnityBootstrapper).Assembly.GetTypes())
+                if (t.IsDefined(typeof(Hud.AutoHudAttribute), false) && typeof(MonoBehaviour).IsAssignableFrom(t) && !t.IsAbstract && !hud.GetComponent(t)) hud.AddComponent(t);
 
             Debug.Log("[Bootstrapper] Calling ReinjectScene()");
             _bootstrap.ReinjectScene();

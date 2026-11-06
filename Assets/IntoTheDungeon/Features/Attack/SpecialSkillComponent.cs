@@ -32,6 +32,14 @@ namespace IntoTheDungeon.Features.Attack
         public float TauntDuration;     // 도발 유지(초)
         public float GuardDuration;     // 방패 유지(초)
         public float GuardDamageMul;    // 방패 동안 받는 피해 배율
+        public float GuardDurationBase, GuardMulBase;   // 유물·특성 보정 전 값(다시 계산할 때 기준)
+        public bool PartyGuard;         // 철벽: 도발 없이 반경 안 파티원 전원에게 방패
+
+        // 필살기 갈래(교체 필살기·유물·특성)
+        public bool Centered;           // 몸 한가운데에 판정(회오리 베기)
+        public float Offset;            // 몸 앞 이 거리에 판정(화살비). 0이면 몸 바로 앞에서 날아감
+        public bool Magic, MagicBase;   // 마법 피해(마법 보호막 관통, 마법 공격력이 더해짐)
+        public float DamageMulBase;     // 유물·특성 보정 전 피해 배율
 
         // 시전 상태
         public bool Requested;
@@ -50,7 +58,7 @@ namespace IntoTheDungeon.Features.Attack
         public static readonly SpecialSkillComponent SwordWave = new()
         {
             StopPower = PatternBreak.DefaultStopPower, StopPowerBase = PatternBreak.DefaultStopPower,
-            Cooldown = 20f,                  // 평타 비중을 높이려고 길게(필살기는 노리는 순간에)
+            Cooldown = 12f,                  // 20이면 초반에 누를 게 없어 지루함 → 12
             CooldownRemaining = 0f,          // 방마다 준비된 채로 시작(첫 강타부터 끊을 기회)
             ManaCost = 50f,                  // 케서린 마나 70: 필살기 몫(50)을 남기고도 기본 스킬(12)을 쓸 수 있게 60 → 50
             CastTime = 0.3f,
@@ -70,7 +78,7 @@ namespace IntoTheDungeon.Features.Attack
         public static readonly SpecialSkillComponent TauntGuard = new()
         {
             StopPower = PatternBreak.DefaultStopPower, StopPowerBase = PatternBreak.DefaultStopPower,
-            Cooldown = 14f,                  // 오크 강타를 끊는 게 핵심이라 다른 필살기보다 자주
+            Cooldown = 10f,                  // 오크 강타·거미 떼를 끄는 게 핵심이라 다른 필살기보다 자주
             CooldownRemaining = 0f,          // 방마다 준비된 채로 시작(첫 강타부터 끊을 기회)
             ManaCost = 25f,                  // 전사 마나 60·초당 1.3 → 약 19초마다(재사용 대기와 비슷)
             CastTime = 0.25f,
@@ -85,7 +93,7 @@ namespace IntoTheDungeon.Features.Attack
         public static readonly SpecialSkillComponent PowerShot = new()
         {
             StopPower = PatternBreak.DefaultStopPower, StopPowerBase = PatternBreak.DefaultStopPower,
-            Cooldown = 20f,                  // 평타 비중을 높이려고 길게(필살기는 노리는 순간에)
+            Cooldown = 12f,                  // 20이면 초반에 누를 게 없어 지루함 → 12
             CooldownRemaining = 0f,          // 방마다 준비된 채로 시작(첫 강타부터 끊을 기회)
             ManaCost = 60f,                  // 궁수 마나 80·초당 1.9 → 대략 30초
             CastTime = 0.58f,                // Archer_Skill(24fps) 14번째 프레임 = 시위를 놓는 순간
@@ -100,9 +108,65 @@ namespace IntoTheDungeon.Features.Attack
             WaveHitStun = 0.6f,
             Visual = ProjectileVisual.PowerArrow
         };
+
+        // ───────── 교체 필살기(레벨업 특성): 저지력 대신 다른 답 ─────────
+
+        // 케서린: 제자리에서 크게 돌며 주변을 벤다(떼 몹·알집 정리)
+        public static readonly SpecialSkillComponent Whirlwind = new()
+        {
+            Cooldown = 10f, ManaCost = 40f,
+            CastTime = 0.3f, Duration = 0.7f,
+            DamageMultiplier = 5.5f,
+            WaveSpeed = 0f, WaveLifetime = 0.2f,
+            WaveHalfExtents = new Vec2(2.3f, 1.2f),
+            WaveKnockback = 6f, WaveLaunch = 3f, WaveHitStun = 0.5f,
+            Visual = ProjectileVisual.SwordWave,
+            Centered = true
+        };
+
+        // 궁수: 앞쪽 넓은 땅에 마력 화살을 쏟는다(마법 피해 → 보호막 관통)
+        public static readonly SpecialSkillComponent ArrowRain = new()
+        {
+            Cooldown = 11f, ManaCost = 55f,
+            CastTime = 0.58f, Duration = 0.71f,
+            DamageMultiplier = 3.2f,
+            WaveSpeed = 0f, WaveLifetime = 0.35f,
+            WaveHalfExtents = new Vec2(2.4f, 1.3f),
+            Offset = 5f,
+            WaveKnockback = 1f, WaveHitStun = 0.3f,
+            Visual = ProjectileVisual.Orb,
+            Magic = true, MagicBase = true
+        };
+
+        // 중갑 전사: 방패를 세우고 외쳐 주변 파티원 전원에게 방패(강타·돌진을 받아낸다)
+        public static readonly SpecialSkillComponent Bulwark = new()
+        {
+            Cooldown = 14f, ManaCost = 30f,
+            CastTime = 0.25f, Duration = 0.75f,
+            TauntRadius = 6f,
+            GuardDuration = 4f, GuardDamageMul = 0.4f, GuardDurationBase = 4f, GuardMulBase = 0.4f,
+            PartyGuard = true
+        };
+
+        /// <summary>프리셋 → 필살기(보정 전 기준값을 채워서).</summary>
+        public static SpecialSkillComponent Of(Character.SkillPreset preset)
+        {
+            var sk = preset switch
+            {
+                Character.SkillPreset.PowerShot => PowerShot,
+                Character.SkillPreset.TauntGuard => TauntGuard,
+                Character.SkillPreset.Whirlwind => Whirlwind,
+                Character.SkillPreset.ArrowRain => ArrowRain,
+                Character.SkillPreset.Bulwark => Bulwark,
+                _ => SwordWave
+            };
+            sk.DamageMulBase = sk.DamageMultiplier;
+            if (sk.GuardDurationBase <= 0f) { sk.GuardDurationBase = sk.GuardDuration; sk.GuardMulBase = sk.GuardDamageMul; }
+            return sk;
+        }
     }
 
-    public enum ProjectileVisual : byte { SwordWave, Arrow, PowerArrow }
+    public enum ProjectileVisual : byte { SwordWave, Arrow, PowerArrow, Orb }
 
     /// <summary>날아가는 히트박스(검기·화살 등). ProjectileMotionSystem이 Hitbox.Center를 옮긴다.</summary>
     public struct ProjectileComponent : IComponentData

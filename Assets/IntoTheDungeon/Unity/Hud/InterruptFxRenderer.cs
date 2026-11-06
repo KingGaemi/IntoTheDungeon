@@ -13,6 +13,9 @@ namespace IntoTheDungeon.Unity.Hud
     /// </summary>
     public sealed class InterruptFxRenderer : MonoBehaviour, IWorldInjectable
     {
+        /// <summary>끊기 성공 직후 보스 슬로우(멈칫 뒤 0.15초, 0.3배) 스위치. 배속 보조성 연출이 싫으면 여기 한 곳만 false로.</summary>
+        public const bool BreakSlowMo = true;
+
         [SerializeField] Color attackColor = new(1f, 0.78f, 0.3f, 1f);
         [SerializeField] Color patternColor = new(1f, 0.93f, 0.55f, 1f);
         [Tooltip("저지력이 모자랄 때(「저지력 부족 10/15」)")]
@@ -44,9 +47,13 @@ namespace IntoTheDungeon.Unity.Hud
         int _layer;
         Image _flash;
         float _flashA;
+        IWorld _world;
+        Image _vignette;   // 끊기 청록 비네트(가장자리만)
+        float _vigA;
 
         public void Init(IWorld world)
         {
+            _world = world;
             if (!_font) _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             int id = SortingLayer.NameToID("Projectiles");   // 캐릭터·체력바보다 위
             _layer = SortingLayer.IsValid(id) ? id : 0;
@@ -71,8 +78,14 @@ namespace IntoTheDungeon.Unity.Hud
             }
 
             _flashA = Mathf.MoveTowards(_flashA, 0f, dt * 2.2f);
-            _flash.color = new Color(1f, 0.95f, 0.8f, _flashA);
+            _flash.color = new Color(UiKit.Stop.r, UiKit.Stop.g, UiKit.Stop.b, _flashA);   // 끊기 = 저지력 청록
             if (_flash.enabled != _flashA > 0f) _flash.enabled = _flashA > 0f;
+            _vigA = Mathf.MoveTowards(_vigA, 0f, dt * 1.1f);
+            if (_vignette)
+            {
+                _vignette.color = new Color(UiKit.Stop.r, UiKit.Stop.g, UiKit.Stop.b, _vigA);
+                if (_vignette.enabled != _vigA > 0f) _vignette.enabled = _vigA > 0f;
+            }
         }
 
         /// <summary>끊김·저지력 부족 연출이 나올 때(안내 HUD 등이 받음).</summary>
@@ -82,7 +95,7 @@ namespace IntoTheDungeon.Unity.Hud
         {
             Shown?.Invoke(info.Kind);
             bool big = info.Kind is InterruptKind.PatternBroken or InterruptKind.Shattered;
-            bool progress = info.Kind is InterruptKind.StopFailed or InterruptKind.Revived;   // 저지력 부족·부활: 작게, 멈칫 없이
+            bool progress = info.Kind is InterruptKind.StopFailed or InterruptKind.Revived or InterruptKind.Empowered or InterruptKind.Shielded or InterruptKind.Enraged;   // 저지력 부족·부활·광폭·광폭화: 작게, 멈칫 없이
             var col = big ? patternColor : progress ? progressColor : attackColor;
             bool impact = info.Kind == InterruptKind.AttackBroken;   // 평타 끊기: 글자·X자 없이 묵직하게 밀려나는 충격만
             var f = new Fx { Born = now, Big = big, Progress = progress, Impact = impact, Col = impact ? impactColor : col };
@@ -115,6 +128,8 @@ namespace IntoTheDungeon.Unity.Hud
             if (impact)
             {
                 SpeedControlHud.HitStop(impactHitStop);
+                CameraFx.Shake(0.07f, 0.15f);
+                SpriteFx.Squash(info.Target, 1.15f, 0.88f, 0.08f, 0.16f);   // 끊긴 적이 움찔
                 return;
             }
 
@@ -124,15 +139,44 @@ namespace IntoTheDungeon.Unity.Hud
             f.TextRoot.position = new Vector3(info.Position.X, info.Position.Y + info.Height + 0.35f, 0f);
             string label = info.Kind == InterruptKind.Shattered ? "분쇄!"
                 : info.Kind == InterruptKind.Revived ? "부활!"
+                : info.Kind == InterruptKind.Empowered ? "광폭!"
+                : info.Kind == InterruptKind.Shielded ? "보호막!"
+                : info.Kind == InterruptKind.Enraged ? "광폭화!"
                 : big ? $"패턴 파괴!\n<size=40>기절 {PatternBreak.PatternStun(info.Power, info.Required):0.0}초</size>" : progress ? $"저지력 부족 {info.Power}/{info.Required}" : "끊김!";   // 저지력이 남은 만큼 기절이 길다
             f.Shadow = MakeText(f.TextRoot, label, new Vector3(0.04f, -0.04f, 0f), order + 4);
             f.Shadow.color = new Color(0.25f, 0.12f, 0f, 0.9f);
             f.Text = MakeText(f.TextRoot, label, Vector3.zero, order + 5);
             f.Text.color = col;
 
+            if (info.Kind == InterruptKind.Enraged) CameraFx.Shake(0.1f, 0.2f);   // 광폭화: 가벼운 흔들림만(시간은 안 건드림)
             if (progress) return;
             SpeedControlHud.HitStop(big ? patternHitStop : attackHitStop);
-            if (big) _flashA = Mathf.Max(_flashA, 0.5f);
+            if (big)
+            {
+                _flashA = Mathf.Max(_flashA, 0.35f);
+                _vigA = Mathf.Max(_vigA, 0.25f);
+                BreakImpact(info);
+            }
+        }
+
+        // 끊기 임팩트: 흔들림(끊은 쪽 → 끊긴 쪽 방향) + 끊은 파티원 스쿼시 + 끊긴 적 흰→청록 플래시. 보스면 줌 펀치 + (BreakSlowMo) 멈칫 뒤 0.15초 슬로우.
+        // SpeedControlHud.SlowMo 호출처는 여기 한 곳뿐 — 예고·충전·StopFailed에서는 절대 시간을 건드리지 않는다.
+        void BreakImpact(in InterruptInfo info)
+        {
+            var dir = Vector2.zero;
+            bool boss = false;
+            if (_world != null)
+            {
+                var em = _world.EntityManager;
+                if (em.Exists(info.Source) && em.TryGetComponent<IntoTheDungeon.Core.ECS.Components.TransformComponent>(info.Source, out var st))
+                    dir = new Vector2(Mathf.Sign(info.Position.X - st.Position.X), 0.3f);
+                boss = em.Exists(info.Target) && em.HasComponent<IntoTheDungeon.Features.Battle.BossComponent>(info.Target);
+            }
+            CameraFx.Shake(0.18f, 0.28f, dir);
+            SpriteFx.Squash(info.Source, 1.18f, 0.86f, 0.12f, 0.18f);
+            SpriteFx.Flash(info.Target, UiKit.Stop, 0.14f);
+            if (boss) CameraFx.ZoomPunch(-0.25f, 0.12f, 0.35f);
+            if (boss && BreakSlowMo) SpeedControlHud.SlowMo(0.15f, 0.3f);
         }
 
         void Animate(Fx f, float age, float dt)
@@ -243,6 +287,35 @@ namespace IntoTheDungeon.Unity.Hud
             var rt = _flash.rectTransform;
             rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one; rt.offsetMin = rt.offsetMax = Vector2.zero;
             _flash.enabled = false;
+
+            // 청록 비네트: 가운데는 비고 가장자리로 갈수록 진한 그림을 화면에 늘려 붙인다
+            var vg = new GameObject("Vignette", typeof(RectTransform), typeof(Image));
+            vg.transform.SetParent(canvasGo.transform, false);
+            _vignette = vg.GetComponent<Image>();
+            _vignette.raycastTarget = false;
+            _vignette.sprite = VignetteSprite();
+            var vrt = _vignette.rectTransform;
+            vrt.anchorMin = Vector2.zero; vrt.anchorMax = Vector2.one; vrt.offsetMin = vrt.offsetMax = Vector2.zero;
+            _vignette.enabled = false;
+        }
+
+        static Sprite s_vignette;
+        static Sprite VignetteSprite()
+        {
+            if (s_vignette) return s_vignette;
+            const int n = 64;
+            var tex = new Texture2D(n, n, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
+            for (int y = 0; y < n; y++)
+                for (int x = 0; x < n; x++)
+                {
+                    float dx = (x + 0.5f) / n * 2f - 1f, dy = (y + 0.5f) / n * 2f - 1f;
+                    float d = Mathf.Sqrt(dx * dx + dy * dy);
+                    float a = Mathf.Clamp01((d - 0.55f) / 0.6f);
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, a * a));
+                }
+            tex.Apply();
+            s_vignette = UnityEngine.Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), n);   // 같은 이름의 Sprite() 메서드와 구분
+            return s_vignette;
         }
     }
 }

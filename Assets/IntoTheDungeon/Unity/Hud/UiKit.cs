@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using IntoTheDungeon.Features.Run;
 
 namespace IntoTheDungeon.Unity.Hud
 {
@@ -20,6 +21,191 @@ namespace IntoTheDungeon.Unity.Hud
         public static readonly Color Gold = new(1f, 0.84f, 0.42f, 1f);
         public static readonly Color TextMain = new(0.93f, 0.91f, 0.86f, 1f);
         public static readonly Color TextDim = new(0.93f, 0.91f, 0.86f, 0.6f);
+
+        // 색 토큰: 빨강 = Negative(부정 신호) 하나뿐. 긍정 강조는 금·청록·연두·파랑
+        public static readonly Color Accent = new(1f, 0.82f, 0.3f, 1f);       // 버튼·선택
+        public static readonly Color Positive = new(0.55f, 1f, 0.6f, 1f);     // 회복·보너스
+        public static readonly Color Negative = new(1f, 0.42f, 0.38f, 1f);    // 부족·위험·대가 전용(= StopPowerUi.ShortColor)
+        public static readonly Color Stop = new(0.35f, 0.92f, 0.88f, 1f);     // 저지력(= StopPowerUi.Color)
+        public static readonly Color Mana = new(0.3f, 0.55f, 1f, 1f);
+        public static readonly Color Xp = new(0.55f, 0.9f, 1f, 1f);
+        public static readonly Color Hp = new(0.35f, 0.85f, 0.4f, 1f);
+        public static readonly Color EnemyHp = new(0.88f, 0.26f, 0.22f, 1f);
+        public static readonly Color Magic = new(0.55f, 0.85f, 1f, 1f);
+        public static readonly Color Poison = new(0.75f, 0.45f, 0.95f, 1f);
+        public static readonly Color CardHover = new(0.17f, 0.18f, 0.26f, 1f);
+        public static readonly Color Dim = new(0f, 0f, 0f, 0.6f);
+        public static readonly Color Disabled = new(0.55f, 0.55f, 0.55f, 0.7f);
+        public static readonly Color Cursed = new(0.62f, 0.12f, 0.18f, 1f);   // 저주 테두리(진홍 = 부정)
+
+        /// <summary>등급색(아이템·유물 공용. LootRenderer.RarityColor가 여기에 위임).</summary>
+        public static Color Rarity(ItemRarity r) => r switch
+        {
+            ItemRarity.Uncommon => new Color(0.35f, 0.85f, 0.4f, 1f),
+            ItemRarity.Rare => new Color(0.3f, 0.6f, 1f, 1f),
+            ItemRarity.Epic => new Color(0.72f, 0.42f, 1f, 1f),
+            _ => new Color(0.85f, 0.85f, 0.85f, 1f)
+        };
+
+        // 타이포 5단계
+        public const int TitleSize = 44, HeadSize = 26, BodySize = 20, CaptionSize = 16, NumberSize = 24;
+
+        static Font s_font;
+        /// <summary>공용 글꼴(LegacyRuntime.ttf 캐시).</summary>
+        public static Font Font
+        {
+            get
+            {
+                if (!s_font) s_font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                return s_font;
+            }
+        }
+
+        // ───────── 빌더(새 코드는 이것만 쓴다. 기존 HUD의 복붙 헬퍼는 건드리지 않음) ─────────
+
+        /// <summary>RectTransform + Image. raycastTarget은 기본 꺼짐(버튼·호버 대상만 켠다).</summary>
+        public static Image NewImage(Transform parent, Color color, bool raycast = false, string name = "Image")
+        {
+            var go = new GameObject(name, typeof(RectTransform), typeof(Image));
+            go.transform.SetParent(parent, false);
+            var img = go.GetComponent<Image>();
+            img.color = color;
+            img.raycastTarget = raycast;
+            return img;
+        }
+
+        /// <summary>굵은 글자(공용 글꼴, raycast 꺼짐). overflow면 가로·세로 넘침 허용(크기를 안 재도 잘리지 않음).</summary>
+        public static Text NewText(Transform parent, string text, int size, Color? color = null, TextAnchor anchor = TextAnchor.MiddleCenter, bool overflow = true)
+        {
+            var go = new GameObject("Text", typeof(RectTransform), typeof(Text));
+            go.transform.SetParent(parent, false);
+            var t = go.GetComponent<Text>();
+            t.font = Font;
+            t.fontStyle = FontStyle.Bold;
+            t.fontSize = size;
+            t.text = text;
+            t.color = color ?? TextMain;
+            t.alignment = anchor;
+            t.raycastTarget = false;
+            t.supportRichText = true;
+            if (overflow) { t.horizontalOverflow = HorizontalWrapMode.Overflow; t.verticalOverflow = VerticalWrapMode.Overflow; }
+            return t;
+        }
+
+        /// <summary>버튼 하나: 바탕(raycast) → Place → Button + 스타일 → 글자(안쪽 여백) Stretch.</summary>
+        public static Button NewButton(Transform parent, string label, Vector2 pos, Vector2 size, Color fill, UnityEngine.Events.UnityAction onClick, int fontSize = 24)
+        {
+            var img = NewImage(parent, fill, raycast: true, name: "Button");
+            Place(img.rectTransform, pos, size);
+            var btn = img.gameObject.AddComponent<Button>();
+            Button(btn, img, fill);
+            if (onClick != null) btn.onClick.AddListener(onClick);
+            var t = NewText(img.transform, label, fontSize, new Color(0.1f, 0.08f, 0.05f, 1f));
+            Stretch(t.rectTransform, 4f);
+            return btn;
+        }
+
+        /// <summary>anchorMin = anchorMax = pivot = anchor, anchoredPosition = pos, sizeDelta = size.</summary>
+        public static void Place(RectTransform rt, Vector2 anchor, Vector2 pos, Vector2 size)
+        {
+            rt.anchorMin = rt.anchorMax = rt.pivot = anchor;
+            rt.anchoredPosition = pos;
+            rt.sizeDelta = size;
+        }
+
+        /// <summary>가운데 앵커로 놓는다.</summary>
+        public static void Place(RectTransform rt, Vector2 pos, Vector2 size) => Place(rt, new Vector2(0.5f, 0.5f), pos, size);
+
+        /// <summary>부모에 꽉 채운다(inset만큼 안쪽으로).</summary>
+        public static void Stretch(RectTransform rt, float inset = 0f)
+        {
+            rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
+            rt.offsetMin = new Vector2(inset, inset); rt.offsetMax = new Vector2(-inset, -inset);
+        }
+
+        /// <summary>화면 캔버스(ScreenSpaceOverlay + 1920×1080 기준 스케일, match 0.5). raycaster가 false면 클릭을 안 받는 순수 표시용.</summary>
+        public static Canvas NewCanvas(Transform parent, string name, int sortingOrder, bool raycaster = true)
+        {
+            var go = raycaster ? new GameObject(name, typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster))
+                               : new GameObject(name, typeof(Canvas), typeof(CanvasScaler));
+            if (parent) go.transform.SetParent(parent, false);
+            var canvas = go.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = sortingOrder;
+            var scaler = go.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.matchWidthOrHeight = 0.5f;
+            return canvas;
+        }
+
+        /// <summary>[아이콘 size+4][글자] 가로 칩. 반환 = 칩 루트(크기·자리는 호출자가 Place). 아이콘이 null이면 글자만.</summary>
+        public static RectTransform IconText(Transform parent, Sprite icon, string text, int size, Color color, out Text label)
+        {
+            var root = new GameObject("Chip", typeof(RectTransform));
+            root.transform.SetParent(parent, false);
+            var rt = (RectTransform)root.transform;
+            float iconSize = size + 4;
+            float left = 0f;
+            if (icon)
+            {
+                var img = NewImage(root.transform, Color.white, name: "Icon");
+                img.sprite = icon;
+                img.preserveAspect = true;
+                Place(img.rectTransform, new Vector2(0f, 0.5f), Vector2.zero, new Vector2(iconSize, iconSize));
+                left = iconSize + 4f;
+            }
+            label = NewText(root.transform, text, size, color, TextAnchor.MiddleLeft);
+            label.rectTransform.anchorMin = Vector2.zero; label.rectTransform.anchorMax = Vector2.one;
+            label.rectTransform.offsetMin = new Vector2(left, 0f); label.rectTransform.offsetMax = Vector2.zero;
+            return rt;
+        }
+
+        /// <summary>빛 번짐 토글: 자식 "Glow"(GlowSprite, 사방 +12px, raycast 없음, 맨 뒤)를 켜고 끈다. 반환 = glow Image(꺼져 있고 없으면 null).</summary>
+        public static Image Glow(Image img, Color c, bool on)
+        {
+            var t = img.transform.Find("Glow");
+            Image glow = t ? t.GetComponent<Image>() : null;
+            if (!glow)
+            {
+                if (!on) return null;
+                glow = NewImage(img.transform, c, name: "Glow");
+                glow.sprite = GlowSprite;
+                glow.type = Image.Type.Sliced;
+                glow.transform.SetAsFirstSibling();
+                Stretch(glow.rectTransform, -12f);
+            }
+            glow.color = c;
+            glow.gameObject.SetActive(on);
+            return glow;
+        }
+
+        static Sprite s_circle, s_circleRim;
+        const int CircleN = 64;
+
+        /// <summary>64px 부드러운 원(흰색, Image.color로 물들임).</summary>
+        public static Sprite CircleSprite { get { if (!s_circle) MakeCircles(); return s_circle; } }
+        /// <summary>64px 원 테두리 3px(흰색).</summary>
+        public static Sprite CircleRimSprite { get { if (!s_circleRim) MakeCircles(); return s_circleRim; } }
+
+        static void MakeCircles()
+        {
+            var fill = new Texture2D(CircleN, CircleN, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
+            var rim = new Texture2D(CircleN, CircleN, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
+            float r = CircleN * 0.5f - 1f, c = CircleN * 0.5f;
+            for (int y = 0; y < CircleN; y++)
+                for (int x = 0; x < CircleN; x++)
+                {
+                    float d = Mathf.Sqrt((x + 0.5f - c) * (x + 0.5f - c) + (y + 0.5f - c) * (y + 0.5f - c)) - r;   // 바깥 양수
+                    float a = Mathf.Clamp01(0.5f - d);
+                    fill.SetPixel(x, y, new Color(1f, 1f, 1f, a));
+                    float ring = Mathf.Clamp01(0.5f - d) * Mathf.Clamp01(d + 3.5f);   // 3px 두께
+                    rim.SetPixel(x, y, new Color(1f, 1f, 1f, ring));
+                }
+            fill.Apply(); rim.Apply();
+            s_circle = Sprite.Create(fill, new Rect(0, 0, CircleN, CircleN), new Vector2(0.5f, 0.5f), 100f);
+            s_circleRim = Sprite.Create(rim, new Rect(0, 0, CircleN, CircleN), new Vector2(0.5f, 0.5f), 100f);
+        }
 
         static Sprite s_fill, s_rim, s_glow;
 
@@ -80,9 +266,10 @@ namespace IntoTheDungeon.Unity.Hud
         public static Image Card(Image img, Color? rim = null, Color? fill = null)
             => Style(img, fill ?? CardFill, rim ?? RimDim, shadow: false);
 
-        /// <summary>버튼: 바탕색 그라데이션 + 밝은 테두리 + 그림자, 마우스 올리면 밝게·누르면 어둡게.</summary>
-        public static Button Button(Button btn, Image img, Color fill, Color? rim = null)
+        /// <summary>버튼: 바탕색 그라데이션 + 밝은 테두리 + 그림자, 마우스 올리면 밝게·누르면 어둡게. fx면 호버·누름 스케일(ButtonFx)도 붙인다.</summary>
+        public static Button Button(Button btn, Image img, Color fill, Color? rim = null, bool fx = true)
         {
+            if (fx && !btn.GetComponent<ButtonFx>()) btn.gameObject.AddComponent<ButtonFx>();
             Style(img, fill, rim ?? Color.Lerp(fill, Color.white, 0.45f), shadow: true);
             btn.targetGraphic = img;
             var cb = btn.colors;
@@ -153,13 +340,45 @@ namespace IntoTheDungeon.Unity.Hud
         }
     }
 
+    /// <summary>
+    /// 버튼 호버 1.03·누름 0.97 스케일(unscaled 시간). interactable == false면 스케일 1.
+    /// 스케일 연출을 따로 하는 버튼은 UiKit.Button(…, fx: false) 또는 enabled = false.
+    /// </summary>
+    public sealed class ButtonFx : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerUpHandler
+    {
+        public float HoverScale = 1.03f, PressScale = 0.97f, Speed = 14f;
+        bool _hover, _press;
+        Button _button;
+        RectTransform _rt;
+
+        void Awake() { _button = GetComponent<Button>(); _rt = transform as RectTransform; }
+        void OnDisable() { _hover = _press = false; if (_rt) _rt.localScale = Vector3.one; }
+
+        public void OnPointerEnter(PointerEventData e) => _hover = true;
+        public void OnPointerExit(PointerEventData e) { _hover = false; _press = false; }
+        public void OnPointerDown(PointerEventData e) => _press = true;
+        public void OnPointerUp(PointerEventData e) => _press = false;
+
+        void Update()
+        {
+            if (!_rt) return;
+            bool on = !_button || _button.interactable;
+            float target = !on ? 1f : _press ? PressScale : _hover ? HoverScale : 1f;
+            float k = 1f - Mathf.Exp(-Speed * Time.unscaledDeltaTime);
+            float s = Mathf.Lerp(_rt.localScale.x, target, k);
+            if (Mathf.Abs(s - target) < 0.001f) s = target;
+            _rt.localScale = new Vector3(s, s, 1f);
+        }
+    }
+
     /// <summary>글자 대신 쓰는 UI 아이콘(Resources/UiIcons.png, 코드로 그린 16px 도트 한 줄 시트).</summary>
     public static class UiIcons
     {
         public const string Hp = "hp", Atk = "atk", Aspd = "aspd", Def = "def", Spd = "spd", Mana = "mana", Regen = "regen",
             MRes = "mres", Res = "res", Str = "str", Agi = "agi", Int = "int", Wil = "wil", Xp = "xp", Cart = "cart",
-            Heal = "heal", Revive = "revive", Recruit = "recruit", Relic = "relic", Item = "item", LvUp = "lvup";
-        static readonly string[] Order = { Hp, Atk, Aspd, Def, Spd, Mana, Regen, MRes, Res, Str, Agi, Int, Wil, Xp, Cart, Heal, Revive, Recruit, Relic, Item, LvUp };
+            Heal = "heal", Revive = "revive", Recruit = "recruit", Relic = "relic", Item = "item", LvUp = "lvup",
+            Dice = "dice", Skull = "skull", Shrine = "shrine";   // events: 도박꾼·저주 상자/유령 상인·저지의 사당
+        static readonly string[] Order = { Hp, Atk, Aspd, Def, Spd, Mana, Regen, MRes, Res, Str, Agi, Int, Wil, Xp, Cart, Heal, Revive, Recruit, Relic, Item, LvUp, Dice, Skull, Shrine };
         static readonly Dictionary<string, Sprite> s_cache = new();
         static Texture2D s_sheet;
 

@@ -27,6 +27,20 @@ namespace IntoTheDungeon.Unity.Hud
         // 씬을 다시 불러온 뒤 어두운 화면에서 밝아지게(정비·지도 화면이 천천히 나타남)
         static bool s_fadeInNext;
 
+        // 화면 전환 요청(지도에서 방을 고를 때 등): 덮개(500)는 이 HUD가 소유하므로 정적 요청으로 받아 어두워졌다가 다시 밝힌다
+        static float s_reqOut = 0.2f, s_reqIn = 0.3f;
+        static bool s_reqPending;
+        float _reqAlpha;
+        bool _reqDark;
+
+        /// <summary>덮개를 outTime 동안 어둡게 했다가 inTime 동안 다시 밝힌다(unscaled). 인스턴스가 없으면 아무 일도 없다.</summary>
+        public static void RequestFade(float outTime, float inTime)
+        {
+            s_reqOut = Mathf.Max(0.01f, outTime);
+            s_reqIn = Mathf.Max(0.01f, inTime);
+            s_reqPending = true;
+        }
+
         IWorld _world;
         BattleProgress _progress;
         Text _status, _banner, _retryLabel, _gemLine;
@@ -41,6 +55,7 @@ namespace IntoTheDungeon.Unity.Hud
             world.TryGet(out _progress);
             if (!_status) Build();
             if (s_fadeInNext) { s_fadeInNext = false; _fadeAlpha = 1f; }
+            s_reqPending = false;   // 씬이 바뀌면 지난 전환 요청은 버린다(정적 잔류 방지)
         }
 
         void Update()
@@ -99,7 +114,12 @@ namespace IntoTheDungeon.Unity.Hud
                 }
             }
             else _fadeAlpha = Mathf.MoveTowards(_fadeAlpha, 0f, Time.unscaledDeltaTime / fadeInTime);
+            // 전환 요청(RequestFade): 어두워진 뒤 다시 밝아짐
+            if (s_reqPending) { s_reqPending = false; _reqDark = true; }
+            if (_reqDark) { _reqAlpha = Mathf.MoveTowards(_reqAlpha, 1f, Time.unscaledDeltaTime / s_reqOut); if (_reqAlpha >= 1f) _reqDark = false; }
+            else if (_reqAlpha > 0f) _reqAlpha = Mathf.MoveTowards(_reqAlpha, 0f, Time.unscaledDeltaTime / s_reqIn);
             float a = Mathf.Max(_fadeAlpha, _progress != null ? _progress.Fade : 0f);   // 웨이브 사이 다음 구역으로 넘어갈 때도
+            a = Mathf.Max(a, _reqAlpha);
             _fade.color = new Color(0f, 0f, 0f, a);
             _fade.raycastTarget = a > 0.01f;   // 바뀌는 동안 클릭 막기
             if (_fade.enabled != a > 0f) _fade.enabled = a > 0f;
